@@ -260,13 +260,13 @@ historical-travel-agent/
 │   │   │       └── backend.tf
 │   │   └── .terraform/
 │   ├── cloud-build/        # Google Cloud Build設定
-│   │   ├── backend-build.yaml
-│   │   └── frontend-build.yaml
+│   │   └── backend-build.yaml
 │   └── scripts/
 │       ├── deploy-backend.sh
 │       ├── deploy-frontend.sh
 │       ├── terraform-init.sh
 │       └── terraform-deploy.sh
+│
 │
 ├── docs/                   # ドキュメント
 │   ├── api/
