@@ -380,7 +380,7 @@ POST /api/upload-images        # 画像アップロード
 
 **ローカル開発設定**:
 - **開発サーバー**: `uvicorn main:app --reload --host 0.0.0.0 --port 8000`
-- **CORS設定**: `http://localhost:3000` (Next.js dev server) を許可
+- **CORS設定**: `http://localhost:5173` (Vite dev server) を許可
 - **ファイルアップロード**: `./uploads/` ディレクトリに一時保存
 - **環境変数**: `.env` ファイルでGoogle Cloud認証情報を管理
 
