@@ -51,7 +51,7 @@ echo ""
 # プロジェクトIDの取得
 echo "プロジェクトIDを取得中..."
 if [ "$OWNER_TYPE" = "org" ]; then
-    PROJECT_ID=$(gh api graphql -f query="
+    PROJECT_DATA=$(gh api graphql -f query="
       query {
         organization(login: \"$OWNER\") {
           projectV2(number: $PROJECT_NUMBER) {
@@ -59,18 +59,11 @@ if [ "$OWNER_TYPE" = "org" ]; then
             title
           }
         }
-      }" --jq '.data.organization.projectV2.id')
-    PROJECT_TITLE=$(gh api graphql -f query="
-      query {
-        organization(login: \"$OWNER\") {
-          projectV2(number: $PROJECT_NUMBER) {
-            id
-            title
-          }
-        }
-      }" --jq '.data.organization.projectV2.title')
+      }" --jq '.data.organization.projectV2')
+    PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.id')
+    PROJECT_TITLE=$(echo "$PROJECT_DATA" | jq -r '.title')
 else
-    PROJECT_ID=$(gh api graphql -f query="
+    PROJECT_DATA=$(gh api graphql -f query="
       query {
         user(login: \"$OWNER\") {
           projectV2(number: $PROJECT_NUMBER) {
@@ -78,16 +71,9 @@ else
             title
           }
         }
-      }" --jq '.data.user.projectV2.id')
-    PROJECT_TITLE=$(gh api graphql -f query="
-      query {
-        user(login: \"$OWNER\") {
-          projectV2(number: $PROJECT_NUMBER) {
-            id
-            title
-          }
-        }
-      }" --jq '.data.user.projectV2.title')
+      }" --jq '.data.user.projectV2')
+    PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.id')
+    PROJECT_TITLE=$(echo "$PROJECT_DATA" | jq -r '.title')
 fi
 
 if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "null" ]; then

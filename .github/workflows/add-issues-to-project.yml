@@ -96,7 +96,12 @@ jobs:
           
           # Get all issues (excluding pull requests) and save to temp file
           TEMP_ISSUES=$(mktemp)
-          gh api repos/${{ github.repository }}/issues?state=all --paginate --jq '.[] | select(.pull_request == null) | .node_id' > "$TEMP_ISSUES"
+          gh api "repos/${{ github.repository }}/issues" \
+            --method GET \
+            --field state=all \
+            --field per_page=100 \
+            --paginate \
+            --jq '.[] | select(.pull_request == null) | .node_id' > "$TEMP_ISSUES"
           
           TOTAL_ISSUES=$(wc -l < "$TEMP_ISSUES")
           if [ "$TOTAL_ISSUES" -eq 0 ]; then
@@ -107,8 +112,7 @@ jobs:
           
           echo "Found $TOTAL_ISSUES issues to process"
           
-          # Process issues in batches to improve performance
-          BATCH_SIZE=10
+          # Process issues with progress tracking
           ADDED=0
           SKIPPED=0
           
