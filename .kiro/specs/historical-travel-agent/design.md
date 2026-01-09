@@ -231,7 +231,6 @@ historical-travel-agent/
 ├── deployment/             # デプロイメント設定
 │   ├── docker/             # Docker設定
 │   │   ├── Dockerfile.backend
-│   │   ├── Dockerfile.frontend
 │   │   └── docker-compose.yml    # ローカル開発用
 │   ├── terraform/          # Terraform Infrastructure as Code
 │   │   ├── main.tf
@@ -382,7 +381,7 @@ POST /api/upload-images        # 画像アップロード
 
 **ローカル開発設定**:
 - **開発サーバー**: `uvicorn main:app --reload --host 0.0.0.0 --port 8000`
-- **CORS設定**: `http://localhost:5173` (Vite dev server) を許可
+- **CORS設定**: `http://localhost:3000` (Next.js dev server) を許可
 - **ファイルアップロード**: `./uploads/` ディレクトリに一時保存
 - **環境変数**: `.env` ファイルでGoogle Cloud認証情報を管理
 
@@ -543,59 +542,59 @@ interface SpotReflection {
 
 Property 1: Travel information storage
 *For any* valid travel destination and tourist spot information, when input to the system, the Historical_Travel_Agent should successfully store and retrieve the information
-**Validates: Requirements 1.1**
+**Validates: Requirement 1, Acceptance Criteria 1**
 
 Property 2: Web search execution
 *For any* travel destination input, the system should execute web search and return historical information results
-**Validates: Requirements 1.2**
+**Validates: Requirement 1, Acceptance Criteria 2**
 
 Property 3: Timeline generation
 *For any* collected historical information, the Timeline_Generator should produce a chronologically ordered timeline
-**Validates: Requirements 1.3**
+**Validates: Requirement 1, Acceptance Criteria 3**
 
 Property 4: Map generation with historical context
 *For any* collected historical information, the Map_Generator should produce a map containing historical context markers
-**Validates: Requirements 1.4**
+**Validates: Requirement 1, Acceptance Criteria 4**
 
 Property 5: Travel guide completeness
 *For any* complete set of travel information (destination, spots, historical data), the system should generate a comprehensive Travel_Guide containing all required components
-**Validates: Requirements 1.5**
+**Validates: Requirement 1, Acceptance Criteria 5**
 
 Property 6: Historical background summarization
 *For any* tourist spot information, the system should generate a historical background summary specific to that location
-**Validates: Requirements 2.1**
+**Validates: Requirement 2, Acceptance Criteria 1**
 
 Property 7: Historical highlights organization
 *For any* historical information, the system should organize highlights from a historical perspective
-**Validates: Requirements 2.2**
+**Validates: Requirement 2, Acceptance Criteria 2**
 
 Property 8: Checkpoint list inclusion
 *For any* generated Travel_Guide, it should contain a Checkpoint_List component
-**Validates: Requirements 2.3**
+**Validates: Requirement 2, Acceptance Criteria 3**
 
 Property 9: Content integration completeness
 *For any* generated content, it should integrate timeline, map, historical summary, and highlights into a unified structure
-**Validates: Requirements 2.4**
+**Validates: Requirement 2, Acceptance Criteria 4**
 
 Property 10: Image analysis execution
 *For any* uploaded photo, the Image_Analyzer should identify tourist spots and historical elements and return analysis results
-**Validates: Requirements 3.1**
+**Validates: Requirement 3, Acceptance Criteria 1**
 
 Property 11: Information integration
 *For any* post-travel input (photos, notes), the system should integrate this information with pre-travel data
-**Validates: Requirements 3.2**
+**Validates: Requirement 3, Acceptance Criteria 2**
 
 Property 12: Information reorganization
 *For any* collected post-travel information, the system should reorganize the travel information
-**Validates: Requirements 3.3**
+**Validates: Requirement 3, Acceptance Criteria 3**
 
 Property 13: Reflection pamphlet generation
 *For any* reorganized travel information, the system should generate a Reflection_Pamphlet
-**Validates: Requirements 3.4**
+**Validates: Requirement 3, Acceptance Criteria 4**
 
 Property 14: Reflection pamphlet completeness
 *For any* generated Reflection_Pamphlet, it should contain travel summary, spot reflections, and next travel suggestions
-**Validates: Requirements 3.5**
+**Validates: Requirement 3, Acceptance Criteria 5**
 
 ## Error Handling
 
