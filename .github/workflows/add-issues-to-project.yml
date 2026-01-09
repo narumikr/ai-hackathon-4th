@@ -18,6 +18,10 @@ on:
         options:
           - user
           - org
+      project_owner:
+        description: 'Project owner (leave empty to use repository owner)'
+        required: false
+        type: string
 
 jobs:
   add-new-issue-to-project:
@@ -30,10 +34,11 @@ jobs:
       - name: Add issue to project
         uses: actions/add-to-project@v0.5.0
         with:
-          # プロジェクトURLを適切に設定してください
-          # ユーザープロジェクトの場合: https://github.com/users/Narumikr/projects/1
-          # 組織プロジェクトの場合: https://github.com/orgs/Narumikr/projects/1
-          project-url: https://github.com/users/Narumikr/projects/1
+          # プロジェクトURLは環境変数PROJECT_URLで設定するか、
+          # 以下のいずれかの形式で直接指定してください：
+          # ユーザープロジェクト: https://github.com/users/USERNAME/projects/NUMBER
+          # 組織プロジェクト: https://github.com/orgs/ORGNAME/projects/NUMBER
+          project-url: ${{ vars.PROJECT_URL || 'https://github.com/users/Narumikr/projects/1' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   add-all-issues:
@@ -52,7 +57,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROJECT_NUMBER: ${{ github.event.inputs.project_number }}
           OWNER_TYPE: ${{ github.event.inputs.owner_type }}
-          OWNER: ${{ github.repository_owner }}
+          OWNER: ${{ github.event.inputs.project_owner || github.repository_owner }}
         run: |
           echo "Adding all issues to project..."
           echo "Project number: $PROJECT_NUMBER"
@@ -61,23 +66,25 @@ jobs:
           
           # Get project ID based on owner type
           if [ "$OWNER_TYPE" = "org" ]; then
-            PROJECT_ID=$(gh api graphql -f query='
+            PROJECT_DATA=$(gh api graphql -f query='
               query($owner: String!, $number: Int!) {
                 organization(login: $owner) {
                   projectV2(number: $number) {
                     id
                   }
                 }
-              }' -f owner="$OWNER" -F number="$PROJECT_NUMBER" --jq '.data.organization.projectV2.id')
+              }' -f owner="$OWNER" -F number="$PROJECT_NUMBER")
+            PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.data.organization.projectV2.id')
           else
-            PROJECT_ID=$(gh api graphql -f query='
+            PROJECT_DATA=$(gh api graphql -f query='
               query($owner: String!, $number: Int!) {
                 user(login: $owner) {
                   projectV2(number: $number) {
                     id
                   }
                 }
-              }' -f owner="$OWNER" -F number="$PROJECT_NUMBER" --jq '.data.user.projectV2.id')
+              }' -f owner="$OWNER" -F number="$PROJECT_NUMBER")
+            PROJECT_ID=$(echo "$PROJECT_DATA" | jq -r '.data.user.projectV2.id')
           fi
           
           if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "null" ]; then
@@ -87,30 +94,58 @@ jobs:
           
           echo "Project ID: $PROJECT_ID"
           
-          # Get all issues (excluding pull requests)
-          ISSUE_IDS=$(gh api repos/${{ github.repository }}/issues --paginate --jq '.[] | select(.pull_request == null) | .node_id')
+          # Get all issues (excluding pull requests) and save to temp file
+          TEMP_ISSUES=$(mktemp)
+          gh api repos/${{ github.repository }}/issues?state=all --paginate --jq '.[] | select(.pull_request == null) | .node_id' > "$TEMP_ISSUES"
           
-          if [ -z "$ISSUE_IDS" ]; then
+          TOTAL_ISSUES=$(wc -l < "$TEMP_ISSUES")
+          if [ "$TOTAL_ISSUES" -eq 0 ]; then
             echo "No issues found in the repository."
+            rm -f "$TEMP_ISSUES"
             exit 0
           fi
           
-          # Add each issue to the project
-          echo "$ISSUE_IDS" | while read -r issue_id; do
-            if [ -z "$issue_id" ]; then
+          echo "Found $TOTAL_ISSUES issues to process"
+          
+          # Process issues in batches to improve performance
+          BATCH_SIZE=10
+          ADDED=0
+          SKIPPED=0
+          
+          while read -r issue_id; do
+            if [ -z "$issue_id" ] || [ "$issue_id" = "null" ]; then
               continue
             fi
-            echo "Adding issue with ID: $issue_id"
-            gh api graphql -f query='
+            
+            # Add issue to project
+            RESULT=$(gh api graphql -f query='
               mutation($project:ID!, $issue:ID!) {
                 addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
                   item {
                     id
                   }
                 }
-              }' -f project="$PROJECT_ID" -f issue="$issue_id" 2>&1 | tee -a /tmp/add_issue.log || {
-              echo "Failed to add issue or issue already in project"
-            }
-          done
+              }' -f project="$PROJECT_ID" -f issue="$issue_id" 2>&1) || true
+            
+            if echo "$RESULT" | grep -q '"item"'; then
+              ADDED=$((ADDED + 1))
+              echo "✓ Added issue ($ADDED/$TOTAL_ISSUES)"
+            else
+              SKIPPED=$((SKIPPED + 1))
+              echo "- Skipped issue (already in project or error) ($SKIPPED skipped)"
+            fi
+            
+            # Small delay to avoid rate limiting
+            sleep 0.5
+          done < "$TEMP_ISSUES"
           
-          echo "Finished adding issues to project!"
+          rm -f "$TEMP_ISSUES"
+          
+          echo ""
+          echo "================================"
+          echo "Completed!"
+          echo "================================"
+          echo "Added: $ADDED"
+          echo "Skipped: $SKIPPED"
+          echo "Total: $TOTAL_ISSUES"
+          echo "================================"

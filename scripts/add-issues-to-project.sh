@@ -102,22 +102,26 @@ echo ""
 
 # 全てのIssueを取得
 echo "全てのIssueを取得中..."
-ISSUE_COUNT=$(gh api "repos/$REPO_FULL/issues?state=all&per_page=100" --paginate --jq 'map(select(.pull_request == null)) | length')
+# 一時ファイルにIssue情報を保存して再利用
+TEMP_ISSUES=$(mktemp)
+gh api "repos/$REPO_FULL/issues?state=all&per_page=100" --paginate --jq '.[] | select(.pull_request == null) | {number: .number, node_id: .node_id, title: .title}' > "$TEMP_ISSUES"
+ISSUE_COUNT=$(wc -l < "$TEMP_ISSUES")
 echo "見つかったIssue数: $ISSUE_COUNT"
 echo ""
 
 if [ "$ISSUE_COUNT" -eq 0 ]; then
     echo "Issueが見つかりませんでした。"
+    rm -f "$TEMP_ISSUES"
     exit 0
 fi
 
 # 各IssueをProjectに追加
 echo "Issueをプロジェクトに追加中..."
-ADDED_COUNT=0
-SKIPPED_COUNT=0
-ERROR_COUNT=0
+# 一時ファイルでカウンターを管理
+TEMP_COUNTS=$(mktemp)
+echo "0 0 0" > "$TEMP_COUNTS"
 
-gh api "repos/$REPO_FULL/issues?state=all&per_page=100" --paginate --jq '.[] | select(.pull_request == null) | {number: .number, node_id: .node_id, title: .title}' | while read -r line; do
+while read -r line; do
     ISSUE_NUMBER=$(echo "$line" | jq -r .number)
     ISSUE_NODE_ID=$(echo "$line" | jq -r .node_id)
     ISSUE_TITLE=$(echo "$line" | jq -r .title)
@@ -137,6 +141,9 @@ gh api "repos/$REPO_FULL/issues?state=all&per_page=100" --paginate --jq '.[] | s
         }
       }" 2>&1) || true
     
+    # カウンターを読み込み
+    read -r ADDED_COUNT SKIPPED_COUNT ERROR_COUNT < "$TEMP_COUNTS"
+    
     if echo "$RESULT" | grep -q '"item"'; then
         echo "✓ 追加しました"
         ADDED_COUNT=$((ADDED_COUNT + 1))
@@ -147,7 +154,16 @@ gh api "repos/$REPO_FULL/issues?state=all&per_page=100" --paginate --jq '.[] | s
         echo "✗ エラー"
         ERROR_COUNT=$((ERROR_COUNT + 1))
     fi
-done
+    
+    # カウンターを保存
+    echo "$ADDED_COUNT $SKIPPED_COUNT $ERROR_COUNT" > "$TEMP_COUNTS"
+done < "$TEMP_ISSUES"
+
+# 最終的なカウンターを読み込み
+read -r ADDED_COUNT SKIPPED_COUNT ERROR_COUNT < "$TEMP_COUNTS"
+
+# 一時ファイルの削除
+rm -f "$TEMP_ISSUES" "$TEMP_COUNTS"
 
 echo ""
 echo "================================"
