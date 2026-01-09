@@ -121,7 +121,6 @@ historical-travel-agent/
 │   ├── next.config.js
 │   ├── tsconfig.json
 │   ├── biome.json            # Biome設定
-│   ├── tailwind.config.js    # Tailwind CSS設定
 │   ├── public/
 │   │   ├── favicon.ico
 │   │   └── images/
