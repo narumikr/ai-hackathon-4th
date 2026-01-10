@@ -1,0 +1,147 @@
+name: "Stage 2: Code Quality Check"
+
+on:
+  workflow_run:
+    workflows: ["Stage 1: Lint Check"]
+    types: [completed]
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.12'
+  PNPM_VERSION: '8'
+
+jobs:
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      backend-changed: ${{ steps.changes.outputs.backend }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          base: ${{ github.event.workflow_run.head_sha }}~1
+          ref: ${{ github.event.workflow_run.head_sha }}
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+            backend:
+              - 'backend/**'
+              - 'pyproject.toml'
+              - 'uv.lock'
+
+      # Frontend Setup
+      - name: Setup Node.js
+        if: steps.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        if: steps.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Setup pnpm cache
+        if: steps.changes.outputs.frontend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install frontend dependencies
+        if: steps.changes.outputs.frontend == 'true'
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      # Backend Setup
+      - name: Setup Python
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        if: steps.changes.outputs.backend == 'true'
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install backend dependencies
+        if: steps.changes.outputs.backend == 'true'
+        working-directory: ./backend
+        run: uv sync --dev
+
+      # Frontend Tests & Build
+      - name: Run frontend tests
+        if: steps.changes.outputs.frontend == 'true'
+        working-directory: ./frontend
+        run: pnpm run test --run
+
+      - name: Build frontend
+        if: steps.changes.outputs.frontend == 'true'
+        working-directory: ./frontend
+        run: pnpm run build
+
+      # Backend Tests
+      - name: Run backend tests
+        if: steps.changes.outputs.backend == 'true'
+        working-directory: ./backend
+        run: uv run pytest --cov=app --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        if: steps.changes.outputs.backend == 'true'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+      # Summary
+      - name: Quality check summary
+        run: |
+          echo "## Stage 2: Code Quality Check Results ✅" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ steps.changes.outputs.frontend }}" == "true" ]]; then
+            echo "- ✅ Frontend: Tests passed, Build successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⏭️ Frontend: No changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [[ "${{ steps.changes.outputs.backend }}" == "true" ]]; then
+            echo "- ✅ Backend: Tests passed, Coverage generated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⏭️ Backend: No changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎯 **Next**: Just Quality Check will start automatically" >> $GITHUB_STEP_SUMMARY
+
+  # Stage 1が失敗した場合の処理
+  lint-check-failed:
+    name: Lint Check Failed
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+
+    steps:
+      - name: Report failure
+        run: |
+          echo "## ❌ Stage 1: Lint Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Code Quality Check was skipped because lint check failed." >> $GITHUB_STEP_SUMMARY
+          echo "Please fix the lint errors and push again." >> $GITHUB_STEP_SUMMARY
+          exit 1

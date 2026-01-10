@@ -1,0 +1,76 @@
+name: "Stage 3: Just Quality Check"
+
+on:
+  workflow_run:
+    workflows: ["Stage 2: Code Quality Check"]
+    types: [completed]
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.12'
+  PNPM_VERSION: '8'
+
+jobs:
+  just-quality-check:
+    name: Just Quality Check
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install Just
+        uses: extractions/setup-just@v2
+
+      - name: Install all dependencies
+        run: just install-all
+
+      - name: Run just quality checks
+        run: just check-quality
+
+      - name: Final summary
+        run: |
+          echo "## Stage 3: Just Quality Check Results ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Just quality checks passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎉 **All stages completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "PR is ready for review." >> $GITHUB_STEP_SUMMARY
+
+  # Stage 2が失敗した場合の処理
+  quality-check-failed:
+    name: Quality Check Failed
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+
+    steps:
+      - name: Report failure
+        run: |
+          echo "## ❌ Stage 2: Code Quality Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Just Quality Check was skipped because code quality check failed." >> $GITHUB_STEP_SUMMARY
+          echo "Please fix the test failures or build errors and push again." >> $GITHUB_STEP_SUMMARY
+          exit 1
