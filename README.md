@@ -143,6 +143,19 @@ cp frontend/.env.local.example frontend/.env.local
 # frontend/.env.localファイルを編集して必要な環境変数を設定
 ```
 
+### pre-commit
+pre-commit（コミット前フック管理ツール）を使い、コミット前に `just check-quality-commit` と `just test-all` を実行します。
+
+```bash
+pre-commit install
+```
+
+必要に応じて、全ファイルに対して手動実行できます。
+
+```bash
+pre-commit run --all-files
+```
+
 ### ローカル開発
 
 #### 開発サーバーの起動
