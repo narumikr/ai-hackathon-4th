@@ -1,7 +1,6 @@
 """アプリケーション設定."""
 
 from functools import lru_cache
-from pathlib import Path
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -32,7 +31,6 @@ class Settings(BaseSettings):
     # Google Cloud設定
     google_cloud_project: str
     google_cloud_location: str = "asia-northeast1"
-    google_application_credentials: str
 
     # ストレージ設定
     upload_dir: str = "./uploads"
@@ -42,21 +40,12 @@ class Settings(BaseSettings):
         "database_url",
         "redis_url",
         "google_cloud_project",
-        "google_application_credentials",
     )
     @classmethod
     def validate_required(cls, value: str) -> str:
         """必須設定の空文字を禁止."""
         if not value.strip():
             raise ValueError("必須設定が未設定です。")
-        return value
-
-    @field_validator("google_application_credentials")
-    @classmethod
-    def validate_credentials_path(cls, value: str) -> str:
-        """認証情報ファイルの存在チェック."""
-        if not Path(value).exists():
-            raise ValueError("GOOGLE_APPLICATION_CREDENTIALSが存在しません。")
         return value
 
 
