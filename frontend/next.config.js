@@ -3,8 +3,7 @@ const nextConfig = {
   // App Router使用
   reactStrictMode: true,
 
-  // 本番デプロイ時は静的エクスポート
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  // 本番環境ではAPIルート（プロキシ）を利用するため、静的エクスポートは行わない
 
   // 画像最適化（静的エクスポート時は無効化）
   images: {

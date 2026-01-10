@@ -6,6 +6,6 @@
   "typeCheckingMode": "basic",
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
-  "pythonVersion": "3.12",
+  "pythonVersion": "3.14",
   "pythonPlatform": "All"
 }
