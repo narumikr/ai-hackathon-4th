@@ -125,7 +125,7 @@
 ```bash
 # リポジトリのクローン
 git clone [repository-url]
-cd ai-hackathon-4th
+cd <repository-directory>
 
 # 依存関係のインストール（バックエンド + フロントエンド）
 just install-all
