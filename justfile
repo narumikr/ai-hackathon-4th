@@ -14,7 +14,7 @@ frontend_port := "3000"
 uv := "uv"
 pnpm := "pnpm"
 
-# --- カテゴリA: 開発サーバー起動 ---
+# --- 開発サーバー起動 ---
 
 # バックエンド開発サーバー起動（FastAPI）
 dev-backend:
@@ -31,7 +31,7 @@ dev-all:
     @echo "Frontend: http://localhost:{{frontend_port}}"
     just dev-backend & just dev-frontend
 
-# --- カテゴリB: テスト実行 ---
+# --- テスト実行 ---
 
 # バックエンドテスト実行
 test-backend:
@@ -52,7 +52,7 @@ test-frontend-cov:
 # 全テスト実行（逐次実行、エラー時停止）
 test-all: test-backend test-frontend
 
-# --- カテゴリC: コード品質チェック ---
+# --- コード品質チェック ---
 
 # バックエンドLint実行（自動修正なし）
 lint-backend:
@@ -99,13 +99,13 @@ typecheck-frontend:
 # 全型チェック実行
 typecheck-all: typecheck-backend typecheck-frontend
 
-# --- カテゴリD: ビルド ---
+# --- ビルド ---
 
 # フロントエンドビルド
 build-frontend:
     cd {{frontend_dir}} && {{pnpm}} build
 
-# --- カテゴリE: 依存関係管理 ---
+# --- 依存関係管理 ---
 
 # バックエンド依存関係インストール
 install-backend:
@@ -118,7 +118,7 @@ install-frontend:
 # 全依存関係インストール
 install-all: install-backend install-frontend
 
-# --- カテゴリF: コード品質一括チェック（CI/CD向け） ---
+# --- コード品質一括チェック（CI/CD向け） ---
 
 # バックエンド品質一括チェック
 check-quality-backend: lint-backend format-backend typecheck-backend
@@ -132,7 +132,7 @@ check-quality: check-quality-backend check-quality-frontend
 # コミット前品質チェック（フォーマットはチェックのみ）
 check-quality-commit: lint-backend format-check-backend lint-frontend typecheck-backend typecheck-frontend
 
-# --- カテゴリG: クリーンアップ ---
+# --- クリーンアップ ---
 
 # バックエンドのキャッシュ・ビルド成果物削除
 clean-backend:
