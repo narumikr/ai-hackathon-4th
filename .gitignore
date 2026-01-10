@@ -39,6 +39,7 @@ pnpm-debug.log*
 .next/
 out/
 .turbo/
+*.tsbuildinfo
 
 # Environment variables
 .env
