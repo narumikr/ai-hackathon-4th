@@ -1,3 +1,4 @@
+![PR-Header](https://capsule-render.vercel.app/api?type=slice&height=39&color=0:ffc800,100:33aaee&section=header&reversal=false)
 ## 課題へのリンク
 
 - close #
@@ -26,6 +27,20 @@
 
 -
 
+### チェックリスト
+
+<!-- 下記はPR作成してから後でチェックリストぽちぽちしていくのが楽だよ -->
+- [ ] branch名はどんな作業を行ったかわかる命名にしたか(ex.feature/impl_login-page)
+- [ ] マージ先のブランチは正しいか
+- [ ] レビュワーを設定したか
+- [ ] 影響確認を行ったか
+- [ ] ローカルで起動確認は行ったか
+- [ ] AIによるレビューの実施を行い、以下の確認をしたか
+  - [ ] 指摘事項の妥当性の確認
+  - [ ] 根拠の確認・調査
+  - [ ] 指摘事項の修正
+  - [ ] 再レビューの実施
+
 ## やってないこと
 
 <!-- 残課題があれば。なければ「なし」 -->
@@ -42,3 +57,4 @@
 
 -
 
+![PR-Foorter](https://capsule-render.vercel.app/api?type=slice&height=39&color=0:ffc800,100:33aaee&section=footer&reversal=false)
