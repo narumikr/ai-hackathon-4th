@@ -44,9 +44,9 @@ class Settings(BaseSettings):
         "google_cloud_project",
     )
     @classmethod
-    def validate_required(cls, value: str) -> str:
-        """必須設定の空文字を禁止."""
-        if not value.strip():
+    def validate_required(cls, value: str | None) -> str:
+        """必須設定の空文字や未設定（None）を禁止."""
+        if value is None or not value.strip():
             raise ValueError("必須設定が未設定です。")
         return value
 
