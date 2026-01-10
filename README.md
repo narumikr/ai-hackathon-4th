@@ -111,27 +111,72 @@
 <!-- TODO 設計書がマージされたら追記する -->
 
 ### 前提条件
-- [必要な開発環境やツールを記載]
-- [必要なアカウント（Google Cloud等）を記載]
+- **開発環境**:
+  - [just](https://github.com/casey/just) - タスクランナー（`brew install just`でインストール）
+  - [uv](https://github.com/astral-sh/uv) - Pythonパッケージ管理（`brew install uv`でインストール）
+  - [pnpm](https://pnpm.io/) - Node.jsパッケージ管理（`brew install pnpm`でインストール）
+  - Python 3.12以上
+  - Node.js 18以上
+- **必要なアカウント**:
+  - Google Cloudアカウント
+  - Vertex AI APIの有効化
 
 ### セットアップ手順
 ```bash
 # リポジトリのクローン
 git clone [repository-url]
-cd ai-hackathon-4
+cd ai-hackathon-4th
 
-# 依存関係のインストール
-[インストールコマンドを記載]
+# 依存関係のインストール（バックエンド + フロントエンド）
+just install-all
+
+# Google Cloud認証（Application Default Credentials）
+gcloud auth application-default login
 
 # 環境変数の設定
-[環境変数の設定方法を記載]
+cp .env.example .env
+# .envファイルを編集して必要な環境変数を設定
 ```
 
 ### ローカル開発
+
+#### 開発サーバーの起動
+
 ```bash
-# 開発サーバーの起動
-[起動コマンドを記載]
+# バックエンド + フロントエンド同時起動
+just dev-all
+
+# または個別に起動
+just dev-backend   # バックエンドのみ（http://localhost:8000）
+just dev-frontend  # フロントエンドのみ（http://localhost:3000）
 ```
+
+#### よく使うタスク
+
+```bash
+# コマンド一覧を表示
+just
+
+# テスト実行
+just test-all              # 全テスト実行
+just test-backend          # バックエンドのみ
+just test-frontend         # フロントエンドのみ
+just test-backend-cov      # カバレッジ付き（バックエンド）
+
+# コード品質チェック
+just check-quality         # 全品質チェック（Lint + Format + 型チェック）
+just lint-all              # Lint実行
+just format-all            # フォーマット実行
+just typecheck-all         # 型チェック実行
+
+# ビルド
+just build-frontend        # フロントエンドのプロダクションビルド
+
+# クリーンアップ
+just clean-all             # キャッシュとビルド成果物を削除
+```
+
+利用可能な全コマンドは `just --list` で確認できます。
 
 ### デプロイ
 ```bash
