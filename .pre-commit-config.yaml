@@ -1,0 +1,13 @@
+repos:
+  - repo: local
+    hooks:
+      - id: just-check-quality-commit
+        name: just check-quality-commit
+        entry: just check-quality-commit
+        language: system
+        pass_filenames: false
+      - id: just-test-all
+        name: just test-all
+        entry: just test-all
+        language: system
+        pass_filenames: false
