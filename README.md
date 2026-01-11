@@ -143,6 +143,58 @@ cp frontend/.env.local.example frontend/.env.local
 # frontend/.env.localファイルを編集して必要な環境変数を設定
 ```
 
+### データベースセットアップ
+
+このプロジェクトはPostgreSQLデータベースを使用します。以下の手順でセットアップしてください。
+
+#### 1. PostgreSQLコンテナの起動
+
+```bash
+cd infrastructure/docker
+docker-compose up -d postgres
+```
+
+#### 2. マイグレーションの適用
+
+```bash
+# プロジェクトルートに戻る
+cd ../..
+
+# マイグレーションを適用
+just migrate-up
+```
+
+#### 3. テスト用データベースの作成
+
+```bash
+cd infrastructure/docker
+docker-compose exec postgres psql -U postgres -c "CREATE DATABASE travel_agent_test;"
+```
+
+#### マイグレーション管理コマンド
+
+```bash
+# マイグレーション作成
+just migrate-create "マイグレーション名"
+
+# マイグレーション適用
+just migrate-up
+
+# マイグレーション取り消し（1つ前に戻る）
+just migrate-down
+
+# マイグレーション履歴表示
+just migrate-history
+
+# 現在のリビジョン表示
+just migrate-current
+
+# データベースリセット（開発用）
+just db-reset
+```
+
+**注意**: 本番環境へのマイグレーション適用前には、必ずバックアップを取得してください。
+
 ### pre-commit
 pre-commit（コミット前フック管理ツール）を使い、コミット前に `just check-quality-commit` と `just test-all` を実行します。
 
@@ -189,6 +241,12 @@ just typecheck-all         # 型チェック実行
 
 # ビルド
 just build-frontend        # フロントエンドのプロダクションビルド
+
+# データベース管理
+just migrate-up            # マイグレーション適用
+just migrate-down          # マイグレーション取り消し
+just migrate-history       # マイグレーション履歴表示
+just migrate-create "name" # マイグレーション作成
 
 # クリーンアップ
 just clean-all             # キャッシュとビルド成果物を削除

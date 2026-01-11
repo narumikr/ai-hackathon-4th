@@ -7,24 +7,37 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    """アプリケーション設定."""
+class DatabaseSettings(BaseSettings):
+    """データベース設定（Alembicやテスト用の最小設定）."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",  # 余分な環境変数を無視
     )
-
-    # アプリケーション設定
-    app_name: str = "Historical Travel Agent"
-    debug: bool = False
-
-    # CORS設定
-    cors_origins: list[str] = ["http://localhost:3000"]
 
     # データベース設定
     database_url: str
+    debug: bool = False
+
+    @field_validator("database_url")
+    @classmethod
+    def validate_database_url(cls, value: str | None) -> str:
+        """データベースURLの必須検証."""
+        if value is None or not value.strip():
+            raise ValueError("DATABASE_URLは必須です。")
+        return value
+
+
+class Settings(DatabaseSettings):
+    """アプリケーション設定（FastAPI用の全設定）."""
+
+    # アプリケーション設定
+    app_name: str = "Historical Travel Agent"
+
+    # CORS設定
+    cors_origins: list[str] = ["http://localhost:3000"]
 
     # Redis設定
     redis_url: str
@@ -38,11 +51,7 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_upload_size: int = 10 * 1024 * 1024  # 10MB
 
-    @field_validator(
-        "database_url",
-        "redis_url",
-        "google_cloud_project",
-    )
+    @field_validator("redis_url", "google_cloud_project")
     @classmethod
     def validate_required(cls, value: str | None) -> str:
         """必須設定の空文字や未設定（None）を禁止."""
@@ -60,6 +69,12 @@ class Settings(BaseSettings):
         if not Path(value).exists():
             raise ValueError(f"GOOGLE_APPLICATION_CREDENTIALS が存在しません: {value}")
         return value
+
+
+@lru_cache
+def get_database_settings() -> DatabaseSettings:
+    """データベース設定のみ取得（Alembic、テスト用）."""
+    return DatabaseSettings()  # type: ignore[call-arg]
 
 
 @lru_cache
