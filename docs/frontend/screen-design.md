@@ -140,12 +140,12 @@ frontend/src/
 │   ├── travel/                  # 旅行計画関連
 │   │   ├── TravelList.tsx
 │   │   ├── TravelForm.tsx
-│   │   ├── SpotSelector.tsx
-│   │   └── TravelGuide.tsx
+│   │   └── SpotSelector.tsx
 │   ├── upload/                  # アップロード関連
 │   │   ├── ImageUploader.tsx
 │   │   └── ReflectionForm.tsx
 │   ├── display/                 # 表示関連
+│   │   ├── TravelGuide.tsx
 │   │   ├── Timeline.tsx
 │   │   └── HistoricalMap.tsx
 │   └── reflection/              # 振り返り関連
