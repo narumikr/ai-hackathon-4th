@@ -34,7 +34,7 @@
 ### 命名ルール
 
 1. 形式: `<type>/<issue-number>-<short-description>`
-2. `<type>` は `feat` / `fix` / `chore` / `docs` / `ref` のいずれか
+2. `<type>` は `feat` / `fix` / `chore` / `docs` / `ref` / `test` のいずれか
 3. `<issue-number>` は GitHub Issue 番号（必須）
 4. `<short-description>` は英小文字のkebab-case（スペース禁止、英数字とハイフンのみ）
 
