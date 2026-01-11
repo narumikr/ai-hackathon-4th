@@ -4,8 +4,7 @@ on:
   workflow_run:
     workflows: 
       - "Stage 1: Lint Check"
-      - "Stage 2: Code Quality Check" 
-      - "Stage 3: Just Quality Check"
+      - "Stage 2: Code Quality Check"
     types: [completed]
     branches: [main, develop]
 
@@ -29,13 +28,12 @@ jobs:
             });
             
             const pipelineRuns = runs.workflow_runs.filter(run => 
-              ['Stage 1: Lint Check', 'Stage 2: Code Quality Check', 'Stage 3: Just Quality Check'].includes(run.name)
+              ['Stage 1: Lint Check', 'Stage 2: Code Quality Check'].includes(run.name)
             );
             
             const status = {
               stage1: pipelineRuns.find(r => r.name === 'Stage 1: Lint Check'),
-              stage2: pipelineRuns.find(r => r.name === 'Stage 2: Code Quality Check'),
-              stage3: pipelineRuns.find(r => r.name === 'Stage 3: Just Quality Check')
+              stage2: pipelineRuns.find(r => r.name === 'Stage 2: Code Quality Check')
             };
             
             return status;
@@ -55,6 +53,7 @@ jobs:
                           status.stage1.status === 'in_progress' ? '🔄' : '⏳';
               summary += `## ${icon} Stage 1: Lint Check\n`;
               summary += `- Status: ${status.stage1.conclusion || status.stage1.status}\n`;
+              summary += `- Command: \`just check-quality\`\n`;
               summary += `- [View Details](${status.stage1.html_url})\n\n`;
             }
             
@@ -65,44 +64,29 @@ jobs:
                           status.stage2.status === 'in_progress' ? '🔄' : '⏳';
               summary += `## ${icon} Stage 2: Code Quality Check\n`;
               summary += `- Status: ${status.stage2.conclusion || status.stage2.status}\n`;
+              summary += `- Commands: \`just test-all\`, \`just build-frontend\`\n`;
               summary += `- [View Details](${status.stage2.html_url})\n\n`;
             } else if (status.stage1?.conclusion === 'success') {
               summary += `## ⏳ Stage 2: Code Quality Check\n`;
-              summary += `- Status: Waiting to start\n\n`;
+              summary += `- Status: Waiting to start\n`;
+              summary += `- Commands: \`just test-all\`, \`just build-frontend\`\n\n`;
             } else if (status.stage1?.conclusion === 'failure') {
               summary += `## ⏭️ Stage 2: Code Quality Check\n`;
               summary += `- Status: Skipped (Stage 1 failed)\n\n`;
             }
             
-            // Stage 3
-            if (status.stage3) {
-              const icon = status.stage3.conclusion === 'success' ? '✅' : 
-                          status.stage3.conclusion === 'failure' ? '❌' : 
-                          status.stage3.status === 'in_progress' ? '🔄' : '⏳';
-              summary += `## ${icon} Stage 3: Just Quality Check\n`;
-              summary += `- Status: ${status.stage3.conclusion || status.stage3.status}\n`;
-              summary += `- [View Details](${status.stage3.html_url})\n\n`;
-            } else if (status.stage2?.conclusion === 'success') {
-              summary += `## ⏳ Stage 3: Just Quality Check\n`;
-              summary += `- Status: Waiting to start\n\n`;
-            } else if (status.stage1?.conclusion === 'failure' || status.stage2?.conclusion === 'failure') {
-              summary += `## ⏭️ Stage 3: Just Quality Check\n`;
-              summary += `- Status: Skipped (Previous stage failed)\n\n`;
-            }
-            
             // Overall status
-            if (status.stage3?.conclusion === 'success') {
+            if (status.stage2?.conclusion === 'success') {
               summary += `## 🎉 Pipeline Result: SUCCESS\n`;
               summary += `All quality checks passed! PR is ready for review.\n`;
             } else if (status.stage1?.conclusion === 'failure') {
               summary += `## ❌ Pipeline Result: FAILED at Stage 1\n`;
               summary += `Please fix lint errors and push again.\n`;
+              summary += `Local check: \`just check-quality\`\n`;
             } else if (status.stage2?.conclusion === 'failure') {
               summary += `## ❌ Pipeline Result: FAILED at Stage 2\n`;
               summary += `Please fix test failures or build errors and push again.\n`;
-            } else if (status.stage3?.conclusion === 'failure') {
-              summary += `## ❌ Pipeline Result: FAILED at Stage 3\n`;
-              summary += `Please fix just quality check issues and push again.\n`;
+              summary += `Local check: \`just test-all && just build-frontend\`\n`;
             } else {
               summary += `## 🔄 Pipeline Result: IN PROGRESS\n`;
               summary += `Pipeline is still running...\n`;

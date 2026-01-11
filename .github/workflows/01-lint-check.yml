@@ -14,126 +14,44 @@ jobs:
   lint-check:
     name: Lint Check
     runs-on: ubuntu-latest
-    outputs:
-      frontend-changed: ${{ steps.changes.outputs.frontend }}
-      backend-changed: ${{ steps.changes.outputs.backend }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Detect changes
-        uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            frontend:
-              - 'frontend/**'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-            backend:
-              - 'backend/**'
-              - 'pyproject.toml'
-              - 'uv.lock'
-
-      # Frontend Setup
       - name: Setup Node.js
-        if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        if: steps.changes.outputs.frontend == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-          run_install: false
 
-      - name: Get pnpm store directory
-        if: steps.changes.outputs.frontend == 'true'
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        if: steps.changes.outputs.frontend == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install frontend dependencies
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm install --frozen-lockfile
-
-      # Backend Setup
       - name: Setup Python
-        if: steps.changes.outputs.backend == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        if: steps.changes.outputs.backend == 'true'
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-          cache-dependency-glob: "backend/uv.lock"
 
-      - name: Install backend dependencies
-        if: steps.changes.outputs.backend == 'true'
-        working-directory: ./backend
-        run: uv sync --dev
+      - name: Install Just
+        uses: extractions/setup-just@v2
 
-      # Frontend Lint Checks
-      - name: Run TypeScript type check
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm run typecheck
+      - name: Install all dependencies
+        run: just install-all
 
-      - name: Run Biome lint check
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm run lint
+      - name: Run quality checks
+        run: just check-quality
 
-      - name: Run Biome format check
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm exec biome format --check .
-
-      # Backend Lint Checks
-      - name: Run ruff lint check
-        if: steps.changes.outputs.backend == 'true'
-        working-directory: ./backend
-        run: uv run ruff check .
-
-      - name: Run ruff format check
-        if: steps.changes.outputs.backend == 'true'
-        working-directory: ./backend
-        run: uv run ruff format --check .
-
-      - name: Run pyright type check
-        if: steps.changes.outputs.backend == 'true'
-        working-directory: ./backend
-        run: uv run pyright
-
-      # Summary
       - name: Lint check summary
         run: |
           echo "## Stage 1: Lint Check Results ✅" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ steps.changes.outputs.frontend }}" == "true" ]]; then
-            echo "- ✅ Frontend: TypeScript, Biome lint, Biome format" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ⏭️ Frontend: No changes detected" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [[ "${{ steps.changes.outputs.backend }}" == "true" ]]; then
-            echo "- ✅ Backend: Pyright, Ruff lint, Ruff format" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ⏭️ Backend: No changes detected" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- ✅ Dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Quality checks passed (lint, format, typecheck)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🎯 **Next**: Code Quality Check will start automatically" >> $GITHUB_STEP_SUMMARY

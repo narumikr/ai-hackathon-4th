@@ -16,9 +16,6 @@ jobs:
     name: Code Quality Check
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
-    outputs:
-      frontend-changed: ${{ steps.changes.outputs.frontend }}
-      backend-changed: ${{ steps.changes.outputs.backend }}
 
     steps:
       - name: Checkout code
@@ -26,88 +23,39 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - name: Detect changes
-        uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          base: ${{ github.event.workflow_run.head_sha }}~1
-          ref: ${{ github.event.workflow_run.head_sha }}
-          filters: |
-            frontend:
-              - 'frontend/**'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-            backend:
-              - 'backend/**'
-              - 'pyproject.toml'
-              - 'uv.lock'
-
-      # Frontend Setup
       - name: Setup Node.js
-        if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        if: steps.changes.outputs.frontend == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
-          run_install: false
 
-      - name: Setup pnpm cache
-        if: steps.changes.outputs.frontend == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install frontend dependencies
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm install --frozen-lockfile
-
-      # Backend Setup
       - name: Setup Python
-        if: steps.changes.outputs.backend == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        if: steps.changes.outputs.backend == 'true'
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-          cache-dependency-glob: "backend/uv.lock"
 
-      - name: Install backend dependencies
-        if: steps.changes.outputs.backend == 'true'
-        working-directory: ./backend
-        run: uv sync --dev
+      - name: Install Just
+        uses: extractions/setup-just@v2
 
-      # Frontend Tests & Build
-      - name: Run frontend tests
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm run test --run
+      - name: Install all dependencies
+        run: just install-all
+
+      - name: Run all tests with coverage
+        run: just test-backend-cov && just test-frontend
 
       - name: Build frontend
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: ./frontend
-        run: pnpm run build
+        run: just build-frontend
 
-      # Backend Tests
-      - name: Run backend tests
-        if: steps.changes.outputs.backend == 'true'
-        working-directory: ./backend
-        run: uv run pytest --cov=app --cov-report=xml --cov-report=term-missing
-
-      - name: Upload coverage to Codecov
-        if: steps.changes.outputs.backend == 'true'
+      - name: Upload backend coverage
         uses: codecov/codecov-action@v4
         with:
           file: ./backend/coverage.xml
@@ -115,22 +63,16 @@ jobs:
           name: backend-coverage
           fail_ci_if_error: false
 
-      # Summary
       - name: Quality check summary
         run: |
           echo "## Stage 2: Code Quality Check Results ✅" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ steps.changes.outputs.frontend }}" == "true" ]]; then
-            echo "- ✅ Frontend: Tests passed, Build successful" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ⏭️ Frontend: No changes detected" >> $GITHUB_STEP_SUMMARY
-          fi
-          if [[ "${{ steps.changes.outputs.backend }}" == "true" ]]; then
-            echo "- ✅ Backend: Tests passed, Coverage generated" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ⏭️ Backend: No changes detected" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- ✅ All dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All tests passed (frontend & backend)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Frontend build successful" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backend coverage report generated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🎯 **Next**: Just Quality Check will start automatically" >> $GITHUB_STEP_SUMMARY
+          echo "🎉 **All quality checks completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "PR is ready for review." >> $GITHUB_STEP_SUMMARY
 
   # Stage 1が失敗した場合の処理
   lint-check-failed:
