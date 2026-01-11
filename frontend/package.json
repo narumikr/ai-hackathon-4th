@@ -11,7 +11,7 @@
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
     "check": "pnpm run typecheck && pnpm run lint",
-    "check:fix": "pnpm run typecheck && pnpm run lint:fix",
+    "lint:check-and-fix": "pnpm run typecheck && pnpm run lint:fix && pnpm run format",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui"
