@@ -9,7 +9,9 @@ from app.domain.travel_plan.value_objects import Location, PlanStatus
 
 
 def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.SearchStrategy[str]:
-    """非空のprintable文字列を生成する戦略.
+    """非空のprintable文字列を生成するStrategy.
+
+    Hypothesis Strategy: テストデータ生成の設計図
 
     TravelPlanエンティティのバリデーション要件に適合:
     - 空文字列は拒否される (`not value or not value.strip()`)
@@ -20,7 +22,7 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
         max_size: 最大文字数
 
     Returns:
-        ASCII 32-126 (printable文字: 画面表示可能な文字) の文字列戦略
+        ASCII 32-126 (printable文字: 画面表示可能な文字) の文字列Strategy
     """
     # ASCII 32-126: スペースから~までのprintable文字のみ
     # 制御文字（改行・タブなど）や拡張ASCII文字を排除し、安定したテストデータを生成
@@ -33,7 +35,9 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
 
 @st.composite
 def _locations(draw: st.DrawFn) -> Location:
-    """地理的に有効な位置情報を生成する戦略.
+    """地理的に有効な位置情報を生成するStrategy.
+
+    Hypothesis Composite Strategy: 複数の値を組み合わせて複雑なオブジェクトを生成
 
     Location値オブジェクトのバリデーション要件に適合:
     - 緯度: -90度 ≤ lat ≤ 90度
@@ -69,7 +73,9 @@ def _locations(draw: st.DrawFn) -> Location:
 
 @st.composite
 def _tourist_spots(draw: st.DrawFn) -> TouristSpot:
-    """観光スポットエンティティを生成する戦略.
+    """観光スポットエンティティを生成するStrategy.
+
+    Hypothesis Composite Strategy: 複数のStrategyを組み合わせてエンティティを生成
 
     TouristSpotエンティティのバリデーション要件に適合:
     - id: 必須、非空文字列
