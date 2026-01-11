@@ -144,3 +144,29 @@ clean-frontend:
 
 # 全クリーンアップ
 clean-all: clean-backend clean-frontend
+
+# --- データベース管理 ---
+
+# データベースマイグレーション作成
+migrate-create message:
+    cd {{backend_dir}} && {{uv}} run alembic revision --autogenerate -m "{{message}}"
+
+# データベースマイグレーション適用
+migrate-up:
+    cd {{backend_dir}} && {{uv}} run alembic upgrade head
+
+# データベースマイグレーション取り消し
+migrate-down:
+    cd {{backend_dir}} && {{uv}} run alembic downgrade -1
+
+# データベースマイグレーション履歴表示
+migrate-history:
+    cd {{backend_dir}} && {{uv}} run alembic history
+
+# データベース現在のリビジョン表示
+migrate-current:
+    cd {{backend_dir}} && {{uv}} run alembic current
+
+# データベースリセット（開発用）
+db-reset:
+    cd {{backend_dir}} && {{uv}} run alembic downgrade base && {{uv}} run alembic upgrade head
