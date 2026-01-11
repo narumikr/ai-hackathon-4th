@@ -58,12 +58,19 @@ test-backend-cov:
 test-frontend:
 	cd {{frontend_dir}} && {{pnpm}} test
 
+# フロントエンドテスト実行（CI用、watch modeなし）
+test-frontend-ci:
+	cd {{frontend_dir}} && {{pnpm}} test:run
+
 # フロントエンドテスト実行（カバレッジ付き）
 test-frontend-cov:
 	cd {{frontend_dir}} && {{pnpm}} test:coverage
 
 # 全テスト実行（逐次実行、エラー時停止）
 test-all: test-backend test-frontend
+
+# 全テスト実行（CI用、watch modeなし）
+test-all-ci: test-backend test-frontend-ci
 
 # --- コード品質チェック ---
 
