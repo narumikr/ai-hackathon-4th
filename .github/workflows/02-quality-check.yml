@@ -1,0 +1,90 @@
+name: "Stage 2: Code Quality Check"
+
+on:
+  workflow_run:
+    workflows: ["Stage 1: Lint Check"]
+    types: [completed]
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.12'
+  PNPM_VERSION: '8'
+
+jobs:
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+
+      - name: Install Just
+        uses: extractions/setup-just@v2
+
+      - name: Install all dependencies
+        run: just install-all
+
+      - name: Run all tests with coverage
+        run: just test-backend-cov && just test-frontend
+
+      - name: Build frontend
+        run: just build-frontend
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+      - name: Quality check summary
+        run: |
+          echo "## Stage 2: Code Quality Check Results ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ All tests passed (frontend & backend)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Frontend build successful" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backend coverage report generated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎉 **All quality checks completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          echo "PR is ready for review." >> $GITHUB_STEP_SUMMARY
+
+  # Stage 1が失敗した場合の処理
+  lint-check-failed:
+    name: Lint Check Failed
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure'
+
+    steps:
+      - name: Report failure
+        run: |
+          echo "## ❌ Stage 1: Lint Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Code Quality Check was skipped because lint check failed." >> $GITHUB_STEP_SUMMARY
+          echo "Please fix the lint errors and push again." >> $GITHUB_STEP_SUMMARY
+          exit 1
