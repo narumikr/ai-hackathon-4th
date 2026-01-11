@@ -254,6 +254,39 @@ just clean-all             # キャッシュとビルド成果物を削除
 
 利用可能な全コマンドは `just --list` で確認できます。
 
+### CI/CD（GitHub Actions）
+
+プロジェクトでは段階的な品質チェックパイプラインを採用しています。
+
+#### パイプライン概要
+
+```
+PR作成/更新 → Stage 1: Lint Check → Stage 2: Code Quality Check → ✅ Ready for Review
+```
+
+- **Stage 1**: コードスタイル・型チェック (`just check-quality`)
+- **Stage 2**: テスト実行・ビルド検証 (`just test-backend-cov`, `just test-frontend`, `just build-frontend`)
+
+各ステージは前のステージが成功した場合のみ実行され、失敗時はパイプラインが終了します。
+
+#### ローカルでの事前チェック
+
+CI/CDと全く同じコマンドでローカルチェックが可能：
+
+```bash
+just install-all      # 依存関係インストール
+just check-quality    # Stage 1相当
+just test-backend-cov # Stage 2相当（バックエンドテスト）
+just test-frontend    # Stage 2相当（フロントエンドテスト）
+just build-frontend   # Stage 2相当（ビルド）
+```
+
+#### 詳細情報
+
+CI/CDワークフローの詳細な設計・仕様・トラブルシューティングについては、以下のドキュメントを参照してください：
+
+📖 **[CI/CDワークフロー設計書](docs/actions/ci-workflow-design.md)**
+
 ### デプロイ
 ```bash
 # Google Cloudへのデプロイ
