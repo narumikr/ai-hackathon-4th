@@ -1,4 +1,4 @@
-"""TravelPlan集約のプロパティテスト."""
+"""TravelPlan集約のプロパティテスト。"""
 
 from datetime import UTC, datetime
 
@@ -9,7 +9,7 @@ from app.domain.travel_plan.value_objects import Location, PlanStatus
 
 
 def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.SearchStrategy[str]:
-    """非空のprintable文字列を生成するStrategy.
+    """非空のprintable文字列を生成するStrategy。
 
     Hypothesis Strategy: テストデータ生成の設計図
 
@@ -35,7 +35,7 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
 
 @st.composite
 def _locations(draw: st.DrawFn) -> Location:
-    """地理的に有効な位置情報を生成するStrategy.
+    """地理的に有効な位置情報を生成するStrategy。
 
     Hypothesis Composite Strategy: 複数の値を組み合わせて複雑なオブジェクトを生成
 
@@ -73,7 +73,7 @@ def _locations(draw: st.DrawFn) -> Location:
 
 @st.composite
 def _tourist_spots(draw: st.DrawFn) -> TouristSpot:
-    """観光スポットエンティティを生成するStrategy.
+    """観光スポットエンティティを生成するStrategy。
 
     Hypothesis Composite Strategy: 複数のStrategyを組み合わせてエンティティを生成
 
@@ -122,7 +122,7 @@ def test_travel_plan_property_travel_information_storage(
     destination: str,
     spots: list[TouristSpot],
 ) -> None:
-    """Property 1: 旅行情報が保持されることを検証する.
+    """Property 1: 旅行情報が保持されることを検証する。
 
     前提条件:
     - 有効なuser_id、title、destinationが生成される
