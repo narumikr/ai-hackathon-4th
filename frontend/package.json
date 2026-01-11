@@ -13,6 +13,7 @@
     "check": "pnpm run typecheck && pnpm run lint",
     "lint:check-and-fix": "pnpm run typecheck && pnpm run lint:fix && pnpm run format",
     "test": "vitest",
+    "test:run": "vitest run",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui"
   },
