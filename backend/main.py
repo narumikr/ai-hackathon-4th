@@ -4,9 +4,16 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config.settings import get_settings
+from app.interfaces.middleware import (
+    generic_exception_handler,
+    http_exception_handler,
+    setup_cors,
+    validation_exception_handler,
+)
 
 
 @asynccontextmanager
@@ -30,14 +37,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS設定（ローカル開発環境）
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORSミドルウェアの設定
+setup_cors(app)
+
+# エラーハンドラーの登録
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
 
 
 @app.get("/")
