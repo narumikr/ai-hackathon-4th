@@ -9,7 +9,7 @@ from app.domain.travel_plan.value_objects import Location, PlanStatus
 
 
 def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.SearchStrategy[str]:
-    """印字可能な非空文字列を生成する戦略.
+    """非空のprintable文字列を生成する戦略.
 
     TravelPlanエンティティのバリデーション要件に適合:
     - 空文字列は拒否される (`not value or not value.strip()`)
@@ -20,10 +20,10 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
         max_size: 最大文字数
 
     Returns:
-        ASCII 32-126 (印字可能文字) の文字列戦略
+        ASCII 32-126 (printable文字: 画面表示可能な文字) の文字列戦略
     """
-    # ASCII 32-126: スペースから~までの印字可能文字のみ
-    # 制御文字や拡張ASCII文字を排除し、安定したテストデータを生成
+    # ASCII 32-126: スペースから~までのprintable文字のみ
+    # 制御文字（改行・タブなど）や拡張ASCII文字を排除し、安定したテストデータを生成
     return st.text(
         alphabet=st.characters(min_codepoint=32, max_codepoint=126),
         min_size=min_size,
