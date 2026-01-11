@@ -4,6 +4,11 @@
 
 歴史学習特化型旅行AIエージェントシステムのフロントエンド画面設計。Next.js 16 App Routerを使用し、旅行前の事前学習から旅行後の振り返りまでのユーザージャーニーをサポートする画面構成。
 
+## 関連ドキュメント
+
+- [システム設計書（Kiro）](../../.kiro/specs/historical-travel-agent/design.md) - アーキテクチャ、データモデル、API設計
+- [UIコンポーネント一覧](./ui-components.md) - 共通UIコンポーネントの詳細
+
 ## 画面構成
 
 ### 1. メイン画面・ナビゲーション
@@ -24,7 +29,7 @@
 - **主要機能**:
   - 旅行計画一覧の表示
   - 新規旅行作成ボタン
-  - 各旅行の状態表示（planning/completed）
+  - 各旅行の状態表示（planning/traveling/completed）
   - 旅行の編集・削除機能
 - **コンポーネント**: 
   - `app/travel/page.tsx`
@@ -88,21 +93,6 @@
   - `components/upload/ImageUploader.tsx`
   - `components/upload/ReflectionForm.tsx`
 
-#### 振り返りパンフレット表示画面 (`/reflection/[id]/pamphlet`)
-- **目的**: AI生成された振り返りパンフレットの表示
-- **主要機能**:
-  - 旅行全体の要約
-  - 各スポットの振り返り
-    - 訪問写真
-    - 歴史的学習内容
-    - 個人的な感想
-  - 次の旅行提案
-  - 印刷・PDF出力機能
-  - SNSシェア機能
-- **コンポーネント**:
-  - `app/reflection/[id]/pamphlet/page.tsx`
-  - `components/display/ReflectionPamphlet.tsx`
-
 ### 4. 共通機能画面
 
 #### ローディング画面
@@ -137,15 +127,13 @@ frontend/src/
 │   ├── reflection/
 │   │   ├── page.tsx            # 振り返り一覧画面
 │   │   └── [id]/
-│   │       ├── page.tsx        # 写真アップロード・振り返り作成画面
-│   │       └── pamphlet/
-│   │           └── page.tsx    # 振り返りパンフレット表示画面
+│   │       └── page.tsx        # 写真アップロード・振り返り作成画面
 │   └── api/                     # Next.js API Routes (プロキシ用)
 │       └── proxy/
 ├── components/
 │   ├── ui/                      # 共通UIコンポーネント
 │   │   ├── Button.tsx
-│   │   ├── Input.tsx
+│   │   ├── TextField.tsx
 │   │   ├── Modal.tsx
 │   │   ├── LoadingSpinner.tsx
 │   │   └── ErrorBoundary.tsx
@@ -159,8 +147,7 @@ frontend/src/
 │   │   └── ReflectionForm.tsx
 │   ├── display/                 # 表示関連
 │   │   ├── Timeline.tsx
-│   │   ├── HistoricalMap.tsx
-│   │   └── ReflectionPamphlet.tsx
+│   │   └── HistoricalMap.tsx
 │   └── reflection/              # 振り返り関連
 │       └── ReflectionList.tsx
 ├── lib/
@@ -191,7 +178,6 @@ frontend/src/
 1. 振り返り一覧画面で振り返り対象の旅行を選択
 2. 写真アップロード画面で旅行写真と感想を入力
 3. AI処理による振り返りパンフレット生成（ローディング画面）
-4. 振り返りパンフレット表示画面で生成されたパンフレットを確認・共有
 
 ## 技術仕様
 

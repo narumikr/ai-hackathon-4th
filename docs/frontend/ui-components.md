@@ -146,10 +146,10 @@
   - レスポンシブ対応
 - **Props**:
   - `columns`: ColumnDef[]
-  - `data`: any[]
+  - `data`: T[]
   - `sortable`: boolean
   - `selectable`: boolean
-  - `onRowClick`: (row: any) => void
+  - `onRowClick`: (row: T) => void
 
 #### List
 - **ファイル**: `components/ui/List.tsx`
@@ -159,8 +159,8 @@
   - 空状態表示
   - ローディング状態
 - **Props**:
-  - `items`: any[]
-  - `renderItem`: (item: any) => ReactNode
+  - `items`: T[]
+  - `renderItem`: (item: T) => ReactNode
   - `loading`: boolean
   - `emptyMessage`: string
 
@@ -310,7 +310,7 @@ export interface ColumnDef {
   key: string;
   title: string;
   sortable?: boolean;
-  render?: (value: any, row: any) => ReactNode;
+  render?: (value: T, row: T) => ReactNode;
 }
 
 export interface AccordionItem {
