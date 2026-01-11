@@ -4,8 +4,8 @@ from datetime import datetime
 
 import pytest
 
-from app.domain.travel_plan.entity import TravelPlan
-from app.domain.travel_plan.value_objects import Location, PlanStatus, TouristSpot
+from app.domain.travel_plan.entity import TouristSpot, TravelPlan
+from app.domain.travel_plan.value_objects import Location, PlanStatus
 
 
 def test_create_travel_plan():
@@ -18,6 +18,7 @@ def test_create_travel_plan():
     title = "京都歴史ツアー"
     destination = "京都"
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
         description="京都を代表する寺院",
@@ -50,6 +51,7 @@ def test_create_travel_plan_with_empty_user_id():
     """
     # 前提条件: 空のuser_id
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -71,6 +73,7 @@ def test_create_travel_plan_with_empty_title():
     """
     # 前提条件: 空のtitle
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -92,6 +95,7 @@ def test_create_travel_plan_with_empty_destination():
     """
     # 前提条件: 空のdestination
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -113,6 +117,7 @@ def test_update_travel_plan():
     """
     # 前提条件: 既存のTravelPlan
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -140,6 +145,7 @@ def test_update_travel_plan_with_empty_title():
     """
     # 前提条件: 既存のTravelPlan
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -162,6 +168,7 @@ def test_update_travel_plan_spots():
     """
     # 前提条件: 既存のTravelPlan
     spot1 = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -174,6 +181,7 @@ def test_update_travel_plan_spots():
 
     # 実行: spotsを更新（金閣寺を追加）
     spot2 = TouristSpot(
+        id="spot-002",
         name="金閣寺",
         location=Location(lat=35.0394, lng=135.7292),
     )
@@ -191,6 +199,7 @@ def test_complete_travel_plan():
     """
     # 前提条件: 既存のTravelPlan（planning状態）
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -217,6 +226,7 @@ def test_travel_plan_spots_defensive_copy():
     """
     # 前提条件: 既存のTravelPlan
     spot = TouristSpot(
+        id="spot-001",
         name="清水寺",
         location=Location(lat=34.9949, lng=135.785),
     )
@@ -231,6 +241,7 @@ def test_travel_plan_spots_defensive_copy():
     spots_copy = plan.spots
     spots_copy.append(
         TouristSpot(
+            id="spot-002",
             name="金閣寺",
             location=Location(lat=35.0394, lng=135.7292),
         )

@@ -1,9 +1,12 @@
 """旅行計画更新ユースケース."""
 
+import uuid
+
 from app.application.dto.travel_plan_dto import TravelPlanDTO
+from app.domain.travel_plan.entity import TouristSpot
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
-from app.domain.travel_plan.value_objects import Location, TouristSpot
+from app.domain.travel_plan.value_objects import Location
 
 
 class UpdateTravelPlanUseCase:
@@ -50,18 +53,24 @@ class UpdateTravelPlanUseCase:
         # 観光スポットの変換
         tourist_spots = None
         if spots is not None:
-            tourist_spots = [
-                TouristSpot(
-                    name=spot["name"],
-                    location=Location(
-                        lat=spot["location"]["lat"],
-                        lng=spot["location"]["lng"],
-                    ),
-                    description=spot.get("description"),
-                    user_notes=spot.get("userNotes"),
+            tourist_spots = []
+            for spot in spots:
+                spot_id = spot.get("id")
+                if spot_id is None or not str(spot_id).strip():
+                    spot_id = str(uuid.uuid4())
+
+                tourist_spots.append(
+                    TouristSpot(
+                        id=str(spot_id),
+                        name=spot["name"],
+                        location=Location(
+                            lat=spot["location"]["lat"],
+                            lng=spot["location"]["lng"],
+                        ),
+                        description=spot.get("description"),
+                        user_notes=spot.get("userNotes"),
+                    )
                 )
-                for spot in spots
-            ]
 
         # エンティティの更新
         travel_plan.update_plan(

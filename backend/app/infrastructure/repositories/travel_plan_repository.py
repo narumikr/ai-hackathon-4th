@@ -4,9 +4,9 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.domain.travel_plan.entity import TravelPlan
+from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.repository import ITravelPlanRepository
-from app.domain.travel_plan.value_objects import Location, PlanStatus, TouristSpot
+from app.domain.travel_plan.value_objects import Location, PlanStatus
 from app.infrastructure.persistence.models import TravelPlanModel
 
 
@@ -114,18 +114,24 @@ class TravelPlanRepository(ITravelPlanRepository):
             TravelPlan: ドメインエンティティ
         """
         # JSON型のspotsを値オブジェクトに変換
-        spots = [
-            TouristSpot(
-                name=spot["name"],
-                location=Location(
-                    lat=spot["location"]["lat"],
-                    lng=spot["location"]["lng"],
-                ),
-                description=spot.get("description"),
-                user_notes=spot.get("userNotes"),
+        spots = []
+        for spot in model.spots:
+            spot_id = spot.get("id")
+            if spot_id is None or not str(spot_id).strip():
+                raise ValueError("TouristSpot.id is required in persistence data.")
+
+            spots.append(
+                TouristSpot(
+                    id=str(spot_id),
+                    name=spot["name"],
+                    location=Location(
+                        lat=spot["location"]["lat"],
+                        lng=spot["location"]["lng"],
+                    ),
+                    description=spot.get("description"),
+                    user_notes=spot.get("userNotes"),
+                )
             )
-            for spot in model.spots
-        ]
 
         return TravelPlan(
             id=model.id,
@@ -149,6 +155,7 @@ class TravelPlanRepository(ITravelPlanRepository):
         """
         return [
             {
+                "id": spot.id,
                 "name": spot.name,
                 "location": {
                     "lat": spot.location.lat,

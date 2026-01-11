@@ -32,22 +32,3 @@ class Location(ValueObject):
         # 経度の範囲チェック（-180度〜180度）
         if not -180 <= self.lng <= 180:
             raise ValueError(f"Invalid longitude: {self.lng}. Must be between -180 and 180.")
-
-
-@dataclass(frozen=True)
-class TouristSpot(ValueObject):
-    """観光スポット（値オブジェクト）."""
-
-    name: str
-    location: Location
-    description: str | None = None
-    user_notes: str | None = None
-
-    def __post_init__(self) -> None:
-        """バリデーション.
-
-        早期失敗: 名前の必須チェック
-        """
-        # 名前の必須チェック
-        if not self.name or not self.name.strip():
-            raise ValueError("Tourist spot name is required and must not be empty.")

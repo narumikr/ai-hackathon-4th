@@ -39,6 +39,7 @@ class TravelPlanDTO:
             destination=entity.destination,
             spots=[
                 {
+                    "id": spot.id,
                     "name": spot.name,
                     "location": {
                         "lat": spot.location.lat,

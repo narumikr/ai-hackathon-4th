@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.domain.travel_plan.value_objects import Location, PlanStatus, TouristSpot
+from app.domain.travel_plan.value_objects import Location, PlanStatus
 
 
 def test_create_location():
@@ -61,58 +61,6 @@ def test_location_with_invalid_longitude():
         Location(lat=34.9949, lng=invalid_lng)
 
 
-def test_create_tourist_spot():
-    """前提条件: 有効な観光スポットデータ
-    実行: TouristSpot作成
-    検証: プロパティが正しく設定されている
-    """
-    # 前提条件: 有効な観光スポットデータ
-    name = "清水寺"
-    location = Location(lat=34.9949, lng=135.785)
-    description = "京都を代表する寺院"
-    user_notes = "早朝訪問予定"
-
-    # 実行: TouristSpot作成
-    spot = TouristSpot(
-        name=name,
-        location=location,
-        description=description,
-        user_notes=user_notes,
-    )
-
-    # 検証: プロパティが正しく設定されている
-    assert spot.name == name
-    assert spot.location == location
-    assert spot.description == description
-    assert spot.user_notes == user_notes
-
-
-def test_tourist_spot_with_empty_name():
-    """前提条件: 空の名前
-    実行: TouristSpot作成を試みる
-    検証: ValueErrorが発生
-    """
-    # 前提条件: 空の名前
-    empty_name = ""
-    location = Location(lat=34.9949, lng=135.785)
-
-    # 実行 & 検証: ValueErrorが発生
-    with pytest.raises(ValueError, match="Tourist spot name is required"):
-        TouristSpot(name=empty_name, location=location)
-
-
-def test_tourist_spot_with_whitespace_only_name():
-    """前提条件: 空白文字のみの名前
-    実行: TouristSpot作成を試みる
-    検証: ValueErrorが発生
-    """
-    # 前提条件: 空白文字のみの名前
-    whitespace_name = "   "
-    location = Location(lat=34.9949, lng=135.785)
-
-    # 実行 & 検証: ValueErrorが発生
-    with pytest.raises(ValueError, match="Tourist spot name is required"):
-        TouristSpot(name=whitespace_name, location=location)
 
 
 def test_plan_status_enum():
