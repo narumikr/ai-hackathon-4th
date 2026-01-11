@@ -29,7 +29,21 @@ dev-all:
     @echo "Starting backend and frontend servers..."
     @echo "Backend: http://localhost:{{backend_port}}"
     @echo "Frontend: http://localhost:{{frontend_port}}"
-    just dev-backend & just dev-frontend
+    backend_cmd="just dev-backend"
+    frontend_cmd="just dev-frontend"
+    $backend_cmd &
+    backend_pid=$!
+    $frontend_cmd &
+    frontend_pid=$!
+    trap 'echo "Stopping dev servers..."; kill "$backend_pid" "$frontend_pid" 2>/dev/null || true' INT TERM EXIT
+    wait "$backend_pid"
+    backend_status=$?
+    wait "$frontend_pid"
+    frontend_status=$?
+    if [ "$backend_status" -ne 0 ] || [ "$frontend_status" -ne 0 ]; then
+        echo "One of the dev servers exited with an error (backend: $backend_status, frontend: $frontend_status)."
+        exit 1
+    fi
 
 # --- テスト実行 ---
 
