@@ -1,7 +1,7 @@
 """SQLAlchemyモデル定義."""
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -42,13 +42,13 @@ class TravelPlanModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=datetime.now(UTC),
+        onupdate=datetime.now(UTC),
     )
 
     # リレーションシップ
@@ -122,7 +122,7 @@ class TravelGuideModel(Base):
     generated_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
     )
 
     # リレーションシップ
@@ -171,7 +171,7 @@ class ReflectionModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.utcnow,
+        default=datetime.now(UTC),
     )
 
     # リレーションシップ
