@@ -28,6 +28,7 @@ env/
 .coverage
 htmlcov/
 *.log
+backend/.hypothesis/
 
 # Node.js
 node_modules/
