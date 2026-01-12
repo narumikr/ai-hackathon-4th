@@ -42,6 +42,7 @@ def upgrade() -> None:
     sa.Column('photos', sa.JSON(), nullable=False),
     sa.Column('user_notes', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['plan_id'], ['travel_plans.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
