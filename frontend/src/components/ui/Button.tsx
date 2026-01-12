@@ -4,32 +4,32 @@ import type { ButtonProps } from '@/types/ui';
 
 const variantStyles = {
   primary: [
+    'bg-primary-400 text-primary-950 border border-primary-600',
+    'hover:bg-primary-500 hover:border-primary-700 hover:shadow-md',
+    'active:bg-primary-600 active:border-primary-800',
+    'focus-visible:ring-primary-300',
+    'disabled:bg-primary-200 disabled:text-primary-400 disabled:border-primary-300',
+  ].join(' '),
+  secondary: [
     'bg-white text-primary-700 border border-primary-400',
     'hover:bg-primary-50 hover:border-primary-500 hover:text-primary-800',
     'active:bg-primary-100 active:border-primary-600',
     'focus-visible:ring-primary-300',
     'disabled:bg-neutral-50 disabled:text-primary-300 disabled:border-primary-200',
   ].join(' '),
-  secondary: [
-    'bg-white text-neutral-700 border border-neutral-300',
-    'hover:bg-neutral-50 hover:border-neutral-400 hover:text-neutral-800',
-    'active:bg-neutral-100 active:border-neutral-500',
-    'focus-visible:ring-neutral-300',
-    'disabled:bg-neutral-50 disabled:text-neutral-300 disabled:border-neutral-200',
-  ].join(' '),
-  danger: [
-    'bg-white text-red-600 border border-red-400',
-    'hover:bg-red-50 hover:border-red-500 hover:text-red-700',
-    'active:bg-red-100 active:border-red-600',
+  error: [
+    'bg-danger text-white border border-red-600',
+    'hover:bg-red-600 hover:border-red-700 hover:shadow-md',
+    'active:bg-red-700 active:border-red-800',
     'focus-visible:ring-red-300',
-    'disabled:bg-neutral-50 disabled:text-red-300 disabled:border-red-200',
+    'disabled:bg-red-200 disabled:text-red-400 disabled:border-red-300',
   ].join(' '),
   ghost: [
-    'bg-transparent text-neutral-600 border border-transparent',
-    'hover:bg-neutral-100 hover:text-neutral-800',
-    'active:bg-neutral-200',
+    'bg-transparent text-neutral-700 border border-neutral-300',
+    'hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-400',
+    'active:bg-neutral-200 active:border-neutral-500',
     'focus-visible:ring-neutral-300',
-    'disabled:text-neutral-300 disabled:bg-transparent',
+    'disabled:text-neutral-300 disabled:bg-transparent disabled:border-neutral-200',
   ].join(' '),
 };
 
