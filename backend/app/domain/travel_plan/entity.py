@@ -1,4 +1,4 @@
-"""TravelPlan集約のエンティティ."""
+"""TravelPlan Aggregateのエンティティ"""
 
 from datetime import UTC, datetime
 
@@ -68,10 +68,10 @@ class TouristSpot(Entity):
 
 
 class TravelPlan(Entity):
-    """旅行計画（集約ルート）.
+    """旅行計画（Aggregate Root）
 
-    旅行計画を表すドメインエンティティ。
-    ユーザー、目的地、観光スポットの情報を管理する。
+    旅行計画を表すドメインエンティティ
+    ユーザー、目的地、観光スポットの情報を管理する
     """
 
     def __init__(

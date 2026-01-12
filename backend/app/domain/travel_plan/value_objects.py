@@ -1,4 +1,4 @@
-"""TravelPlan集約の値オブジェクト."""
+"""TravelPlan Aggregateの値オブジェクト"""
 
 from dataclasses import dataclass
 from enum import Enum

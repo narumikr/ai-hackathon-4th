@@ -1,4 +1,4 @@
-"""TravelPlan集約のリポジトリインターフェース."""
+"""TravelPlan Aggregateのリポジトリインターフェース"""
 
 from abc import ABC, abstractmethod
 
@@ -6,10 +6,10 @@ from app.domain.travel_plan.entity import TravelPlan
 
 
 class ITravelPlanRepository(ABC):
-    """TravelPlanリポジトリのインターフェース.
+    """TravelPlanリポジトリのインターフェース
 
-    ドメイン層でのリポジトリインターフェース定義。
-    実装はインフラ層で提供される。
+    ドメイン層でのリポジトリインターフェース定義
+    実装はインフラ層で提供される
     """
 
     @abstractmethod

@@ -1,8 +1,8 @@
-"""TravelPlan集約のドメイン例外."""
+"""TravelPlan Aggregateのドメイン例外"""
 
 
 class TravelPlanDomainError(Exception):
-    """TravelPlan集約のドメインエラー基底クラス."""
+    """TravelPlan Aggregateのドメインエラー基底クラス"""
 
     pass
 
