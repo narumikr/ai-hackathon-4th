@@ -143,18 +143,23 @@ historical-travel-agent/
 │   │   ├── components/
 │   │   │   ├── ui/           # 共通UIコンポーネント
 │   │   │   │   ├── Button.tsx
-│   │   │   │   ├── Input.tsx
-│   │   │   │   └── Modal.tsx
-│   │   │   ├── travel/
+│   │   │   │   ├── TextField.tsx
+│   │   │   │   ├── Modal.tsx
+│   │   │   │   ├── LoadingSpinner.tsx
+│   │   │   │   └── ErrorBoundary.tsx
+│   │   │   ├── travel/                  # 旅行計画関連
 │   │   │   │   ├── TravelList.tsx
 │   │   │   │   ├── TravelForm.tsx
-│   │   │   │   └── SpotSelector.tsx
-│   │   │   ├── upload/
+│   │   │   │   ├── SpotSelector.tsx
+│   │   │   │   └── TravelGuide.tsx
+│   │   │   ├── upload/                  # アップロード関連
 │   │   │   │   ├── ImageUploader.tsx
 │   │   │   │   └── ReflectionForm.tsx
-│   │   │   └── display/
-│   │   │       ├── TravelGuide.tsx
-│   │   │       └── ReflectionPamphlet.tsx
+│   │   │   ├── display/                 # 表示関連
+│   │   │   │   ├── Timeline.tsx
+│   │   │   │   └── HistoricalMap.tsx
+│   │   │   └── reflection/              # 振り返り関連
+│   │   │       └── ReflectionList.tsx
 │   │   ├── lib/
 │   │   │   ├── api.ts
 │   │   │   ├── utils.ts
@@ -176,7 +181,7 @@ historical-travel-agent/
 │   │   └── e2e/            # Playwright Test Agent
 │   └── .next/              # Next.js ビルド出力
 │
-├── backend/                 # Python/FastAPI バックエンド (DDD構造)
+├── backend/                # Python/FastAPI バックエンド (DDD構造)
 │   ├── pyproject.toml      # uv設定
 │   ├── uv.lock
 │   ├── ruff.toml           # Ruff設定
@@ -419,6 +424,9 @@ cd deployment/terraform && terraform apply
 ## Components and Interfaces
 
 ### Frontend Components
+
+> 詳細な画面設計は [フロントエンド画面設計書](../../../docs/frontend/screen-design.md) を参照してください。
+
 #### 1. Travel Planning Interface
 - **目的**: 旅行の管理と旅行先・観光スポットの入力受付
 - **技術**: React + Next.js 16 + TypeScript
