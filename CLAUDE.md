@@ -26,6 +26,18 @@
    - 変更の概要（1行目）
    - 必要に応じて詳細な説明
 
+
+## ブランチ命名規則
+
+**重要**: ブランチ名は以下の形式に統一すること。
+
+### 命名ルール
+
+1. 形式: `<type>/<issue-number>-<short-description>`
+2. `<type>` は `feat` / `fix` / `chore` / `docs` / `ref` のいずれか
+3. `<issue-number>` は GitHub Issue 番号（必須）
+4. `<short-description>` は英小文字のkebab-case（スペース禁止、英数字とハイフンのみ）
+
 ## Pull Request 作成ポリシー
 
 **重要**: PRを作成する際は、必ず`.github/pull_request_template.md`のテンプレートに従って記載すること。

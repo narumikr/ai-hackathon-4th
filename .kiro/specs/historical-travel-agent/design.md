@@ -562,6 +562,7 @@ interface TravelPlan {
 }
 
 interface TouristSpot {
+  id: string;
   name: string;
   location: {
     lat: number;

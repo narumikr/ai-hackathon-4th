@@ -1,0 +1,74 @@
+"""TravelPlan API スキーマ."""
+
+from datetime import datetime
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class LocationSchema(BaseModel):
+    """地理的位置スキーマ."""
+
+    lat: float = Field(..., ge=-90, le=90, description="緯度")
+    lng: float = Field(..., ge=-180, le=180, description="経度")
+
+
+class TouristSpotSchema(BaseModel):
+    """観光スポットスキーマ."""
+
+    id: str | None = Field(None, description="スポットID")
+    name: str = Field(..., min_length=1, description="スポット名")
+    location: LocationSchema = Field(..., description="位置情報")
+    description: str | None = Field(None, description="説明")
+    user_notes: str | None = Field(None, alias="userNotes", description="ユーザーメモ")
+
+    model_config = {"populate_by_name": True}
+
+
+class CreateTravelPlanRequest(BaseModel):
+    """旅行計画作成リクエスト."""
+
+    user_id: str = Field(..., min_length=1, alias="userId", description="ユーザーID")
+    title: str = Field(..., min_length=1, description="旅行タイトル")
+    destination: str = Field(..., min_length=1, description="目的地")
+    spots: list[TouristSpotSchema] = Field(..., min_length=1, description="観光スポットリスト")
+
+    model_config = {"populate_by_name": True}
+
+    @field_validator("user_id", "title", "destination")
+    @classmethod
+    def validate_not_empty(cls, value: str) -> str:
+        """空文字列でないことを検証する."""
+        if not value.strip():
+            raise ValueError("must not be empty")
+        return value
+
+
+class UpdateTravelPlanRequest(BaseModel):
+    """旅行計画更新リクエスト."""
+
+    title: str | None = Field(None, min_length=1, description="旅行タイトル")
+    destination: str | None = Field(None, min_length=1, description="目的地")
+    spots: list[TouristSpotSchema] | None = Field(None, description="観光スポットリスト")
+
+    @field_validator("title", "destination")
+    @classmethod
+    def validate_not_empty(cls, value: str | None) -> str | None:
+        """空文字列でないことを検証する."""
+        if value is not None and not value.strip():
+            raise ValueError("must not be empty")
+        return value
+
+
+class TravelPlanResponse(BaseModel):
+    """旅行計画レスポンス."""
+
+    id: str
+    user_id: str = Field(..., alias="userId")
+    title: str
+    destination: str
+    spots: list[dict]
+    status: str
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
+
+    model_config = {"populate_by_name": True}

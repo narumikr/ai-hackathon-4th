@@ -27,7 +27,7 @@ class TravelPlanModel(Base):
     destination: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # 観光スポット（JSON型）
-    # 形式: List[{"name": str, "location": {"lat": float, "lng": float}, "description": str, "userNotes": str}]
+    # 形式: List[{"id": str, "name": str, "location": {"lat": float, "lng": float}, "description": str, "userNotes": str}]
     spots: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
     # ステータス
