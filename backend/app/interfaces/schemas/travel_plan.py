@@ -15,6 +15,7 @@ class LocationSchema(BaseModel):
 class TouristSpotSchema(BaseModel):
     """観光スポットスキーマ."""
 
+    id: str | None = Field(None, description="スポットID")
     name: str = Field(..., min_length=1, description="スポット名")
     location: LocationSchema = Field(..., description="位置情報")
     description: str | None = Field(None, description="説明")

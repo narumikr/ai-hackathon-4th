@@ -3,7 +3,68 @@
 from datetime import UTC, datetime
 
 from app.domain.shared.entity import Entity
-from app.domain.travel_plan.value_objects import PlanStatus, TouristSpot
+from app.domain.travel_plan.value_objects import Location, PlanStatus
+
+
+class TouristSpot(Entity):
+    """観光スポット（エンティティ）."""
+
+    def __init__(
+        self,
+        id: str,
+        name: str,
+        location: Location,
+        description: str | None = None,
+        user_notes: str | None = None,
+    ):
+        """TouristSpotを初期化する.
+
+        Args:
+            id: 観光スポットID
+            name: スポット名
+            location: 位置情報
+            description: 説明
+            user_notes: ユーザーメモ
+
+        Raises:
+            ValueError: 必須フィールドが空の場合
+        """
+        super().__init__(id)
+
+        # 早期失敗: 必須フィールドの検証
+        if not id or not id.strip():
+            raise ValueError("id is required and must not be empty.")
+
+        if not name or not name.strip():
+            raise ValueError("Tourist spot name is required and must not be empty.")
+
+        if not isinstance(location, Location):
+            raise ValueError("location must be a Location instance.")
+
+        self._name = name
+        self._location = location
+        self._description = description
+        self._user_notes = user_notes
+
+    @property
+    def name(self) -> str:
+        """スポット名."""
+        return self._name
+
+    @property
+    def location(self) -> Location:
+        """位置情報."""
+        return self._location
+
+    @property
+    def description(self) -> str | None:
+        """説明."""
+        return self._description
+
+    @property
+    def user_notes(self) -> str | None:
+        """ユーザーメモ."""
+        return self._user_notes
 
 
 class TravelPlan(Entity):

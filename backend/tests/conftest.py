@@ -63,12 +63,14 @@ def sample_travel_plan(db_session: Session) -> TravelPlanModel:
         destination="京都",
         spots=[
             {
+                "id": "spot-001",
                 "name": "清水寺",
                 "location": {"lat": 34.9949, "lng": 135.785},
                 "description": "京都を代表する寺院",
                 "userNotes": "早朝訪問予定",
             },
             {
+                "id": "spot-002",
                 "name": "金閣寺",
                 "location": {"lat": 35.0394, "lng": 135.7292},
                 "description": "金色に輝く舎利殿",
