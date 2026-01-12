@@ -173,6 +173,12 @@ class ReflectionModel(Base):
         nullable=False,
         default=datetime.now(UTC),
     )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now(UTC),
+        onupdate=datetime.now(UTC),
+    )
 
     # リレーションシップ
     plan: Mapped["TravelPlanModel"] = relationship(

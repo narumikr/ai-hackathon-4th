@@ -134,6 +134,9 @@ def test_travel_plan_property_travel_information_storage(
     - 日時フィールドが正しく初期化される
     - スポットリストの長さと内容が保持される
     """
+    # テスト実行前の時刻を記録（検証用）
+    now = datetime.now(UTC)
+
     # 実行: TravelPlan作成
     plan = TravelPlan(
         user_id=user_id,
@@ -141,8 +144,6 @@ def test_travel_plan_property_travel_information_storage(
         destination=destination,
         spots=spots,
     )
-    # テスト実行直後の時刻を記録（検証用）
-    now = datetime.now(UTC)
 
     # 検証: 入力データが一致して格納される
     assert plan.user_id == user_id
@@ -153,9 +154,9 @@ def test_travel_plan_property_travel_information_storage(
     # 検証: 日時フィールドが正しく初期化される
     assert isinstance(plan.created_at, datetime)
     assert isinstance(plan.updated_at, datetime)
-    # 生成時刻が未来になっていないことを確認（生成直後の時刻以前であることを検証）
-    assert plan.created_at <= now
-    assert plan.updated_at <= now
+    # 生成時刻が未来になっていないことを確認（基準時刻以降であることを検証）
+    assert plan.created_at >= now
+    assert plan.updated_at >= now
 
     # 検証: スポットリストの長さが保持される
     assert len(plan.spots) == len(spots)
