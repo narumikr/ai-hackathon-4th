@@ -18,7 +18,7 @@ class TravelGuideComposer:
         spot_details: list[SpotDetail],
         checkpoints: list[Checkpoint],
         map_data: MapData,
-        generated_at: datetime | None = None,
+        created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> TravelGuide:
         """TravelGuideを生成する
@@ -52,6 +52,6 @@ class TravelGuideComposer:
             spot_details=spot_details,
             checkpoints=checkpoints,
             map_data=map_data,
-            generated_at=generated_at,
+            created_at=created_at,
             updated_at=updated_at,
         )

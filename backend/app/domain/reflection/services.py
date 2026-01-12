@@ -26,16 +26,6 @@ class ReflectionAnalyzer:
         if not all(isinstance(photo, Photo) for photo in photos):
             raise InvalidReflectionError("photos must contain Photo items only.")
 
-        detected_spots = {
-            spot
-            for photo in photos
-            for spot in photo.analysis.detected_spots
-            if isinstance(spot, str) and spot.strip()
-        }
-
-        if not detected_spots:
-            raise InvalidReflectionError("detected_spots must not be empty.")
-
         if not isinstance(spot_reflections, (list, tuple)) or not spot_reflections:
             raise InvalidReflectionError("spot_reflections must be a non-empty list.")
 
@@ -61,12 +51,6 @@ class ReflectionAnalyzer:
 
         if len(set(spot_names)) != len(spot_names):
             raise InvalidReflectionError("spot_reflections contains duplicate spot_name.")
-
-        missing = set(spot_names) - detected_spots
-        if missing:
-            raise InvalidReflectionError(
-                f"spot_reflections spot_name not found in detected_spots: {sorted(missing)}"
-            )
 
         if not isinstance(next_trip_suggestions, (list, tuple)) or not next_trip_suggestions:
             raise InvalidReflectionError("next_trip_suggestions must be a non-empty list.")

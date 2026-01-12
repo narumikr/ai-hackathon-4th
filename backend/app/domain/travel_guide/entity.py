@@ -84,7 +84,7 @@ class TravelGuide(Entity):
         checkpoints: list[Checkpoint],
         map_data: MapData,
         id: str | None = None,
-        generated_at: datetime | None = None,
+        created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
         """TravelGuideを初期化する
@@ -97,7 +97,7 @@ class TravelGuide(Entity):
             checkpoints: チェックポイント
             map_data: 地図データ
             id: ガイドID（Noneの場合は新規）
-            generated_at: 生成日時（Noneの場合は現在時刻）
+            created_at: 作成日時（Noneの場合は現在時刻）
             updated_at: 更新日時（Noneの場合は現在時刻）
 
         Raises:
@@ -137,7 +137,7 @@ class TravelGuide(Entity):
         self._spot_details = spot_details
         self._checkpoints = checkpoints
         self._map_data = _copy_map_data(map_data)
-        self._generated_at = generated_at or datetime.now(UTC)
+        self._created_at = created_at or datetime.now(UTC)
         self._updated_at = updated_at or datetime.now(UTC)
 
     @property
@@ -171,9 +171,9 @@ class TravelGuide(Entity):
         return _copy_map_data(self._map_data)
 
     @property
-    def generated_at(self) -> datetime:
-        """生成日時"""
-        return self._generated_at
+    def created_at(self) -> datetime:
+        """作成日時"""
+        return self._created_at
 
     @property
     def updated_at(self) -> datetime:
