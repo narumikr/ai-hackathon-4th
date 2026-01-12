@@ -7,7 +7,7 @@ from app.domain.travel_plan.value_objects import Location, PlanStatus
 
 
 class TouristSpot(Entity):
-    """観光スポット（エンティティ）."""
+    """観光スポット（エンティティ）"""
 
     def __init__(
         self,
@@ -17,7 +17,7 @@ class TouristSpot(Entity):
         description: str | None = None,
         user_notes: str | None = None,
     ):
-        """TouristSpotを初期化する.
+        """TouristSpotを初期化する
 
         Args:
             id: 観光スポットID
@@ -48,22 +48,22 @@ class TouristSpot(Entity):
 
     @property
     def name(self) -> str:
-        """スポット名."""
+        """スポット名"""
         return self._name
 
     @property
     def location(self) -> Location:
-        """位置情報."""
+        """位置情報"""
         return self._location
 
     @property
     def description(self) -> str | None:
-        """説明."""
+        """説明"""
         return self._description
 
     @property
     def user_notes(self) -> str | None:
-        """ユーザーメモ."""
+        """ユーザーメモ"""
         return self._user_notes
 
 
@@ -85,7 +85,7 @@ class TravelPlan(Entity):
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
-        """TravelPlanを初期化する.
+        """TravelPlanを初期化する
 
         Args:
             user_id: ユーザーID
@@ -122,37 +122,37 @@ class TravelPlan(Entity):
 
     @property
     def user_id(self) -> str:
-        """ユーザーID."""
+        """ユーザーID"""
         return self._user_id
 
     @property
     def title(self) -> str:
-        """旅行タイトル."""
+        """旅行タイトル"""
         return self._title
 
     @property
     def destination(self) -> str:
-        """目的地."""
+        """目的地"""
         return self._destination
 
     @property
     def spots(self) -> list[TouristSpot]:
-        """観光スポットリスト（防御的コピー）."""
+        """観光スポットリスト（防御的コピー）"""
         return self._spots.copy()
 
     @property
     def status(self) -> PlanStatus:
-        """旅行状態."""
+        """旅行状態"""
         return self._status
 
     @property
     def created_at(self) -> datetime:
-        """作成日時."""
+        """作成日時"""
         return self._created_at
 
     @property
     def updated_at(self) -> datetime:
-        """更新日時."""
+        """更新日時"""
         return self._updated_at
 
     def update_plan(
@@ -161,7 +161,7 @@ class TravelPlan(Entity):
         destination: str | None = None,
         spots: list[TouristSpot] | None = None,
     ) -> None:
-        """旅行計画を更新する.
+        """旅行計画を更新する
 
         Args:
             title: 旅行タイトル（オプション）
@@ -188,6 +188,6 @@ class TravelPlan(Entity):
         self._updated_at = datetime.now(UTC)
 
     def complete(self) -> None:
-        """旅行を完了状態にする."""
+        """旅行を完了状態にする"""
         self._status = PlanStatus.COMPLETED
         self._updated_at = datetime.now(UTC)

@@ -14,7 +14,7 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def save(self, reflection: Reflection) -> Reflection:
-        """Reflectionを保存する.
+        """Reflectionを保存する
 
         Args:
             reflection: 保存するReflectionエンティティ
@@ -26,7 +26,7 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def find_by_id(self, reflection_id: str) -> Reflection | None:
-        """IDでReflectionを検索する.
+        """IDでReflectionを検索する
 
         Args:
             reflection_id: 振り返りID
@@ -38,7 +38,7 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def find_by_plan_id(self, plan_id: str) -> Reflection | None:
-        """旅行計画IDでReflectionを検索する.
+        """旅行計画IDでReflectionを検索する
 
         Args:
             plan_id: 旅行計画ID
@@ -50,7 +50,7 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def delete(self, reflection_id: str) -> None:
-        """Reflectionを削除する.
+        """Reflectionを削除する
 
         Args:
             reflection_id: 削除する振り返りID

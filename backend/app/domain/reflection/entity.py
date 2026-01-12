@@ -7,7 +7,7 @@ from app.domain.shared.entity import Entity
 
 
 class Photo(Entity):
-    """写真（エンティティ）."""
+    """写真（エンティティ）"""
 
     def __init__(
         self,
@@ -16,7 +16,7 @@ class Photo(Entity):
         analysis: ImageAnalysis,
         user_description: str | None = None,
     ):
-        """Photoを初期化する.
+        """Photoを初期化する
 
         Args:
             id: 写真ID
@@ -47,17 +47,17 @@ class Photo(Entity):
 
     @property
     def url(self) -> str:
-        """画像URL."""
+        """画像URL"""
         return self._url
 
     @property
     def analysis(self) -> ImageAnalysis:
-        """画像分析結果."""
+        """画像分析結果"""
         return self._analysis
 
     @property
     def user_description(self) -> str | None:
-        """ユーザー説明."""
+        """ユーザー説明"""
         return self._user_description
 
 
@@ -76,7 +76,7 @@ class Reflection(Entity):
         id: str | None = None,
         created_at: datetime | None = None,
     ):
-        """Reflectionを初期化する.
+        """Reflectionを初期化する
 
         Args:
             plan_id: 旅行計画ID
@@ -118,31 +118,31 @@ class Reflection(Entity):
 
     @property
     def plan_id(self) -> str:
-        """旅行計画ID."""
+        """旅行計画ID"""
         return self._plan_id
 
     @property
     def user_id(self) -> str:
-        """ユーザーID."""
+        """ユーザーID"""
         return self._user_id
 
     @property
     def photos(self) -> list[Photo]:
-        """写真リスト（防御的コピー）."""
+        """写真リスト（防御的コピー）"""
         return list(self._photos)
 
     @property
     def user_notes(self) -> str | None:
-        """ユーザーメモ."""
+        """ユーザーメモ"""
         return self._user_notes
 
     @property
     def created_at(self) -> datetime:
-        """作成日時."""
+        """作成日時"""
         return self._created_at
 
     def add_photo(self, photo: Photo) -> None:
-        """写真を追加する.
+        """写真を追加する
 
         Args:
             photo: 追加する写真
@@ -159,7 +159,7 @@ class Reflection(Entity):
         self._photos.append(photo)
 
     def update_notes(self, user_notes: str | None) -> None:
-        """ユーザーメモを更新する.
+        """ユーザーメモを更新する
 
         Args:
             user_notes: 新しいメモ内容

@@ -8,10 +8,10 @@ class ReflectionDomainError(Exception):
 
 
 class ReflectionNotFoundError(ReflectionDomainError):
-    """Reflectionが見つからない."""
+    """Reflectionが見つからない"""
 
     def __init__(self, reflection_id: str):
-        """ReflectionNotFoundErrorを初期化する.
+        """ReflectionNotFoundErrorを初期化する
 
         Args:
             reflection_id: 見つからなかった振り返りID
@@ -21,6 +21,6 @@ class ReflectionNotFoundError(ReflectionDomainError):
 
 
 class InvalidReflectionError(ReflectionDomainError):
-    """Reflectionのバリデーションエラー."""
+    """Reflectionのバリデーションエラー"""
 
     pass

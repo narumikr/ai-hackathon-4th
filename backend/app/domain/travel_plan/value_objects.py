@@ -7,7 +7,7 @@ from app.domain.shared.value_object import ValueObject
 
 
 class PlanStatus(str, Enum):
-    """旅行計画のステータス."""
+    """旅行計画のステータス"""
 
     PLANNING = "planning"
     COMPLETED = "completed"
@@ -15,13 +15,13 @@ class PlanStatus(str, Enum):
 
 @dataclass(frozen=True)
 class Location(ValueObject):
-    """地理的位置（緯度経度）."""
+    """地理的位置（緯度経度）"""
 
     lat: float
     lng: float
 
     def __post_init__(self) -> None:
-        """バリデーション.
+        """バリデーション
 
         早期失敗: 緯度経度の範囲チェック
         """

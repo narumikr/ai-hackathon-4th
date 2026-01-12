@@ -6,7 +6,7 @@ from app.domain.reflection.value_objects import ReflectionPamphlet, SpotReflecti
 
 
 class ReflectionAnalyzer:
-    """振り返り情報を検証・構成するドメインサービス."""
+    """振り返り情報を検証・構成するドメインサービス"""
 
     def build_pamphlet(
         self,
@@ -15,7 +15,7 @@ class ReflectionAnalyzer:
         spot_reflections: list[SpotReflection] | tuple[SpotReflection, ...],
         next_trip_suggestions: list[str] | tuple[str, ...],
     ) -> ReflectionPamphlet:
-        """ReflectionPamphletを構成する.
+        """ReflectionPamphletを構成する
 
         Raises:
             InvalidReflectionError: データ整合性が取れない場合

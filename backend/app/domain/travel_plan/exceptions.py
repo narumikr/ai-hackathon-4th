@@ -8,10 +8,10 @@ class TravelPlanDomainError(Exception):
 
 
 class TravelPlanNotFoundError(TravelPlanDomainError):
-    """TravelPlanが見つからない."""
+    """TravelPlanが見つからない"""
 
     def __init__(self, plan_id: str):
-        """TravelPlanNotFoundErrorを初期化する.
+        """TravelPlanNotFoundErrorを初期化する
 
         Args:
             plan_id: 見つからなかった旅行計画ID
@@ -21,6 +21,6 @@ class TravelPlanNotFoundError(TravelPlanDomainError):
 
 
 class InvalidTravelPlanError(TravelPlanDomainError):
-    """TravelPlanのバリデーションエラー."""
+    """TravelPlanのバリデーションエラー"""
 
     pass
