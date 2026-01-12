@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import cast
 
 from app.domain.shared.entity import Entity
-from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
+from app.domain.travel_guide.value_objects import (
+    Checkpoint,
+    HistoricalEvent,
+    MapData,
+    SpotDetail,
+)
 
 
-def _validate_map_data(map_data: dict[str, Any]) -> None:
+def _validate_map_data(map_data: MapData) -> None:
     """地図データの最小バリデーションを行う
 
     Raises:
@@ -53,15 +58,18 @@ def _validate_map_data(map_data: dict[str, Any]) -> None:
             raise ValueError("marker.label must be a non-empty string.")
 
 
-def _copy_map_data(map_data: dict[str, Any]) -> dict[str, Any]:
+def _copy_map_data(map_data: MapData) -> MapData:
     """地図データを防御的コピーする"""
     center = map_data.get("center", {})
     markers = map_data.get("markers", [])
-    return {
-        **map_data,
-        "center": dict(center),
-        "markers": [dict(marker) for marker in markers],
-    }
+    return cast(
+        MapData,
+        {
+            **map_data,
+            "center": dict(center),
+            "markers": [dict(marker) for marker in markers],
+        },
+    )
 
 
 class TravelGuide(Entity):
@@ -74,9 +82,10 @@ class TravelGuide(Entity):
         timeline: list[HistoricalEvent],
         spot_details: list[SpotDetail],
         checkpoints: list[Checkpoint],
-        map_data: dict[str, Any],
+        map_data: MapData,
         id: str | None = None,
         generated_at: datetime | None = None,
+        updated_at: datetime | None = None,
     ):
         """TravelGuideを初期化する
 
@@ -89,6 +98,7 @@ class TravelGuide(Entity):
             map_data: 地図データ
             id: ガイドID（Noneの場合は新規）
             generated_at: 生成日時（Noneの場合は現在時刻）
+            updated_at: 更新日時（Noneの場合は現在時刻）
 
         Raises:
             ValueError: 必須フィールドが空の場合
@@ -128,6 +138,7 @@ class TravelGuide(Entity):
         self._checkpoints = checkpoints
         self._map_data = _copy_map_data(map_data)
         self._generated_at = generated_at or datetime.now(UTC)
+        self._updated_at = updated_at or datetime.now(UTC)
 
     @property
     def plan_id(self) -> str:
@@ -155,7 +166,7 @@ class TravelGuide(Entity):
         return list(self._checkpoints)
 
     @property
-    def map_data(self) -> dict[str, Any]:
+    def map_data(self) -> MapData:
         """地図データ"""
         return _copy_map_data(self._map_data)
 
@@ -163,3 +174,60 @@ class TravelGuide(Entity):
     def generated_at(self) -> datetime:
         """生成日時"""
         return self._generated_at
+
+    @property
+    def updated_at(self) -> datetime:
+        """更新日時"""
+        return self._updated_at
+
+    def update_guide(
+        self,
+        overview: str | None = None,
+        timeline: list[HistoricalEvent] | None = None,
+        spot_details: list[SpotDetail] | None = None,
+        checkpoints: list[Checkpoint] | None = None,
+        map_data: MapData | None = None,
+    ) -> None:
+        """旅行ガイドを更新する
+
+        Args:
+            overview: ガイド概要（オプション）
+            timeline: 歴史イベント（オプション）
+            spot_details: スポット詳細（オプション）
+            checkpoints: チェックポイント（オプション）
+            map_data: 地図データ（オプション）
+
+        Raises:
+            ValueError: 空文字列が渡された場合
+        """
+        if overview is not None:
+            if not overview.strip():
+                raise ValueError("overview cannot be empty.")
+            self._overview = overview
+
+        if timeline is not None:
+            if not isinstance(timeline, list) or not timeline:
+                raise ValueError("timeline must be a non-empty list.")
+            if not all(isinstance(event, HistoricalEvent) for event in timeline):
+                raise ValueError("timeline must contain HistoricalEvent items only.")
+            self._timeline = timeline
+
+        if spot_details is not None:
+            if not isinstance(spot_details, list) or not spot_details:
+                raise ValueError("spot_details must be a non-empty list.")
+            if not all(isinstance(detail, SpotDetail) for detail in spot_details):
+                raise ValueError("spot_details must contain SpotDetail items only.")
+            self._spot_details = spot_details
+
+        if checkpoints is not None:
+            if not isinstance(checkpoints, list) or not checkpoints:
+                raise ValueError("checkpoints must be a non-empty list.")
+            if not all(isinstance(checkpoint, Checkpoint) for checkpoint in checkpoints):
+                raise ValueError("checkpoints must contain Checkpoint items only.")
+            self._checkpoints = checkpoints
+
+        if map_data is not None:
+            _validate_map_data(map_data)
+            self._map_data = _copy_map_data(map_data)
+
+        self._updated_at = datetime.now(UTC)
