@@ -9,7 +9,7 @@ const variantStyles = {
     'hover:bg-primary-500 hover:border-primary-700 hover:shadow-md',
     'active:bg-primary-600 active:border-primary-800',
     'focus-visible:ring-primary-300',
-    'disabled:bg-primary-200 disabled:text-primary-400 disabled:border-primary-300',
+    'disabled:bg-primary-200 disabled:text-primary-600 disabled:border-primary-300',
   ].join(' '),
   secondary: [
     'bg-white text-primary-700 border border-primary-400',
