@@ -1,1 +1,9 @@
-export type { ButtonProps, ButtonVariant, ButtonSize } from './ui';
+export type {
+  ComponentSize,
+  LoadingSpinnerSize,
+  LoadingSpinnerVariant,
+  LoadingSpinnerProps,
+  ButtonProps,
+  ButtonVariant,
+  ButtonSize,
+} from './ui';
