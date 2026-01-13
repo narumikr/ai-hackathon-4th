@@ -20,16 +20,25 @@ export function LoadingSpinner({
   return (
     <div
       className={`inline-flex ${sizeStyles[size]} ${variantStyles[variant]} ${className}`.trim()}
+      // biome-ignore lint/a11y/useSemanticElements: role="status" is appropriate for loading indicator
       role="status"
       aria-label="読み込み中"
     >
       <svg
-        className="animate-spin w-full h-full"
+        className="h-full w-full animate-spin"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
+        aria-hidden="true"
       >
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
         <path
           className="opacity-75"
           fill="currentColor"

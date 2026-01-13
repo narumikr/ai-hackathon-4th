@@ -209,7 +209,7 @@ describe('LoadingSpinner', () => {
 
       const wrapper = getContainer(container);
       const spinner = getSpinner(container);
-      
+
       expect(wrapper).toHaveClass('inline-flex', 'w-6', 'h-6', 'text-current', 'custom-class');
       expect(wrapper).toHaveAttribute('role', 'status');
       expect(wrapper).toHaveAttribute('aria-label', '読み込み中');
