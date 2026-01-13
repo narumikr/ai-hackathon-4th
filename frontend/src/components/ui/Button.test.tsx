@@ -459,8 +459,8 @@ describe('Button', () => {
     it('uses secondary variant for spinner to inherit button text color', () => {
       const { container } = render(<Button loading>Loading</Button>);
 
-      const spinner = container.querySelector('svg');
-      expect(spinner).toHaveClass('text-current');
+      const spinnerWrapper = container.querySelector('div[role="status"]');
+      expect(spinnerWrapper).toHaveClass('text-current');
     });
 
     it('spinner size matches small button size', () => {
@@ -470,8 +470,8 @@ describe('Button', () => {
         </Button>
       );
 
-      const spinner = container.querySelector('svg');
-      expect(spinner).toHaveClass('w-3.5', 'h-3.5');
+      const spinnerWrapper = container.querySelector('div[role="status"]');
+      expect(spinnerWrapper).toHaveClass('w-3.5', 'h-3.5');
     });
 
     it('spinner size matches medium button size', () => {
@@ -481,8 +481,8 @@ describe('Button', () => {
         </Button>
       );
 
-      const spinner = container.querySelector('svg');
-      expect(spinner).toHaveClass('w-4', 'h-4');
+      const spinnerWrapper = container.querySelector('div[role="status"]');
+      expect(spinnerWrapper).toHaveClass('w-4', 'h-4');
     });
 
     it('spinner size matches large button size', () => {
@@ -492,8 +492,8 @@ describe('Button', () => {
         </Button>
       );
 
-      const spinner = container.querySelector('svg');
-      expect(spinner).toHaveClass('w-5', 'h-5');
+      const spinnerWrapper = container.querySelector('div[role="status"]');
+      expect(spinnerWrapper).toHaveClass('w-5', 'h-5');
     });
   });
 
@@ -564,9 +564,9 @@ describe('Button', () => {
       expect(button).toBeDisabled();
       expect(button).toHaveClass('bg-white', 'px-3', 'py-1.5', 'w-full', 'custom-class');
 
-      const spinner = container.querySelector('svg');
-      expect(spinner).toBeInTheDocument();
-      expect(spinner).toHaveClass('w-3.5', 'h-3.5');
+      const spinnerWrapper = container.querySelector('div[role="status"]');
+      expect(spinnerWrapper).toBeInTheDocument();
+      expect(spinnerWrapper).toHaveClass('w-3.5', 'h-3.5');
     });
 
     it('disabled takes precedence over loading for click events', () => {

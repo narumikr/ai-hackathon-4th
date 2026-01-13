@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { LoadingSpinner } from './LoadingSpinner';
 
 describe('LoadingSpinner', () => {
+  const getContainer = (container: HTMLElement) => container.querySelector('div[role="status"]');
   const getSpinner = (container: HTMLElement) => container.querySelector('svg');
 
   describe('rendering', () => {
@@ -13,18 +14,25 @@ describe('LoadingSpinner', () => {
       expect(spinner).toBeInTheDocument();
     });
 
+    it('renders with div wrapper', () => {
+      const { container } = render(<LoadingSpinner />);
+
+      const wrapper = getContainer(container);
+      expect(wrapper).toBeInTheDocument();
+    });
+
     it('has role status for accessibility', () => {
       const { container } = render(<LoadingSpinner />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveAttribute('role', 'status');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveAttribute('role', 'status');
     });
 
     it('has aria-label for accessibility', () => {
       const { container } = render(<LoadingSpinner />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveAttribute('aria-label', '読み込み中');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveAttribute('aria-label', '読み込み中');
     });
   });
 
@@ -32,22 +40,22 @@ describe('LoadingSpinner', () => {
     it('applies primary variant styles by default', () => {
       const { container } = render(<LoadingSpinner />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('text-primary-500');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('text-primary-500');
     });
 
     it('applies primary variant styles when specified', () => {
       const { container } = render(<LoadingSpinner variant="primary" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('text-primary-500');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('text-primary-500');
     });
 
     it('applies secondary variant styles when specified', () => {
       const { container } = render(<LoadingSpinner variant="secondary" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('text-current');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('text-current');
     });
   });
 
@@ -55,36 +63,36 @@ describe('LoadingSpinner', () => {
     it('applies medium size by default', () => {
       const { container } = render(<LoadingSpinner />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('w-4', 'h-4');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('w-4', 'h-4');
     });
 
     it('applies small size when specified', () => {
       const { container } = render(<LoadingSpinner size="sm" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('w-3.5', 'h-3.5');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('w-3.5', 'h-3.5');
     });
 
     it('applies medium size when specified', () => {
       const { container } = render(<LoadingSpinner size="md" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('w-4', 'h-4');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('w-4', 'h-4');
     });
 
     it('applies large size when specified', () => {
       const { container } = render(<LoadingSpinner size="lg" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('w-5', 'h-5');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('w-5', 'h-5');
     });
 
     it('applies extra large size when specified', () => {
       const { container } = render(<LoadingSpinner size="xl" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('w-6', 'h-6');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('w-6', 'h-6');
     });
   });
 
@@ -92,24 +100,31 @@ describe('LoadingSpinner', () => {
     it('applies additional className when provided', () => {
       const { container } = render(<LoadingSpinner className="custom-class" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('custom-class');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('custom-class');
     });
 
     it('combines className with default classes', () => {
       const { container } = render(<LoadingSpinner size="lg" className="custom-class" />);
 
-      const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('animate-spin', 'w-5', 'h-5', 'custom-class');
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('inline-flex', 'w-5', 'h-5', 'custom-class');
     });
   });
 
   describe('animation', () => {
-    it('has spin animation class', () => {
+    it('has spin animation class on SVG', () => {
       const { container } = render(<LoadingSpinner />);
 
       const spinner = getSpinner(container);
       expect(spinner).toHaveClass('animate-spin');
+    });
+
+    it('SVG fills container with w-full and h-full', () => {
+      const { container } = render(<LoadingSpinner />);
+
+      const spinner = getSpinner(container);
+      expect(spinner).toHaveClass('w-full', 'h-full');
     });
   });
 
@@ -192,23 +207,37 @@ describe('LoadingSpinner', () => {
         <LoadingSpinner variant="secondary" size="xl" className="custom-class" />
       );
 
+      const wrapper = getContainer(container);
       const spinner = getSpinner(container);
-      expect(spinner).toHaveClass('animate-spin', 'w-6', 'h-6', 'text-current', 'custom-class');
-      expect(spinner).toHaveAttribute('role', 'status');
-      expect(spinner).toHaveAttribute('aria-label', '読み込み中');
+      
+      expect(wrapper).toHaveClass('inline-flex', 'w-6', 'h-6', 'text-current', 'custom-class');
+      expect(wrapper).toHaveAttribute('role', 'status');
+      expect(wrapper).toHaveAttribute('aria-label', '読み込み中');
+      expect(spinner).toHaveClass('animate-spin', 'w-full', 'h-full');
     });
 
     it('maintains structure with custom props', () => {
       const { container } = render(<LoadingSpinner variant="primary" size="lg" className="mx-2" />);
 
+      const wrapper = getContainer(container);
       const spinner = getSpinner(container);
       const circle = container.querySelector('circle');
       const path = container.querySelector('path');
 
+      expect(wrapper).toBeInTheDocument();
       expect(spinner).toBeInTheDocument();
       expect(circle).toBeInTheDocument();
       expect(path).toBeInTheDocument();
-      expect(spinner).toHaveClass('text-primary-500', 'w-5', 'h-5', 'mx-2');
+      expect(wrapper).toHaveClass('text-primary-500', 'w-5', 'h-5', 'mx-2');
+    });
+  });
+
+  describe('wrapper styles', () => {
+    it('has inline-flex display', () => {
+      const { container } = render(<LoadingSpinner />);
+
+      const wrapper = getContainer(container);
+      expect(wrapper).toHaveClass('inline-flex');
     });
   });
 });
