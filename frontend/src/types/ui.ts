@@ -1,4 +1,9 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  TextareaHTMLAttributes,
+} from 'react';
 
 /**
  * Common Size Type
@@ -37,4 +42,44 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
   /** Button content */
   children: ReactNode;
+}
+
+/**
+ * TextField Component Props
+ */
+export interface TextFieldProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size'> {
+  /** Input label */
+  label?: string;
+  /** Error message */
+  error?: string;
+  /** Help text */
+  helpText?: string;
+  /** Input size */
+  size?: ComponentSize;
+  /** Full width input */
+  fullWidth?: boolean;
+  /** Change handler */
+  onChange?: (value: string) => void;
+}
+
+/**
+ * TextArea Component Props
+ */
+export interface TextAreaProps
+  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> {
+  /** TextArea label */
+  label?: string;
+  /** Error message */
+  error?: string;
+  /** Help text */
+  helpText?: string;
+  /** Maximum character length */
+  maxLength?: number;
+  /** Show character count */
+  showCount?: boolean;
+  /** Full width textarea */
+  fullWidth?: boolean;
+  /** Change handler */
+  onChange?: (value: string) => void;
 }

@@ -6,4 +6,6 @@ export type {
   ButtonProps,
   ButtonVariant,
   ButtonSize,
+  TextFieldProps,
+  TextAreaProps,
 } from './ui';
