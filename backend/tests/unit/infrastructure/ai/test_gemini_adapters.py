@@ -30,6 +30,7 @@ def gemini_service(mock_gemini_client):
         gemini_client=mock_gemini_client,
         default_temperature=0.7,
         default_max_output_tokens=8192,
+        default_timeout_seconds=60,
     )
 
 
@@ -61,6 +62,7 @@ async def test_generate_text(gemini_service, mock_gemini_client):
         system_instruction="システム命令",
         temperature=0.7,
         max_output_tokens=1024,
+        timeout=60,
     )
 
 
@@ -93,6 +95,7 @@ async def test_generate_with_search(gemini_service, mock_gemini_client):
         tools=["google_search"],
         temperature=0.0,
         max_output_tokens=2048,
+        timeout=60,
     )
 
 
@@ -126,6 +129,7 @@ async def test_analyze_image(gemini_service, mock_gemini_client):
         images=["gs://bucket/image.jpg"],
         temperature=0.7,
         max_output_tokens=1024,
+        timeout=60,
     )
 
 
@@ -167,6 +171,7 @@ async def test_generate_structured_data(gemini_service, mock_gemini_client):
         system_instruction="観光情報AI",
         temperature=0.0,
         max_output_tokens=1024,
+        timeout=60,
     )
 
 
@@ -195,4 +200,5 @@ async def test_generate_text_with_defaults(gemini_service, mock_gemini_client):
         system_instruction=None,
         temperature=0.7,  # fixtureで設定したdefault_temperature
         max_output_tokens=8192,  # fixtureで設定したdefault_max_output_tokens
+        timeout=60,
     )

@@ -19,6 +19,7 @@ class GeminiAIService(IAIService):
         *,
         default_temperature: float = 0.7,
         default_max_output_tokens: int = 8192,
+        default_timeout_seconds: int = 60,
     ) -> None:
         """GeminiAIServiceを初期化する
 
@@ -30,6 +31,7 @@ class GeminiAIService(IAIService):
         self.client = gemini_client
         self.default_temperature = default_temperature
         self.default_max_output_tokens = default_max_output_tokens
+        self.default_timeout_seconds = default_timeout_seconds
 
     async def generate_text(
         self,
@@ -57,6 +59,7 @@ class GeminiAIService(IAIService):
             max_output_tokens=max_output_tokens
             if max_output_tokens is not None
             else self.default_max_output_tokens,
+            timeout=self.default_timeout_seconds,
         )
 
     async def generate_with_search(
@@ -86,6 +89,7 @@ class GeminiAIService(IAIService):
             max_output_tokens=max_output_tokens
             if max_output_tokens is not None
             else self.default_max_output_tokens,
+            timeout=self.default_timeout_seconds,
         )
 
     async def analyze_image(
@@ -117,6 +121,7 @@ class GeminiAIService(IAIService):
             max_output_tokens=max_output_tokens
             if max_output_tokens is not None
             else self.default_max_output_tokens,
+            timeout=self.default_timeout_seconds,
         )
 
     async def generate_structured_data(
@@ -148,4 +153,5 @@ class GeminiAIService(IAIService):
             max_output_tokens=max_output_tokens
             if max_output_tokens is not None
             else self.default_max_output_tokens,
+            timeout=self.default_timeout_seconds,
         )

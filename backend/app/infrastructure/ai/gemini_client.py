@@ -1,5 +1,6 @@
 """Vertex AI Gemini APIクライアント実装"""
 
+import asyncio
 import json
 from typing import Any
 
@@ -104,12 +105,20 @@ class GeminiClient:
         # リトライ付きで生成を実行
         for attempt in range(max_retries):
             try:
-                response = await model.generate_content_async(
-                    contents=contents,  # type: ignore[arg-type]
-                    tools=model_tools,
-                    generation_config=generation_config,
+                response = await asyncio.wait_for(
+                    model.generate_content_async(
+                        contents=contents,  # type: ignore[arg-type]
+                        tools=model_tools,
+                        generation_config=generation_config,
+                    ),
+                    timeout=timeout,
                 )
                 return response.text
+
+            except TimeoutError as e:
+                if attempt == max_retries - 1:
+                    raise AIServiceConnectionError(f"Request timeout: {e}") from e
+                await self._exponential_backoff(attempt)
 
             except google_exceptions.ResourceExhausted as e:
                 # クォータ超過エラー（429）
@@ -195,13 +204,21 @@ class GeminiClient:
         # リトライ付きで生成を実行
         for attempt in range(max_retries):
             try:
-                response = await model.generate_content_async(
-                    contents=prompt,
-                    tools=model_tools,
-                    generation_config=generation_config,
+                response = await asyncio.wait_for(
+                    model.generate_content_async(
+                        contents=prompt,
+                        tools=model_tools,
+                        generation_config=generation_config,
+                    ),
+                    timeout=timeout,
                 )
                 # JSONをパースして返す
                 return json.loads(response.text)
+
+            except TimeoutError as e:
+                if attempt == max_retries - 1:
+                    raise AIServiceConnectionError(f"Request timeout: {e}") from e
+                await self._exponential_backoff(attempt)
 
             except google_exceptions.ResourceExhausted as e:
                 if attempt == max_retries - 1:
@@ -254,7 +271,8 @@ class GeminiClient:
                         grounding.GoogleSearchRetrieval()  # type: ignore[union-attr]
                     )
                 )
-            # 将来的に他のツール（google_maps, code_executionなど）を追加可能
+                continue
+            raise AIServiceInvalidRequestError(f"Unsupported tool name: {tool_name}")
         return tools
 
     def _prepare_contents(self, prompt: str, images: list[str] | None = None) -> list[Part] | str:

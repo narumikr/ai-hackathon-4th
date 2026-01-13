@@ -36,6 +36,7 @@ def create_ai_service() -> IAIService:
         gemini_client=gemini_client,
         default_temperature=settings.gemini_temperature,
         default_max_output_tokens=settings.gemini_max_output_tokens,
+        default_timeout_seconds=settings.gemini_timeout_seconds,
     )
 
     return ai_service
