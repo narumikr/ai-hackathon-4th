@@ -137,8 +137,14 @@ class TravelGuide(Entity):
         self._spot_details = spot_details
         self._checkpoints = checkpoints
         self._map_data = _copy_map_data(map_data)
-        self._created_at = created_at or datetime.now(UTC)
-        self._updated_at = updated_at or datetime.now(UTC)
+        # created_atとupdated_atが両方Noneの場合は同一の現在時刻を使用して一貫性を保つ
+        if created_at is None and updated_at is None:
+            now = datetime.now(UTC)
+            self._created_at = now
+            self._updated_at = now
+        else:
+            self._created_at = created_at or datetime.now(UTC)
+            self._updated_at = updated_at or datetime.now(UTC)
 
     @property
     def plan_id(self) -> str:
