@@ -197,4 +197,217 @@ describe('TextField', () => {
       expect(input).toHaveClass('bg-white');
     });
   });
+
+  describe('value prop', () => {
+    it('renders with controlled value', () => {
+      render(<TextField value="test value" onChange={() => {}} />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('test value');
+    });
+
+    it('renders with empty value', () => {
+      render(<TextField value="" onChange={() => {}} />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('');
+    });
+  });
+
+  describe('name prop', () => {
+    it('applies name attribute when provided', () => {
+      render(<TextField name="email" />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('name', 'email');
+    });
+  });
+
+  describe('readOnly prop', () => {
+    it('is not readOnly by default', () => {
+      render(<TextField />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).not.toHaveAttribute('readonly');
+    });
+
+    it('is readOnly when readOnly prop is true', () => {
+      render(<TextField readOnly />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('readonly');
+    });
+  });
+
+  describe('maxLength prop', () => {
+    it('applies maxLength attribute when provided', () => {
+      render(<TextField maxLength={100} />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('maxlength', '100');
+    });
+  });
+
+  describe('minLength prop', () => {
+    it('applies minLength attribute when provided', () => {
+      render(<TextField minLength={5} />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('minlength', '5');
+    });
+  });
+
+  describe('pattern prop', () => {
+    it('applies pattern attribute when provided', () => {
+      render(<TextField pattern="[A-Za-z]+" />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('pattern', '[A-Za-z]+');
+    });
+  });
+
+  describe('autoComplete prop', () => {
+    it('applies autoComplete attribute when provided', () => {
+      render(<TextField autoComplete="email" />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('autocomplete', 'email');
+    });
+  });
+
+  describe('autoFocus prop', () => {
+    it('does not have autoFocus by default', () => {
+      render(<TextField />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).not.toHaveAttribute('autofocus');
+    });
+  });
+
+  describe('normal state styles', () => {
+    it('has neutral border by default', () => {
+      render(<TextField />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveClass('border-neutral-300');
+    });
+
+    it('does not have error border by default', () => {
+      render(<TextField />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).not.toHaveClass('border-red-400');
+    });
+
+    it('does not set aria-invalid by default', () => {
+      render(<TextField />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).not.toHaveAttribute('aria-invalid');
+    });
+  });
+
+  describe('accessibility', () => {
+    it('associates label with input via htmlFor', () => {
+      render(<TextField label="Email" id="email-input" />);
+
+      const label = screen.getByText('Email');
+      expect(label).toHaveAttribute('for', 'email-input');
+    });
+
+    it('associates error message with input via aria-describedby', () => {
+      render(<TextField id="test-input" error="Error message" />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('aria-describedby', 'test-input-error');
+    });
+
+    it('associates help text with input via aria-describedby', () => {
+      render(<TextField id="test-input" helpText="Help text" />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('aria-describedby', 'test-input-help');
+    });
+
+    it('does not have aria-describedby when no error or help text', () => {
+      render(<TextField />);
+
+      const input = screen.getByRole('textbox');
+      expect(input).not.toHaveAttribute('aria-describedby');
+    });
+
+    it('generates unique id when not provided', () => {
+      render(<TextField label="Test" />);
+
+      const input = screen.getByLabelText('Test');
+      expect(input).toHaveAttribute('id');
+    });
+  });
+
+  describe('label without required', () => {
+    it('renders label without required indicator when required is false', () => {
+      render(<TextField label="Optional Field" required={false} />);
+
+      expect(screen.getByText('Optional Field')).toBeInTheDocument();
+      expect(screen.queryByText('*')).not.toBeInTheDocument();
+    });
+
+    it('renders label without required indicator when required is not provided', () => {
+      render(<TextField label="Optional Field" />);
+
+      expect(screen.getByText('Optional Field')).toBeInTheDocument();
+      expect(screen.queryByText('*')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('props combinations', () => {
+    it('renders with all props combined', () => {
+      const handleChange = vi.fn();
+      render(
+        <TextField
+          label="Email"
+          placeholder="Enter email"
+          helpText="We will never share your email"
+          size="lg"
+          fullWidth
+          required
+          name="email"
+          type="email"
+          autoComplete="email"
+          value="test@example.com"
+          onChange={handleChange}
+          className="custom-class"
+        />
+      );
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('test@example.com');
+      expect(input).toHaveAttribute('name', 'email');
+      expect(input).toHaveAttribute('type', 'email');
+      expect(input).toHaveAttribute('autocomplete', 'email');
+      expect(input).toHaveClass('px-4', 'py-3', 'text-lg', 'custom-class');
+      expect(screen.getByText('Email')).toBeInTheDocument();
+      expect(screen.getByText('*')).toBeInTheDocument();
+      expect(screen.getByText('We will never share your email')).toBeInTheDocument();
+    });
+
+    it('renders with error state and all visual props', () => {
+      render(
+        <TextField
+          label="Email"
+          error="Invalid email format"
+          size="sm"
+          fullWidth
+          required
+          disabled
+        />
+      );
+
+      const input = screen.getByRole('textbox');
+      expect(input).toBeDisabled();
+      expect(input).toHaveClass('border-red-400', 'px-3', 'py-1.5', 'text-sm');
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByText('Invalid email format')).toBeInTheDocument();
+    });
+  });
 });

@@ -215,4 +215,290 @@ describe('TextArea', () => {
       expect(textarea).toHaveClass('resize-y');
     });
   });
+
+  describe('value prop', () => {
+    it('renders with controlled value', () => {
+      render(<TextArea value="test value" onChange={() => {}} />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveValue('test value');
+    });
+
+    it('renders with empty value', () => {
+      render(<TextArea value="" onChange={() => {}} />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveValue('');
+    });
+
+    it('renders with multiline value', () => {
+      render(<TextArea value={'line1\nline2\nline3'} onChange={() => {}} />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveValue('line1\nline2\nline3');
+    });
+  });
+
+  describe('name prop', () => {
+    it('applies name attribute when provided', () => {
+      render(<TextArea name="description" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('name', 'description');
+    });
+  });
+
+  describe('readOnly prop', () => {
+    it('is not readOnly by default', () => {
+      render(<TextArea />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).not.toHaveAttribute('readonly');
+    });
+
+    it('is readOnly when readOnly prop is true', () => {
+      render(<TextArea readOnly />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('readonly');
+    });
+  });
+
+  describe('maxLength prop', () => {
+    it('applies maxLength attribute when provided', () => {
+      render(<TextArea maxLength={500} />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('maxlength', '500');
+    });
+
+    it('works with maxLength but without showCount', () => {
+      render(<TextArea maxLength={100} value="test" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('maxlength', '100');
+      expect(screen.queryByText('4/100')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('autoComplete prop', () => {
+    it('applies autoComplete attribute when provided', () => {
+      render(<TextArea autoComplete="off" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('autocomplete', 'off');
+    });
+  });
+
+  describe('autoFocus prop', () => {
+    it('does not have autoFocus by default', () => {
+      render(<TextArea />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).not.toHaveAttribute('autofocus');
+    });
+  });
+
+  describe('normal state styles', () => {
+    it('has neutral border by default', () => {
+      render(<TextArea />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveClass('border-neutral-300');
+    });
+
+    it('does not have error border by default', () => {
+      render(<TextArea />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).not.toHaveClass('border-red-400');
+    });
+
+    it('does not set aria-invalid by default', () => {
+      render(<TextArea />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).not.toHaveAttribute('aria-invalid');
+    });
+  });
+
+  describe('accessibility', () => {
+    it('associates label with textarea via htmlFor', () => {
+      render(<TextArea label="Description" id="desc-input" />);
+
+      const label = screen.getByText('Description');
+      expect(label).toHaveAttribute('for', 'desc-input');
+    });
+
+    it('associates error message with textarea via aria-describedby', () => {
+      render(<TextArea id="test-textarea" error="Error message" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('aria-describedby', 'test-textarea-error');
+    });
+
+    it('associates help text with textarea via aria-describedby', () => {
+      render(<TextArea id="test-textarea" helpText="Help text" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('aria-describedby', 'test-textarea-help');
+    });
+
+    it('does not have aria-describedby when no error or help text', () => {
+      render(<TextArea />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).not.toHaveAttribute('aria-describedby');
+    });
+
+    it('generates unique id when not provided', () => {
+      render(<TextArea label="Test" />);
+
+      const textarea = screen.getByLabelText('Test');
+      expect(textarea).toHaveAttribute('id');
+    });
+  });
+
+  describe('label without required', () => {
+    it('renders label without required indicator when required is false', () => {
+      render(<TextArea label="Optional Field" required={false} />);
+
+      expect(screen.getByText('Optional Field')).toBeInTheDocument();
+      expect(screen.queryByText('*')).not.toBeInTheDocument();
+    });
+
+    it('renders label without required indicator when required is not provided', () => {
+      render(<TextArea label="Optional Field" />);
+
+      expect(screen.getByText('Optional Field')).toBeInTheDocument();
+      expect(screen.queryByText('*')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('showCount prop', () => {
+    it('does not show count when showCount is false', () => {
+      render(<TextArea maxLength={100} value="test" showCount={false} />);
+
+      expect(screen.queryByText('4/100')).not.toBeInTheDocument();
+    });
+
+    it('shows count only when both showCount and maxLength are provided', () => {
+      render(<TextArea value="test" showCount />);
+
+      expect(screen.queryByText(/\/\d+/)).not.toBeInTheDocument();
+    });
+
+    it('updates count when value changes', () => {
+      const { rerender } = render(<TextArea maxLength={100} value="test" showCount />);
+
+      expect(screen.getByText('4/100')).toBeInTheDocument();
+
+      rerender(<TextArea maxLength={100} value="longer text" showCount />);
+
+      expect(screen.getByText('11/100')).toBeInTheDocument();
+    });
+  });
+
+  describe('over limit state', () => {
+    it('applies error styles when value exceeds maxLength', () => {
+      render(<TextArea maxLength={5} value="toolong" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveClass('border-red-400');
+    });
+
+    it('sets aria-invalid when value exceeds maxLength', () => {
+      render(<TextArea maxLength={5} value="toolong" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    it('does not apply error styles when value is within maxLength', () => {
+      render(<TextArea maxLength={100} value="short" />);
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).not.toHaveClass('border-red-400');
+    });
+  });
+
+  describe('props combinations', () => {
+    it('renders with all props combined', () => {
+      const handleChange = vi.fn();
+      render(
+        <TextArea
+          label="Description"
+          placeholder="Enter description"
+          helpText="Maximum 500 characters"
+          rows={6}
+          maxLength={500}
+          showCount
+          fullWidth
+          required
+          name="description"
+          value="This is a test description"
+          onChange={handleChange}
+          className="custom-class"
+        />
+      );
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toHaveValue('This is a test description');
+      expect(textarea).toHaveAttribute('name', 'description');
+      expect(textarea).toHaveAttribute('rows', '6');
+      expect(textarea).toHaveAttribute('maxlength', '500');
+      expect(textarea).toHaveClass('custom-class');
+      expect(screen.getByText('Description')).toBeInTheDocument();
+      expect(screen.getByText('*')).toBeInTheDocument();
+      expect(screen.getByText('Maximum 500 characters')).toBeInTheDocument();
+      expect(screen.getByText('26/500')).toBeInTheDocument();
+    });
+
+    it('renders with error state and all visual props', () => {
+      render(
+        <TextArea
+          label="Description"
+          error="Description is required"
+          rows={8}
+          maxLength={200}
+          showCount
+          fullWidth
+          required
+          disabled
+          value=""
+        />
+      );
+
+      const textarea = screen.getByRole('textbox');
+      expect(textarea).toBeDisabled();
+      expect(textarea).toHaveClass('border-red-400');
+      expect(textarea).toHaveAttribute('aria-invalid', 'true');
+      expect(textarea).toHaveAttribute('rows', '8');
+      expect(screen.getByText('Description is required')).toBeInTheDocument();
+      expect(screen.getByText('0/200')).toBeInTheDocument();
+    });
+
+    it('renders with help text and character count together', () => {
+      render(<TextArea helpText="Enter your message" maxLength={100} showCount value="Hello" />);
+
+      expect(screen.getByText('Enter your message')).toBeInTheDocument();
+      expect(screen.getByText('5/100')).toBeInTheDocument();
+    });
+
+    it('error takes priority over help text', () => {
+      render(
+        <TextArea
+          helpText="Help text"
+          error="Error message"
+          maxLength={100}
+          showCount
+          value="test"
+        />
+      );
+
+      expect(screen.queryByText('Help text')).not.toBeInTheDocument();
+      expect(screen.getByText('Error message')).toBeInTheDocument();
+      expect(screen.getByText('4/100')).toBeInTheDocument();
+    });
+  });
 });
