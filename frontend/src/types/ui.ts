@@ -26,7 +26,7 @@ export interface LoadingSpinnerProps {
 export type ButtonVariant = 'primary' | 'secondary' | 'error' | 'ghost';
 export type ButtonSize = ComponentSize;
 
-export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Button style variant */
   variant?: ButtonVariant;
   /** Button size */
