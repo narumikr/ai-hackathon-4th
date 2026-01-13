@@ -1,5 +1,3 @@
-'use client';
-
 import type { LoadingSpinnerProps } from '@/types/ui';
 
 const sizeStyles = {
