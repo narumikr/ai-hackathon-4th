@@ -1,5 +1,10 @@
 'use client';
 
+<<<<<<< HEAD
+=======
+import type { RadioButtonProps } from '@/types/ui';
+
+>>>>>>> daba406 (create checkbox and radio button)
 const sizeStyles = {
   sm: 'w-4 h-4',
   md: 'w-5 h-5',
@@ -19,16 +24,22 @@ export function RadioButton({
   disabled = false,
   error = false,
   description,
+<<<<<<< HEAD
   errorMessage,
+=======
+>>>>>>> daba406 (create checkbox and radio button)
   className = '',
   ...props
 }: RadioButtonProps) {
   const radioId = id || `radio-${Math.random().toString(36).substring(7)}`;
+<<<<<<< HEAD
   const descriptionId = `${radioId}-description`;
 
   // Use errorMessage if in error state, otherwise use description
   const displayDescription = error && errorMessage ? errorMessage : description;
   const hasDescription = Boolean(displayDescription);
+=======
+>>>>>>> daba406 (create checkbox and radio button)
 
   return (
     <div className={`flex items-start ${className}`}>
@@ -37,8 +48,11 @@ export function RadioButton({
           id={radioId}
           type="radio"
           disabled={disabled}
+<<<<<<< HEAD
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={hasDescription ? descriptionId : undefined}
+=======
+>>>>>>> daba406 (create checkbox and radio button)
           className={[
             sizeStyles[size],
             'border-2',
@@ -61,7 +75,11 @@ export function RadioButton({
           {...props}
         />
       </div>
+<<<<<<< HEAD
       {(label || displayDescription) && (
+=======
+      {(label || description) && (
+>>>>>>> daba406 (create checkbox and radio button)
         <div className="ml-3">
           {label && (
             <label
@@ -80,9 +98,14 @@ export function RadioButton({
               {label}
             </label>
           )}
+<<<<<<< HEAD
           {displayDescription && (
             <p
               id={descriptionId}
+=======
+          {description && (
+            <p
+>>>>>>> daba406 (create checkbox and radio button)
               className={[
                 'mt-0.5 text-sm',
                 disabled ? 'text-neutral-300' : 'text-neutral-600',
@@ -90,9 +113,14 @@ export function RadioButton({
               ]
                 .filter(Boolean)
                 .join(' ')}
+<<<<<<< HEAD
               role={error ? 'alert' : undefined}
             >
               {displayDescription}
+=======
+            >
+              {description}
+>>>>>>> daba406 (create checkbox and radio button)
             </p>
           )}
         </div>
