@@ -1,0 +1,198 @@
+"""GeminiAIServiceのユニットテスト"""
+
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from app.infrastructure.ai.adapters import GeminiAIService
+from app.infrastructure.ai.gemini_client import GeminiClient
+
+
+@pytest.fixture
+def mock_gemini_client():
+    """モックGeminiClientのフィクスチャ
+
+    前提条件: GeminiClientの全メソッドをモック化する
+    """
+    mock_client = MagicMock(spec=GeminiClient)
+    mock_client.generate_content = AsyncMock()
+    mock_client.generate_content_with_schema = AsyncMock()
+    return mock_client
+
+
+@pytest.fixture
+def gemini_service(mock_gemini_client):
+    """GeminiAIServiceのフィクスチャ
+
+    前提条件: モックGeminiClientを使用してGeminiAIServiceを初期化する
+    """
+    return GeminiAIService(
+        gemini_client=mock_gemini_client,
+        default_temperature=0.7,
+        default_max_output_tokens=8192,
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_text(gemini_service, mock_gemini_client):
+    """基本的なテキスト生成
+
+    前提条件: GeminiClientのgenerate_contentメソッドが正常なレスポンスを返す
+    検証項目:
+    - GeminiClientのgenerate_contentが適切なパラメータで呼び出されること
+    - 生成されたテキストが返されること
+    """
+    # モックの戻り値を設定
+    expected_text = "生成されたテキスト"
+    mock_gemini_client.generate_content.return_value = expected_text
+
+    # テキスト生成を実行
+    result = await gemini_service.generate_text(
+        prompt="テストプロンプト",
+        system_instruction="システム命令",
+        temperature=0.7,
+        max_output_tokens=1024,
+    )
+
+    # 検証
+    assert result == expected_text
+    mock_gemini_client.generate_content.assert_called_once_with(
+        prompt="テストプロンプト",
+        system_instruction="システム命令",
+        temperature=0.7,
+        max_output_tokens=1024,
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search(gemini_service, mock_gemini_client):
+    """Google Search統合
+
+    前提条件: GeminiClientのgenerate_contentメソッドがgoogle_searchツールを使用してレスポンスを返す
+    検証項目:
+    - GeminiClientのgenerate_contentがtools=["google_search"]で呼び出されること
+    - 検索結果を含むテキストが返されること
+    """
+    # モックの戻り値を設定
+    expected_text = "検索結果を含む生成テキスト"
+    mock_gemini_client.generate_content.return_value = expected_text
+
+    # Google Search統合でテキスト生成を実行
+    result = await gemini_service.generate_with_search(
+        prompt="最新の観光情報を教えて",
+        system_instruction="観光ガイド",
+        temperature=0.0,
+        max_output_tokens=2048,
+    )
+
+    # 検証
+    assert result == expected_text
+    mock_gemini_client.generate_content.assert_called_once_with(
+        prompt="最新の観光情報を教えて",
+        system_instruction="観光ガイド",
+        tools=["google_search"],
+        temperature=0.0,
+        max_output_tokens=2048,
+    )
+
+
+@pytest.mark.asyncio
+async def test_analyze_image(gemini_service, mock_gemini_client):
+    """画像分析
+
+    前提条件: GeminiClientのgenerate_contentメソッドが画像URIを使用してレスポンスを返す
+    検証項目:
+    - GeminiClientのgenerate_contentがimages=[image_uri]で呼び出されること
+    - 画像分析結果のテキストが返されること
+    """
+    # モックの戻り値を設定
+    expected_text = "この画像には富士山が写っています"
+    mock_gemini_client.generate_content.return_value = expected_text
+
+    # 画像分析を実行
+    result = await gemini_service.analyze_image(
+        prompt="この画像について説明してください",
+        image_uri="gs://bucket/image.jpg",
+        system_instruction="画像分析AI",
+        temperature=0.7,
+        max_output_tokens=1024,
+    )
+
+    # 検証
+    assert result == expected_text
+    mock_gemini_client.generate_content.assert_called_once_with(
+        prompt="この画像について説明してください",
+        system_instruction="画像分析AI",
+        images=["gs://bucket/image.jpg"],
+        temperature=0.7,
+        max_output_tokens=1024,
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_structured_data(gemini_service, mock_gemini_client):
+    """JSON構造化出力
+
+    前提条件: GeminiClientのgenerate_content_with_schemaメソッドが構造化データを返す
+    検証項目:
+    - GeminiClientのgenerate_content_with_schemaが適切なパラメータで呼び出されること
+    - スキーマに従った構造化データが返されること
+    """
+    # モックの戻り値を設定
+    expected_data = {"name": "富士山", "type": "自然", "height": 3776}
+    mock_gemini_client.generate_content_with_schema.return_value = expected_data
+
+    # JSON構造化出力を実行
+    schema = {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "type": {"type": "string"},
+            "height": {"type": "number"},
+        },
+    }
+    result = await gemini_service.generate_structured_data(
+        prompt="富士山の情報を返してください",
+        response_schema=schema,
+        system_instruction="観光情報AI",
+        temperature=0.0,
+        max_output_tokens=1024,
+    )
+
+    # 検証
+    assert result == expected_data
+    mock_gemini_client.generate_content_with_schema.assert_called_once_with(
+        prompt="富士山の情報を返してください",
+        response_schema=schema,
+        system_instruction="観光情報AI",
+        temperature=0.0,
+        max_output_tokens=1024,
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_text_with_defaults(gemini_service, mock_gemini_client):
+    """デフォルトパラメータでのテキスト生成
+
+    前提条件: オプションパラメータを省略してgenerate_textを呼び出す
+    検証項目:
+    - 設定のデフォルト値が適用されること
+    - 生成されたテキストが返されること
+    """
+    # モックの戻り値を設定
+    expected_text = "デフォルト設定で生成されたテキスト"
+    mock_gemini_client.generate_content.return_value = expected_text
+
+    # デフォルトパラメータでテキスト生成を実行
+    result = await gemini_service.generate_text(
+        prompt="テストプロンプト",
+    )
+
+    # 検証（設定から取得したデフォルト値が使用される）
+    assert result == expected_text
+    mock_gemini_client.generate_content.assert_called_once_with(
+        prompt="テストプロンプト",
+        system_instruction=None,
+        temperature=0.7,  # fixtureで設定したdefault_temperature
+        max_output_tokens=8192,  # fixtureで設定したdefault_max_output_tokens
+    )
