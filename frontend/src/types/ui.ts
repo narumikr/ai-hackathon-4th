@@ -61,6 +61,8 @@ export interface CheckboxProps
   error?: boolean;
   /** Error message for accessibility (overrides description when in error state) */
   errorMessage?: string;
+  /** Indeterminate state for partial selection */
+  indeterminate?: boolean;
 }
 
 /**
@@ -120,4 +122,69 @@ export interface TextAreaProps
   fullWidth?: boolean;
   /** Change handler */
   onChange?: (value: string) => void;
+}
+
+/**
+ * Table Column Definition
+ */
+export interface ColumnDef<T> {
+  /** Unique key for the column */
+  key: string;
+  /** Column header title */
+  title: string;
+  /** Whether the column is sortable */
+  sortable?: boolean;
+  /** Column width (CSS value) */
+  width?: string;
+  /** Text alignment */
+  align?: 'left' | 'center' | 'right';
+  /** Custom render function for the cell */
+  render?: (value: T[keyof T], row: T, rowIndex: number) => ReactNode;
+}
+
+/**
+ * Sort Direction Type
+ */
+export type SortDirection = 'asc' | 'desc' | null;
+
+/**
+ * Sort State
+ */
+export interface SortState {
+  /** Column key being sorted */
+  key: string | null;
+  /** Sort direction */
+  direction: SortDirection;
+}
+
+/**
+ * Table Component Props
+ */
+export interface TableProps<T> {
+  /** Column definitions */
+  columns: ColumnDef<T>[];
+  /** Data array */
+  data: T[];
+  /** Enable sorting (global) */
+  sortable?: boolean;
+  /** Enable row selection */
+  selectable?: boolean;
+  /** Selected row keys */
+  selectedKeys?: string[];
+  /** Callback when selection changes */
+  onSelectionChange?: (keys: string[]) => void;
+  /** Callback when row is clicked */
+  onRowClick?: (row: T, rowIndex: number) => void;
+  /** Function to get unique key for each row */
+  rowKey?: (row: T, rowIndex: number) => string;
+  /** Loading state */
+  loading?: boolean;
+  /** Empty state message */
+  emptyMessage?: string;
+  /** Enable striped rows */
+  striped?: boolean;
+  /** Enable hover effect on rows */
+  hoverable?: boolean;
+  /** Additional CSS classes */
+  className?: string;
 }
