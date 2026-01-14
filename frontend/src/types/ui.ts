@@ -45,6 +45,44 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /**
+ * Checkbox Component Props
+ */
+export type CheckboxSize = ComponentSize;
+
+export interface CheckboxProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'> {
+  /** Checkbox size */
+  size?: CheckboxSize;
+  /** Label text */
+  label?: string;
+  /** Description text shown below the label */
+  description?: string;
+  /** Error state */
+  error?: boolean;
+  /** Error message for accessibility (overrides description when in error state) */
+  errorMessage?: string;
+}
+
+/**
+ * RadioButton Component Props
+ */
+export type RadioButtonSize = ComponentSize;
+
+export interface RadioButtonProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'> {
+  /** RadioButton size */
+  size?: RadioButtonSize;
+  /** Label text */
+  label?: string;
+  /** Description text shown below the label */
+  description?: string;
+  /** Error state */
+  error?: boolean;
+  /** Error message for accessibility (overrides description when in error state) */
+  errorMessage?: string;
+}
+
+/*
  * TextField Component Props
  */
 export interface TextFieldProps
