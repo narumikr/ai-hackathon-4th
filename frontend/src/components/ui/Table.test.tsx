@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { ColumnDef } from '@/types/ui';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Table } from './Table';
-import type { ColumnDef } from '@/types/ui';
 
 interface TestData {
   id: number;
@@ -79,7 +79,7 @@ describe('Table', () => {
     it('sortable=falseの場合、ソートアイコンが表示されないこと', () => {
       render(<Table columns={testColumns} data={testData} sortable={false} />);
       const headers = screen.getAllByRole('columnheader');
-      headers.forEach((header) => {
+      headers.forEach(header => {
         expect(header.querySelector('svg')).not.toBeInTheDocument();
       });
     });
@@ -87,7 +87,7 @@ describe('Table', () => {
     it('sortable=trueの場合、ソートアイコンが表示されること', () => {
       render(<Table columns={testColumns} data={testData} sortable />);
       const headers = screen.getAllByRole('columnheader');
-      headers.forEach((header) => {
+      headers.forEach(header => {
         expect(header.querySelectorAll('svg').length).toBe(2);
       });
     });
@@ -343,7 +343,7 @@ describe('Table', () => {
         {
           key: 'age',
           title: '年齢',
-          render: (value) => <span data-testid="custom-age">{value}歳</span>,
+          render: value => <span data-testid="custom-age">{value}歳</span>,
         },
         { key: 'city', title: '都市' },
       ];
