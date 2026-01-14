@@ -1,6 +1,6 @@
 'use client';
 
-import type { RadioButtonProps } from '@/types/ui';
+import type { ButtonProps } from '@/types/ui';
 
 const sizeStyles = {
   sm: 'w-4 h-4',
