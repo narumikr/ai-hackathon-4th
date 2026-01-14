@@ -93,6 +93,6 @@
 
   input[type="checkbox"].accent-red-500,
   input[type="radio"].accent-red-500 {
-    accent-color: #ef4444;
+    accent-color: var(--color-danger);
   }
 }
