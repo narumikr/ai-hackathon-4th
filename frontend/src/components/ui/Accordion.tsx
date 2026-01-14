@@ -25,8 +25,10 @@ export function Accordion({
     <div
       className={`divide-y divide-neutral-200 rounded-lg border border-neutral-300 ${className}`}
     >
-      {items.map(item => {
+      {items.map((item, index) => {
         const open = isOpen(item.id);
+        const isFirst = index === 0;
+        const isLast = index === items.length - 1;
         return (
           <div key={item.id} className="overflow-hidden">
             <button
@@ -38,6 +40,8 @@ export function Accordion({
                 'hover:bg-primary-50',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 focus-visible:ring-offset-2',
                 open ? 'bg-primary-50 text-primary-900' : 'bg-white text-neutral-900',
+                isFirst ? 'rounded-t-lg' : '',
+                isLast && !open ? 'rounded-b-lg' : '',
               ].join(' ')}
             >
               <span className="text-base">{item.title}</span>
@@ -65,7 +69,14 @@ export function Accordion({
                 open ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0',
               ].join(' ')}
             >
-              <div className="bg-white px-4 py-3 text-neutral-700 text-sm">{item.content}</div>
+              <div
+                className={[
+                  'bg-white px-4 py-3 text-neutral-700 text-sm',
+                  isLast ? 'rounded-b-lg' : '',
+                ].join(' ')}
+              >
+                {item.content}
+              </div>
             </div>
           </div>
         );
