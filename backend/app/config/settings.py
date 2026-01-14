@@ -56,7 +56,8 @@ class Settings(DatabaseSettings):
     gemini_temperature: float = 0.7
     gemini_max_output_tokens: int = 8192
     gemini_timeout_seconds: int = 60
-    gemini_thinking_level: str = "medium"  # minimal, low, medium, high
+    # TODO: 将来の拡張用 - thinking_levelパラメータの活用
+    gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）
 
     @field_validator("redis_url", "google_cloud_project")
     @classmethod

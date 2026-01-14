@@ -301,7 +301,5 @@ class GeminiClient:
         Args:
             attempt: 現在の試行回数（0から開始）
         """
-        import asyncio
-
         wait_time = min(2**attempt, 8)  # 最大8秒
         await asyncio.sleep(wait_time)
