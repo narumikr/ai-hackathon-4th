@@ -21,10 +21,16 @@ export function Checkbox({
   disabled = false,
   error = false,
   description,
+  errorMessage,
   className = '',
   ...props
 }: CheckboxProps) {
   const checkboxId = id || `checkbox-${Math.random().toString(36).substring(7)}`;
+  const descriptionId = `${checkboxId}-description`;
+
+  // Use errorMessage if in error state, otherwise use description
+  const displayDescription = error && errorMessage ? errorMessage : description;
+  const hasDescription = Boolean(displayDescription);
 
   return (
     <div className={`flex items-start ${className}`}>
@@ -33,6 +39,8 @@ export function Checkbox({
           id={checkboxId}
           type="checkbox"
           disabled={disabled}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={hasDescription ? descriptionId : undefined}
           className={[
             sizeStyles[size],
             'rounded border-2',
@@ -55,7 +63,7 @@ export function Checkbox({
           {...props}
         />
       </div>
-      {(label || description) && (
+      {(label || displayDescription) && (
         <div className="ml-3">
           {label && (
             <label
@@ -74,8 +82,9 @@ export function Checkbox({
               {label}
             </label>
           )}
-          {description && (
+          {displayDescription && (
             <p
+              id={descriptionId}
               className={[
                 'mt-0.5 text-sm',
                 disabled ? 'text-neutral-300' : 'text-neutral-600',
@@ -83,8 +92,9 @@ export function Checkbox({
               ]
                 .filter(Boolean)
                 .join(' ')}
+              role={error ? 'alert' : undefined}
             >
-              {description}
+              {displayDescription}
             </p>
           )}
         </div>

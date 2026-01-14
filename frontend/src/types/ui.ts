@@ -54,6 +54,8 @@ export interface CheckboxProps
   description?: string;
   /** Error state */
   error?: boolean;
+  /** Error message for accessibility (overrides description when in error state) */
+  errorMessage?: string;
 }
 
 /**
@@ -71,4 +73,6 @@ export interface RadioButtonProps
   description?: string;
   /** Error state */
   error?: boolean;
+  /** Error message for accessibility (overrides description when in error state) */
+  errorMessage?: string;
 }
