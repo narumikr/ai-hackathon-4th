@@ -1,6 +1,7 @@
 'use client';
 
 import type { CheckboxProps } from '@/types/ui';
+import { useId } from 'react';
 
 const sizeStyles = {
   sm: 'w-4 h-4',
@@ -25,7 +26,8 @@ export function Checkbox({
   className = '',
   ...props
 }: CheckboxProps) {
-  const checkboxId = id || `checkbox-${Math.random().toString(36).substring(7)}`;
+  const generatedId = useId();
+  const checkboxId = id || `checkbox-${generatedId}`;
   const descriptionId = `${checkboxId}-description`;
 
   // Use errorMessage if in error state, otherwise use description

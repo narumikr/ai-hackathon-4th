@@ -1,7 +1,5 @@
 'use client';
 
-import type { ButtonProps } from '@/types/ui';
-
 const sizeStyles = {
   sm: 'w-4 h-4',
   md: 'w-5 h-5',
