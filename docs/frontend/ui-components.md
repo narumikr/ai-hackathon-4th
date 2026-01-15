@@ -130,6 +130,7 @@
   - アクションボタン配置
   - クリック可能なカード
   - 複数のバリエーション対応
+  - アクセシビリティ対応（WCAG 2.1 AA準拠）
 - **Props**:
   - `variant`: 'default' | 'outlined' | 'elevated'
   - `image`: { src: string; alt: string } | undefined
@@ -138,7 +139,12 @@
   - `actions`: ReactNode | undefined
   - `clickable`: boolean | undefined - カードをクリック可能にするかどうか（デフォルト: false。`onClick` が提供されている場合は自動的に true になる）
   - `onClick`: (e: React.MouseEvent<HTMLDivElement>) => void | undefined
+  - `ariaLabel`: string | undefined - クリック可能なカードのアクセシブルラベル（`title` がない場合に推奨）
   - `children`: ReactNode
+- **アクセシビリティ**:
+  - クリック可能なカードには `title` または `ariaLabel` の指定を推奨
+  - `title` がある場合、自動的に `aria-labelledby` 属性でh3要素を参照
+  - `title` がない場合、`ariaLabel` を指定することで `aria-label` 属性を設定
 
 ### 3. データ表示コンポーネント
 
@@ -319,6 +325,7 @@ export interface CardProps {
   description?: string;
   actions?: ReactNode;
   clickable?: boolean;
+  ariaLabel?: string;
   onClick?: () => void;
   children?: ReactNode;
 }

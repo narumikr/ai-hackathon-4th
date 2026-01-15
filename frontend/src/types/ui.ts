@@ -148,6 +148,8 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   actions?: ReactNode;
   /** Whether the card is clickable */
   clickable?: boolean;
+  /** Accessible label for clickable cards (required when clickable and no title) */
+  ariaLabel?: string;
   /** Card content */
   children?: ReactNode;
 }

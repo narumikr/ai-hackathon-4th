@@ -31,9 +31,20 @@ export function Card({
   className = '',
   children,
   onClick,
+  ariaLabel,
   ...props
 }: CardProps) {
   const isClickable = clickable || !!onClick;
+  const titleId =
+    title && isClickable ? `card-title-${Math.random().toString(36).substr(2, 9)}` : undefined;
+
+  // アクセシビリティ警告: クリック可能なカードにはaria-labelまたはtitleが必要
+  if (isClickable && !title && !ariaLabel && process.env.NODE_ENV === 'development') {
+    console.warn(
+      'Card: Clickable cards should have either a "title" or "ariaLabel" prop for accessibility. ' +
+        'Screen readers need to know what the button does.'
+    );
+  }
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     onClick?.(e);
@@ -46,6 +57,13 @@ export function Card({
     }
   };
 
+  // aria属性の決定: titleがあればaria-labelledby、なければaria-label
+  const ariaProps = isClickable
+    ? titleId
+      ? { 'aria-labelledby': titleId }
+      : { 'aria-label': ariaLabel }
+    : {};
+
   return (
     <div
       className={[baseStyles, variantStyles[variant], isClickable ? clickableStyles : '', className]
@@ -55,6 +73,7 @@ export function Card({
       onKeyDown={isClickable ? handleKeyDown : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
+      {...ariaProps}
       {...props}
     >
       {image && (
@@ -69,7 +88,11 @@ export function Card({
         </div>
       )}
       <div className="p-4">
-        {title && <h3 className="mb-1 font-semibold text-lg text-neutral-900">{title}</h3>}
+        {title && (
+          <h3 id={titleId} className="mb-1 font-semibold text-lg text-neutral-900">
+            {title}
+          </h3>
+        )}
         {description && <p className="text-neutral-600 text-sm">{description}</p>}
         {children}
         {actions && <div className="mt-4 flex gap-2">{actions}</div>}
