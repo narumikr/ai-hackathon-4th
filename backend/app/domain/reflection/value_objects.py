@@ -88,7 +88,7 @@ class ImageAnalysis(ValueObject):
 
         早期失敗: 画像分析結果の検証
         """
-        if not isinstance(self.confidence, (int, float)) or isinstance(self.confidence, bool):
+        if isinstance(self.confidence, bool) or not isinstance(self.confidence, (int, float)):
             raise ValueError("confidence must be a number.")
 
         if not 0 <= float(self.confidence) <= 1:
