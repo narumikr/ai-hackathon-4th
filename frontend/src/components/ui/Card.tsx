@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useId } from 'react';
 
 import type { CardProps } from '@/types/ui';
 
@@ -35,8 +36,8 @@ export function Card({
   ...props
 }: CardProps) {
   const isClickable = clickable || !!onClick;
-  const titleId =
-    title && isClickable ? `card-title-${Math.random().toString(36).substr(2, 9)}` : undefined;
+  const generatedId = useId();
+  const titleId = title && isClickable ? generatedId : undefined;
 
   // アクセシビリティ警告: クリック可能なカードにはaria-labelまたはtitleが必要
   if (isClickable && !title && !ariaLabel && process.env.NODE_ENV === 'development') {
@@ -57,11 +58,13 @@ export function Card({
     }
   };
 
-  // aria属性の決定: titleがあればaria-labelledby、なければaria-label
+  // aria属性の決定: titleがあればaria-labelledby、ariaLabelがあればaria-label、なければ空
   const ariaProps = isClickable
     ? titleId
       ? { 'aria-labelledby': titleId }
-      : { 'aria-label': ariaLabel }
+      : ariaLabel
+        ? { 'aria-label': ariaLabel }
+        : {}
     : {};
 
   return (
