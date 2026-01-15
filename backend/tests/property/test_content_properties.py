@@ -25,6 +25,13 @@ from app.infrastructure.ai.gemini_client import GeminiClient
 
 # --- Hypothesisカスタム戦略定義 ---
 
+MIN_HISTORICAL_BACKGROUND_LENGTH = 10
+"""historical_backgroundの最小文字数
+
+汎用的すぎる応答（「不明」「なし」など）を排除するための閾値。
+10文字未満の歴史的背景は実質的な情報を含まないと判断する。
+"""
+
 
 def _non_empty_printable_text(
     min_size: int = 1, max_size: int = 50
@@ -156,7 +163,7 @@ async def test_property_web_search_execution(inputs: tuple[str, str | None]) -> 
     # GeminiAIServiceのインスタンス作成
     service = GeminiAIService(
         gemini_client=mock_client,
-        default_temperature=0.7,
+        default_temperature=0.0,
         default_max_output_tokens=8192,
         default_timeout_seconds=60,
     )
@@ -222,7 +229,7 @@ async def test_property_historical_background_summarization(
     # GeminiAIServiceのインスタンス作成
     service = GeminiAIService(
         gemini_client=mock_client,
-        default_temperature=0.7,
+        default_temperature=0.0,
         default_max_output_tokens=8192,
         default_timeout_seconds=60,
     )
@@ -260,7 +267,9 @@ async def test_property_historical_background_summarization(
     assert spot_detail.historical_background.strip() != ""
 
     # 検証6: historical_backgroundが最小限の長さを持つこと（汎用的すぎる応答を排除）
-    assert len(spot_detail.historical_background) >= 10
+    assert (
+        len(spot_detail.historical_background) >= MIN_HISTORICAL_BACKGROUND_LENGTH
+    )
 
 
 # --- Property 7: Historical highlights organization ---
@@ -306,7 +315,7 @@ async def test_property_historical_highlights_organization(
     # GeminiAIServiceのインスタンス作成
     service = GeminiAIService(
         gemini_client=mock_client,
-        default_temperature=0.7,
+        default_temperature=0.0,
         default_max_output_tokens=8192,
         default_timeout_seconds=60,
     )
