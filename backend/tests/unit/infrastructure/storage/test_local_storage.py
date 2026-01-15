@@ -34,8 +34,8 @@ async def test_upload_file_成功(local_storage, temp_upload_dir):
     - 正しいURLが返される
     - ファイルが実際に存在する
     """
-    # テストデータ
-    file_data = b"test image data"
+    # テストデータ（JPEG画像のマジックバイト）
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
     destination = "travels/123/test-image.jpg"
     content_type = "image/jpeg"
 
@@ -62,7 +62,8 @@ async def test_upload_file_親ディレクトリ自動作成(local_storage, temp
     - 親ディレクトリが自動的に作成される
     - ファイルが正しく保存される
     """
-    file_data = b"test data"
+    # PNG画像のマジックバイト
+    file_data = b"\x89PNG\r\n\x1a\n" + b"a" * 1000
     destination = "travels/456/sub/dir/image.png"
     content_type = "image/png"
 
@@ -208,3 +209,88 @@ async def test_file_exists_ディレクトリの場合(local_storage, temp_uploa
 
     # 検証
     assert result is False
+
+
+@pytest.mark.asyncio
+async def test_upload_file_パストラバーサル攻撃(local_storage):
+    """
+    前提条件:
+    - パストラバーサルを含むdestinationが与えられる
+
+    検証項目:
+    - StorageOperationErrorが発生する
+    - upload_dir外へのアクセスが防がれる
+    """
+    # JPEG画像のマジックバイト
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
+    destination = "../../../etc/passwd"
+    content_type = "image/jpeg"
+
+    # パストラバーサル攻撃を試みる
+    with pytest.raises(StorageOperationError, match="不正なファイルパスです"):
+        await local_storage.upload_file(file_data, destination, content_type)
+
+
+@pytest.mark.asyncio
+async def test_upload_file_絶対パス攻撃(local_storage):
+    """
+    前提条件:
+    - 絶対パスが与えられる
+
+    検証項目:
+    - StorageOperationErrorが発生する
+    - upload_dir外へのアクセスが防がれる
+    """
+    # JPEG画像のマジックバイト
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
+    destination = "/tmp/malicious.jpg"
+    content_type = "image/jpeg"
+
+    # 絶対パス攻撃を試みる
+    with pytest.raises(StorageOperationError, match="不正なファイルパスです"):
+        await local_storage.upload_file(file_data, destination, content_type)
+
+
+@pytest.mark.asyncio
+async def test_get_file_url_パストラバーサル攻撃(local_storage):
+    """
+    前提条件:
+    - パストラバーサルを含むfile_pathが与えられる
+
+    検証項目:
+    - StorageOperationErrorが発生する
+    """
+    file_path = "../../../etc/passwd"
+
+    with pytest.raises(StorageOperationError, match="不正なファイルパスです"):
+        await local_storage.get_file_url(file_path)
+
+
+@pytest.mark.asyncio
+async def test_delete_file_パストラバーサル攻撃(local_storage):
+    """
+    前提条件:
+    - パストラバーサルを含むfile_pathが与えられる
+
+    検証項目:
+    - StorageOperationErrorが発生する
+    """
+    file_path = "../../../etc/passwd"
+
+    with pytest.raises(StorageOperationError, match="不正なファイルパスです"):
+        await local_storage.delete_file(file_path)
+
+
+@pytest.mark.asyncio
+async def test_file_exists_パストラバーサル攻撃(local_storage):
+    """
+    前提条件:
+    - パストラバーサルを含むfile_pathが与えられる
+
+    検証項目:
+    - StorageOperationErrorが発生する
+    """
+    file_path = "../../../etc/passwd"
+
+    with pytest.raises(StorageOperationError, match="不正なファイルパスです"):
+        await local_storage.file_exists(file_path)

@@ -1,13 +1,16 @@
 """Google Cloud Storage統合実装"""
 
 import asyncio
+from datetime import timedelta
 
 from google.api_core import exceptions as google_exceptions
 from google.cloud import storage
 from google.cloud.storage import Blob, Bucket
 
 from app.application.ports.storage_service import IStorageService
+from app.config.settings import get_settings
 from app.infrastructure.storage.exceptions import StorageOperationError
+from app.infrastructure.storage.validators import validate_upload_file
 
 
 class CloudStorageService(IStorageService):
@@ -51,11 +54,17 @@ class CloudStorageService(IStorageService):
             content_type: ファイルのMIMEタイプ
 
         Returns:
-            str: アップロードされたファイルの公開URL
+            str: アップロードされたファイルの署名付きURL（7日間有効）
 
         Raises:
+            UnsupportedImageFormatError: サポートされていない画像形式
+            FileSizeExceededError: ファイルサイズ超過
             StorageOperationError: アップロード失敗
         """
+        # ファイル検証（サイズ・形式チェック）
+        settings = get_settings()
+        validate_upload_file(file_data, content_type, settings.max_upload_size)
+
         for attempt in range(self.max_retries):
             try:
                 # Blobオブジェクトを作成
@@ -68,8 +77,26 @@ class CloudStorageService(IStorageService):
                     content_type=content_type,
                 )
 
-                # 公開URLを返す
-                return blob.public_url
+                # 署名付きURL（7日間有効）を生成して返す
+                signed_url = await asyncio.to_thread(
+                    blob.generate_signed_url,
+                    version="v4",
+                    expiration=timedelta(days=7),
+                    method="GET",
+                )
+                return signed_url
+
+            except google_exceptions.BadRequest as e:
+                # 不正なリクエスト（4xx） - リトライしない
+                raise StorageOperationError(
+                    f"不正なリクエストです: {destination}。エラー: {e}"
+                ) from e
+
+            except google_exceptions.Forbidden as e:
+                # 権限エラー（403） - リトライしない
+                raise StorageOperationError(
+                    f"アクセス権限がありません: {destination}。エラー: {e}"
+                ) from e
 
             except google_exceptions.ResourceExhausted as e:
                 # クォータ超過エラー（429） - リトライ
@@ -88,7 +115,7 @@ class CloudStorageService(IStorageService):
                 await self._exponential_backoff(attempt)
 
             except google_exceptions.GoogleAPIError as e:
-                # その他のGoogleAPIエラー - リトライ
+                # その他のGoogleAPIエラー（5xx系） - リトライ
                 if attempt == self.max_retries - 1:
                     raise StorageOperationError(
                         f"GCSへのアップロードに失敗しました: {destination}。エラー: {e}"
@@ -105,13 +132,13 @@ class CloudStorageService(IStorageService):
         raise StorageOperationError(f"最大リトライ回数を超えました: {destination}")
 
     async def get_file_url(self, file_path: str) -> str:
-        """ファイルの公開URLを取得する
+        """ファイルの署名付きURLを取得する
 
         Args:
             file_path: ファイルのパス
 
         Returns:
-            str: ファイルの公開URL
+            str: ファイルの署名付きURL（7日間有効）
 
         Raises:
             StorageOperationError: ファイルが存在しない、またはURL取得失敗
@@ -126,7 +153,14 @@ class CloudStorageService(IStorageService):
             if not exists:
                 raise StorageOperationError(f"ファイルが存在しません: {file_path}")
 
-            return blob.public_url
+            # 署名付きURL（7日間有効）を生成して返す
+            signed_url = await asyncio.to_thread(
+                blob.generate_signed_url,
+                version="v4",
+                expiration=timedelta(days=7),
+                method="GET",
+            )
+            return signed_url
 
         except StorageOperationError:
             # 既に処理済みのエラーはそのまま再発生

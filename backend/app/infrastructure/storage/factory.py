@@ -36,6 +36,5 @@ def create_storage_service(settings: Settings) -> IStorageService:
         )
     else:
         raise ValueError(
-            f"サポートされていないストレージタイプです: {storage_type}。"
-            f"対応タイプ: local, gcs"
+            f"サポートされていないストレージタイプです: {storage_type}。対応タイプ: local, gcs"
         )

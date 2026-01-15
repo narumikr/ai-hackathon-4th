@@ -39,17 +39,17 @@ async def test_upload_file_成功(cloud_storage, mock_storage_client):
 
     検証項目:
     - ファイルが正しくアップロードされる
-    - 公開URLが返される
+    - 署名付きURLが返される
     """
     _, mock_bucket = mock_storage_client
 
     # モックのBlob設定
     mock_blob = MagicMock()
-    mock_blob.public_url = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg"
+    mock_blob.generate_signed_url.return_value = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
     mock_bucket.blob.return_value = mock_blob
 
-    # テストデータ
-    file_data = b"test image data"
+    # テストデータ（JPEG画像のマジックバイト）
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
     destination = "travels/123/image.jpg"
     content_type = "image/jpeg"
 
@@ -57,12 +57,13 @@ async def test_upload_file_成功(cloud_storage, mock_storage_client):
     url = await cloud_storage.upload_file(file_data, destination, content_type)
 
     # 検証
-    assert url == mock_blob.public_url
+    assert url == mock_blob.generate_signed_url.return_value
     mock_bucket.blob.assert_called_once_with(destination)
     mock_blob.upload_from_string.assert_called_once_with(
         file_data,
         content_type=content_type,
     )
+    mock_blob.generate_signed_url.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -80,7 +81,7 @@ async def test_upload_file_リトライ成功(cloud_storage, mock_storage_client
 
     # モックのBlob設定
     mock_blob = MagicMock()
-    mock_blob.public_url = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg"
+    mock_blob.generate_signed_url.return_value = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
     mock_bucket.blob.return_value = mock_blob
 
     # 1回目は失敗、2回目は成功
@@ -89,7 +90,8 @@ async def test_upload_file_リトライ成功(cloud_storage, mock_storage_client
         None,  # 2回目は成功
     ]
 
-    file_data = b"test image data"
+    # JPEG画像のマジックバイト
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
     destination = "travels/123/image.jpg"
     content_type = "image/jpeg"
 
@@ -97,7 +99,7 @@ async def test_upload_file_リトライ成功(cloud_storage, mock_storage_client
     url = await cloud_storage.upload_file(file_data, destination, content_type)
 
     # 検証
-    assert url == mock_blob.public_url
+    assert url == mock_blob.generate_signed_url.return_value
     assert mock_blob.upload_from_string.call_count == 2
 
 
@@ -121,7 +123,8 @@ async def test_upload_file_最大リトライ超過(cloud_storage, mock_storage_
         "Service unavailable"
     )
 
-    file_data = b"test image data"
+    # JPEG画像のマジックバイト
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
     destination = "travels/123/image.jpg"
     content_type = "image/jpeg"
 
@@ -140,13 +143,13 @@ async def test_get_file_url_成功(cloud_storage, mock_storage_client):
     - ファイルが存在する
 
     検証項目:
-    - 公開URLが返される
+    - 署名付きURLが返される
     """
     _, mock_bucket = mock_storage_client
 
     # モックのBlob設定
     mock_blob = MagicMock()
-    mock_blob.public_url = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg"
+    mock_blob.generate_signed_url.return_value = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
     mock_blob.exists.return_value = True
     mock_bucket.blob.return_value = mock_blob
 
@@ -156,9 +159,10 @@ async def test_get_file_url_成功(cloud_storage, mock_storage_client):
     url = await cloud_storage.get_file_url(file_path)
 
     # 検証
-    assert url == mock_blob.public_url
+    assert url == mock_blob.generate_signed_url.return_value
     mock_bucket.blob.assert_called_once_with(file_path)
     mock_blob.exists.assert_called_once()
+    mock_blob.generate_signed_url.assert_called_once()
 
 
 @pytest.mark.asyncio

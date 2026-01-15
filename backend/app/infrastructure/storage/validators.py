@@ -45,8 +45,7 @@ def validate_image_format(file_data: bytes, content_type: str) -> None:
 
     if kind is None:
         raise UnsupportedImageFormatError(
-            f"ファイル形式を判定できませんでした。"
-            f"対応形式: {', '.join(SUPPORTED_IMAGE_FORMATS)}"
+            f"ファイル形式を判定できませんでした。対応形式: {', '.join(SUPPORTED_IMAGE_FORMATS)}"
         )
 
     image_format = kind.extension  # 'jpg', 'png', 'webp' など
