@@ -56,7 +56,7 @@ class UpdateTravelPlanUseCase:
             tourist_spots = []
             for spot in spots:
                 spot_id = spot.get("id")
-                if not spot_id or (isinstance(spot_id, str) and not spot_id.strip()):
+                if not spot_id or not str(spot_id).strip():
                     spot_id = str(uuid.uuid4())
 
                 tourist_spots.append(

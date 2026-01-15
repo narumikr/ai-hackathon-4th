@@ -1,0 +1,116 @@
+<mxfile host="app.diagrams.net" modified="2026-01-14T00:00:00.000Z" agent="Kiro" version="24.0.0">
+  <diagram name="標準レイアウト" id="standard-layout">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- 全体フレーム -->
+        <mxCell id="frame" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="400" height="700" as="geometry" />
+        </mxCell>
+        
+        <!-- ヘッダー -->
+        <mxCell id="header" value="Header (固定)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="400" height="64" as="geometry" />
+        </mxCell>
+        
+        <!-- ロゴ -->
+        <mxCell id="logo" value="🏛️ Logo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="60" width="80" height="24" as="geometry" />
+        </mxCell>
+        
+        <!-- ナビゲーション -->
+        <mxCell id="nav" value="ホーム | 旅行計画 | 振り返り" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="60" width="200" height="24" as="geometry" />
+        </mxCell>
+        
+        <!-- ユーザーアイコン -->
+        <mxCell id="user" value="👤" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="430" y="60" width="30" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- コンテンツエリア -->
+        <mxCell id="content" value="Content Area&#xa;(スクロール可能)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="104" width="400" height="556" as="geometry" />
+        </mxCell>
+        
+        <!-- コンテンツ例1 -->
+        <mxCell id="content1" value="旅行カード 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="140" width="360" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- コンテンツ例2 -->
+        <mxCell id="content2" value="旅行カード 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="260" width="360" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- コンテンツ例3 -->
+        <mxCell id="content3" value="旅行カード 3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="380" width="360" height="100" as="geometry" />
+        </mxCell>
+        
+        <!-- スクロールインジケーター -->
+        <mxCell id="scroll" value="↓ スクロール" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="230" y="500" width="100" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- フッター -->
+        <mxCell id="footer" value="Footer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="660" width="400" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- フッターコンテンツ -->
+        <mxCell id="footer-content" value="About | Privacy | Terms&#xa;© 2026 Historical Travel Agent" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="180" y="680" width="200" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- タイトル -->
+        <mxCell id="title" value="標準レイアウト" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="180" y="10" width="200" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- 説明 -->
+        <mxCell id="description" value="固定ヘッダー + スクロールコンテンツ + フッター&#xa;確実で実装しやすい標準的なレイアウト" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="520" y="40" width="280" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 特徴リスト -->
+        <mxCell id="features" value="✓ 実装難易度: 低&#xa;✓ モバイル対応: 良&#xa;✓ パフォーマンス: 高&#xa;✓ 開発期間: 短&#xa;✓ 適用場面: MVP、確実性重視" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=top;whiteSpace=wrap;rounded=1;fontSize=11;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="520" y="120" width="280" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- レスポンシブ表示 -->
+        <mxCell id="responsive-title" value="レスポンシブ対応" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="520" y="260" width="200" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- モバイル表示 -->
+        <mxCell id="mobile-frame" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="520" y="300" width="180" height="320" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="mobile-header" value="Header" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="300" width="180" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="mobile-hamburger" value="☰" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="650" y="310" width="40" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="mobile-content" value="Content" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="520" y="340" width="180" height="240" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="mobile-footer" value="Footer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="580" width="180" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="mobile-label" value="モバイル (〜767px)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="545" y="630" width="130" height="20" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
