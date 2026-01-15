@@ -104,7 +104,7 @@
   - `helpText`: string
   - `children`: ReactNode
 
-### 2. ファイル・画像関連コンポーネント
+### 2. ファイル・メディア関連コンポーネント
 
 #### FileUploader
 - **ファイル**: `components/ui/FileUploader.tsx`
@@ -121,18 +121,23 @@
   - `onUpload`: (files: File[]) => void
   - `onError`: (error: string) => void
 
-#### ImagePreview
-- **ファイル**: `components/ui/ImagePreview.tsx`
-- **用途**: アップロード画像のプレビュー表示
+#### Card
+- **ファイル**: `components/ui/Card.tsx`
+- **用途**: 汎用カードコンポーネント（画像、テキスト、アクションなど多様なコンテンツ表示）
 - **機能**:
-  - サムネイル表示
-  - 削除ボタン
-  - 拡大表示
+  - 画像表示（オプション）
+  - タイトル・説明文表示
+  - アクションボタン配置
+  - クリック可能なカード
+  - 複数のバリエーション対応
 - **Props**:
-  - `src`: string
-  - `alt`: string
-  - `onRemove`: () => void
-  - `onClick`: () => void
+  - `variant`: 'default' | 'outlined' | 'elevated'
+  - `image`: { src: string; alt: string } | undefined
+  - `title`: string | undefined
+  - `description`: string | undefined
+  - `actions`: ReactNode | undefined
+  - `onClick`: () => void | undefined
+  - `children`: ReactNode
 
 ### 3. データ表示コンポーネント
 
@@ -269,7 +274,7 @@ frontend/src/components/
 │   ├── RadioButton.tsx
 │   ├── FormField.tsx
 │   ├── FileUploader.tsx
-│   ├── ImagePreview.tsx
+│   ├── Card.tsx
 │   ├── Table.tsx
 │   ├── List.tsx
 │   ├── Accordion.tsx
@@ -306,6 +311,16 @@ export interface TextFieldProps {
   onChange: (value: string) => void;
 }
 
+export interface CardProps {
+  variant?: 'default' | 'outlined' | 'elevated';
+  image?: { src: string; alt: string };
+  title?: string;
+  description?: string;
+  actions?: ReactNode;
+  onClick?: () => void;
+  children?: ReactNode;
+}
+
 export interface ColumnDef {
   key: string;
   title: string;
@@ -340,7 +355,7 @@ export interface BreadcrumbItem {
 Button, TextField, TextArea, Modal, LoadingSpinner, Header
 
 ### Phase 2（機能充実）
-Table, List, FormField, FileUploader, ImagePreview, Dialog
+Table, List, FormField, FileUploader, Card, Dialog
 
 ### Phase 3（UX向上）
 Checkbox, RadioButton, Accordion, Tooltip, Breadcrumb
