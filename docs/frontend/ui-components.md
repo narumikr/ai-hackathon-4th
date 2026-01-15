@@ -318,6 +318,7 @@ export interface CardProps {
   title?: string;
   description?: string;
   actions?: ReactNode;
+  clickable?: boolean;
   onClick?: () => void;
   children?: ReactNode;
 }
