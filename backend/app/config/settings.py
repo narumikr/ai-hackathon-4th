@@ -48,8 +48,10 @@ class Settings(DatabaseSettings):
     google_application_credentials: str | None = None  # ADC使用時は不要
 
     # ストレージ設定
+    storage_type: str = "local"  # "local" or "gcs"
     upload_dir: str = "./uploads"
     max_upload_size: int = 10 * 1024 * 1024  # 10MB
+    gcs_bucket_name: str | None = None  # GCSバケット名（本番環境用）
 
     # Gemini設定
     gemini_model_name: str = "gemini-3-flash"
