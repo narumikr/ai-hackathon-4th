@@ -4,3 +4,4 @@ export { Checkbox } from './Checkbox';
 export { RadioButton } from './RadioButton';
 export { TextField } from './TextField';
 export { TextArea } from './TextArea';
+export { Tooltip } from './Tooltip';

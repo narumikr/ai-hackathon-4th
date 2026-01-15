@@ -121,3 +121,21 @@ export interface TextAreaProps
   /** Change handler */
   onChange?: (value: string) => void;
 }
+
+/**
+ * Tooltip Component Props
+ */
+export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
+
+export interface TooltipProps {
+  /** Tooltip content text */
+  content: string;
+  /** Tooltip position relative to trigger element */
+  position?: TooltipPosition;
+  /** Delay in milliseconds before showing tooltip */
+  delay?: number;
+  /** Trigger element */
+  children: ReactNode;
+  /** Additional CSS classes for tooltip container */
+  className?: string;
+}
