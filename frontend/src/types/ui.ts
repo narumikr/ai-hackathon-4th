@@ -127,9 +127,9 @@ export interface TextAreaProps
 /**
  * Table Column Definition
  */
-export interface ColumnDef<T> {
+export interface ColumnDef<T, K extends keyof T = keyof T> {
   /** Unique key for the column */
-  key: string;
+  key: K;
   /** Column header title */
   title: string;
   /** Whether the column is sortable */
@@ -139,7 +139,7 @@ export interface ColumnDef<T> {
   /** Text alignment */
   align?: 'left' | 'center' | 'right';
   /** Custom render function for the cell */
-  render?: (value: T[keyof T], row: T, rowIndex: number) => ReactNode;
+  render?: (value: T[K], row: T, rowIndex: number) => ReactNode;
 }
 
 /**
