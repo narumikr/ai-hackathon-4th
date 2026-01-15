@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import type { TableProps, ColumnDef, SortState, SortDirection } from '@/types/ui';
-import { LoadingSpinner } from './LoadingSpinner';
+import { TABLE_LABELS } from '@/constants/ui';
+import type { ColumnDef, SortDirection, SortState, TableProps } from '@/types/ui';
+import { useCallback, useMemo, useState } from 'react';
 import { Checkbox } from './Checkbox';
+import { LoadingSpinner } from './LoadingSpinner';
 
 const getAlignClass = (align: 'left' | 'center' | 'right' = 'left') => {
   const alignClasses = {
@@ -51,7 +52,7 @@ export function Table<T extends Record<string, unknown>>({
   onRowClick,
   rowKey,
   loading = false,
-  emptyMessage = 'データがありません',
+  emptyMessage = TABLE_LABELS.EMPTY_MESSAGE,
   striped = false,
   hoverable = true,
   className = '',
@@ -78,7 +79,7 @@ export function Table<T extends Record<string, unknown>>({
     (column: ColumnDef<T>) => {
       if (!sortable || column.sortable === false) return;
 
-      setSortState((prev) => {
+      setSortState(prev => {
         if (prev.key !== column.key) {
           return { key: column.key, direction: 'asc' };
         }
@@ -113,7 +114,7 @@ export function Table<T extends Record<string, unknown>>({
     if (!onSelectionChange) return;
 
     const allKeys = data.map((row, index) => getRowKey(row, index));
-    const allSelected = allKeys.every((key) => selectedKeys.includes(key));
+    const allSelected = allKeys.every(key => selectedKeys.includes(key));
 
     if (allSelected) {
       onSelectionChange([]);
@@ -127,7 +128,7 @@ export function Table<T extends Record<string, unknown>>({
       if (!onSelectionChange) return;
 
       if (selectedKeys.includes(key)) {
-        onSelectionChange(selectedKeys.filter((k) => k !== key));
+        onSelectionChange(selectedKeys.filter(k => k !== key));
       } else {
         onSelectionChange([...selectedKeys, key]);
       }
@@ -138,13 +139,13 @@ export function Table<T extends Record<string, unknown>>({
   const isAllSelected = useMemo(() => {
     if (data.length === 0) return false;
     const allKeys = data.map((row, index) => getRowKey(row, index));
-    return allKeys.every((key) => selectedKeys.includes(key));
+    return allKeys.every(key => selectedKeys.includes(key));
   }, [data, getRowKey, selectedKeys]);
 
   const isIndeterminate = useMemo(() => {
     if (data.length === 0) return false;
     const allKeys = data.map((row, index) => getRowKey(row, index));
-    const selectedCount = allKeys.filter((key) => selectedKeys.includes(key)).length;
+    const selectedCount = allKeys.filter(key => selectedKeys.includes(key)).length;
     return selectedCount > 0 && selectedCount < allKeys.length;
   }, [data, getRowKey, selectedKeys]);
 
@@ -178,7 +179,12 @@ export function Table<T extends Record<string, unknown>>({
     'text-sm',
   ].join(' ');
 
-  const bodyCellStyles = ['px-4 py-3', 'border-b border-neutral-100', 'text-sm', 'text-neutral-700'].join(' ');
+  const bodyCellStyles = [
+    'px-4 py-3',
+    'border-b border-neutral-100',
+    'text-sm',
+    'text-neutral-700',
+  ].join(' ');
 
   const getRowStyles = (index: number, isSelected: boolean) => {
     const styles = ['transition-colors duration-150'];
@@ -211,11 +217,11 @@ export function Table<T extends Record<string, unknown>>({
                   checked={isAllSelected}
                   indeterminate={isIndeterminate}
                   onChange={handleSelectAll}
-                  aria-label="すべての行を選択"
+                  aria-label={TABLE_LABELS.SELECT_ALL_ROWS}
                 />
               </th>
             )}
-            {columns.map((column) => {
+            {columns.map(column => {
               const isSortable = sortable && column.sortable !== false;
               const isSorted = sortState.key === column.key;
 
@@ -237,9 +243,7 @@ export function Table<T extends Record<string, unknown>>({
                 >
                   <span className="inline-flex items-center">
                     {column.title}
-                    {isSortable && (
-                      <SortIcon direction={isSorted ? sortState.direction : null} />
-                    )}
+                    {isSortable && <SortIcon direction={isSorted ? sortState.direction : null} />}
                   </span>
                 </th>
               );
@@ -279,18 +283,15 @@ export function Table<T extends Record<string, unknown>>({
                   onClick={() => onRowClick?.(row, rowIndex)}
                 >
                   {selectable && (
-                    <td
-                      className={bodyCellStyles}
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <td className={bodyCellStyles} onClick={e => e.stopPropagation()}>
                       <Checkbox
                         checked={isSelected}
                         onChange={() => handleSelectRow(key)}
-                        aria-label={`行${rowIndex + 1}を選択`}
+                        aria-label={TABLE_LABELS.SELECT_ROW(rowIndex + 1)}
                       />
                     </td>
                   )}
-                  {columns.map((column) => (
+                  {columns.map(column => (
                     <td
                       key={column.key}
                       className={`${bodyCellStyles} ${getAlignClass(column.align)}`}
