@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import TypedDict
 
+from app.domain.reflection.exceptions import InvalidReflectionError
 from app.domain.shared.value_object import ValueObject
 
 
@@ -46,30 +47,30 @@ def _normalize_spot_reflections(
     """スポット振り返りリストをタプルに正規化する
 
     Raises:
-        ValueError: 型や内容が不正な場合
+        InvalidReflectionError: 型や内容が不正な場合
     """
     if isinstance(value, list):
         normalized = tuple(value)
     elif isinstance(value, tuple):
         normalized = value
     else:
-        raise ValueError("spot_reflections must be a list or tuple.")
+        raise InvalidReflectionError("spot_reflections must be a list or tuple.")
 
     if not normalized:
-        raise ValueError("spot_reflections must not be empty.")
+        raise InvalidReflectionError("spot_reflections must be a non-empty list")
 
     for item in normalized:
         if not isinstance(item, dict):
-            raise ValueError("spot_reflections must contain dict items.")
+            raise InvalidReflectionError("spot_reflections must contain dict items.")
 
         spot_name = item.get("spot_name")
         reflection = item.get("reflection")
 
         if not isinstance(spot_name, str) or not spot_name.strip():
-            raise ValueError("spot_reflections.spot_name must be a non-empty string.")
+            raise InvalidReflectionError("spot_reflections.spot_name must be a non-empty string.")
 
         if not isinstance(reflection, str) or not reflection.strip():
-            raise ValueError("spot_reflections.reflection must be a non-empty string.")
+            raise InvalidReflectionError("spot_reflections.reflection must be a non-empty string.")
 
     return normalized
 
