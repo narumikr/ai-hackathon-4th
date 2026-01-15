@@ -71,7 +71,7 @@ export function Accordion({
             >
               <div
                 className={[
-                  'bg-white px-4 py-3 text-neutral-700 text-sm',
+                  'bg-white px-4 py-3 text-sm text-neutral-700',
                   isLast ? 'rounded-b-lg' : '',
                 ].join(' ')}
               >
