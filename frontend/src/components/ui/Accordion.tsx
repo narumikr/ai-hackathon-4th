@@ -33,7 +33,10 @@ export function Accordion({
           <div key={item.id} className="overflow-hidden">
             <button
               type="button"
+              id={`accordion-button-${item.id}`}
               onClick={() => toggleItem(item.id)}
+              aria-expanded={open}
+              aria-controls={`accordion-content-${item.id}`}
               className={[
                 'flex w-full items-center justify-between px-4 py-3',
                 'text-left font-medium transition-colors duration-200',
@@ -63,7 +66,9 @@ export function Accordion({
                 />
               </svg>
             </button>
-            <div
+            <section
+              id={`accordion-content-${item.id}`}
+              aria-labelledby={`accordion-button-${item.id}`}
               className={[
                 'overflow-hidden transition-all duration-300 ease-in-out',
                 open ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0',
@@ -71,13 +76,13 @@ export function Accordion({
             >
               <div
                 className={[
-                  'bg-white px-4 py-3 text-sm text-neutral-700',
+                  'bg-white px-4 py-3 text-neutral-700 text-sm',
                   isLast ? 'rounded-b-lg' : '',
                 ].join(' ')}
               >
                 {item.content}
               </div>
-            </div>
+            </section>
           </div>
         );
       })}
