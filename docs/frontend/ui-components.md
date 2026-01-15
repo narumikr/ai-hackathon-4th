@@ -137,7 +137,7 @@
   - `description`: string | undefined
   - `actions`: ReactNode | undefined
   - `clickable`: boolean | undefined - カードをクリック可能にするかどうか（デフォルト: false。`onClick` が提供されている場合は自動的に true になる）
-  - `onClick`: () => void | undefined
+  - `onClick`: (e: React.MouseEvent<HTMLDivElement>) => void | undefined
   - `children`: ReactNode
 
 ### 3. データ表示コンポーネント
