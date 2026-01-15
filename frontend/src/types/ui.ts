@@ -122,7 +122,7 @@ export interface TextAreaProps
   onChange?: (value: string) => void;
 }
 
-/**
+/*
  * Tooltip Component Props
  */
 export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
