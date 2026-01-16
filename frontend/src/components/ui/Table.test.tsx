@@ -1,3 +1,4 @@
+import { TABLE_LABELS } from '@/constants/ui';
 import type { ColumnDef } from '@/types/ui';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -159,7 +160,7 @@ describe('Table', () => {
         />
       );
 
-      const headerCheckbox = screen.getAllByRole('checkbox')[0];
+      const headerCheckbox = screen.getByLabelText(TABLE_LABELS.SELECT_ALL_ROWS);
       fireEvent.click(headerCheckbox);
 
       expect(handleSelectionChange).toHaveBeenCalledWith(['1', '2', '3']);
@@ -176,8 +177,8 @@ describe('Table', () => {
         />
       );
 
-      const rowCheckboxes = screen.getAllByRole('checkbox');
-      fireEvent.click(rowCheckboxes[1]);
+      const firstRowCheckbox = screen.getByLabelText(TABLE_LABELS.SELECT_ROW(1));
+      fireEvent.click(firstRowCheckbox);
 
       expect(handleSelectionChange).toHaveBeenCalledWith(['1']);
     });
@@ -194,8 +195,8 @@ describe('Table', () => {
         />
       );
 
-      const rowCheckboxes = screen.getAllByRole('checkbox');
-      fireEvent.click(rowCheckboxes[1]);
+      const firstRowCheckbox = screen.getByLabelText(TABLE_LABELS.SELECT_ROW(1));
+      fireEvent.click(firstRowCheckbox);
 
       expect(handleSelectionChange).toHaveBeenCalledWith([]);
     });
@@ -212,7 +213,7 @@ describe('Table', () => {
         />
       );
 
-      const headerCheckbox = screen.getAllByRole('checkbox')[0];
+      const headerCheckbox = screen.getByLabelText(TABLE_LABELS.SELECT_ALL_ROWS);
       fireEvent.click(headerCheckbox);
 
       expect(handleSelectionChange).toHaveBeenCalledWith([]);
@@ -239,8 +240,8 @@ describe('Table', () => {
         <Table columns={testColumns} data={testData} selectable onRowClick={handleRowClick} />
       );
 
-      const rowCheckboxes = screen.getAllByRole('checkbox');
-      fireEvent.click(rowCheckboxes[1]);
+      const firstRowCheckbox = screen.getByLabelText(TABLE_LABELS.SELECT_ROW(1));
+      fireEvent.click(firstRowCheckbox);
 
       expect(handleRowClick).not.toHaveBeenCalled();
     });
@@ -261,8 +262,8 @@ describe('Table', () => {
         />
       );
 
-      const rowCheckboxes = screen.getAllByRole('checkbox');
-      fireEvent.click(rowCheckboxes[1]);
+      const firstRowCheckbox = screen.getByLabelText(TABLE_LABELS.SELECT_ROW(1));
+      fireEvent.click(firstRowCheckbox);
 
       expect(handleSelectionChange).toHaveBeenCalledWith(['custom-1']);
     });
@@ -378,6 +379,38 @@ describe('Table', () => {
 
       expect(checkboxes[0]).toHaveAttribute('aria-label', 'すべての行を選択');
       expect(checkboxes[1]).toHaveAttribute('aria-label', '行1を選択');
+    });
+
+    it('一部の行が選択されている場合、ヘッダーチェックボックスがindeterminate状態になること', () => {
+      render(<Table columns={testColumns} data={testData} selectable selectedKeys={['1', '2']} />);
+
+      const headerCheckbox = screen.getByLabelText(
+        TABLE_LABELS.SELECT_ALL_ROWS
+      ) as HTMLInputElement;
+      expect(headerCheckbox.indeterminate).toBe(true);
+      expect(headerCheckbox.checked).toBe(false);
+    });
+
+    it('すべての行が選択されている場合、ヘッダーチェックボックスはindeterminateではなくcheckedになること', () => {
+      render(
+        <Table columns={testColumns} data={testData} selectable selectedKeys={['1', '2', '3']} />
+      );
+
+      const headerCheckbox = screen.getByLabelText(
+        TABLE_LABELS.SELECT_ALL_ROWS
+      ) as HTMLInputElement;
+      expect(headerCheckbox.indeterminate).toBe(false);
+      expect(headerCheckbox.checked).toBe(true);
+    });
+
+    it('行が選択されていない場合、ヘッダーチェックボックスはindeterminateでもcheckedでもないこと', () => {
+      render(<Table columns={testColumns} data={testData} selectable selectedKeys={[]} />);
+
+      const headerCheckbox = screen.getByLabelText(
+        TABLE_LABELS.SELECT_ALL_ROWS
+      ) as HTMLInputElement;
+      expect(headerCheckbox.indeterminate).toBe(false);
+      expect(headerCheckbox.checked).toBe(false);
     });
   });
 
