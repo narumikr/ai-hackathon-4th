@@ -161,8 +161,8 @@ class TravelGuideRepository(ITravelGuideRepository):
             spot_details=spot_details,
             checkpoints=checkpoints,
             map_data=cast(MapData, model.map_data),
-            created_at=model.generated_at,
-            updated_at=model.generated_at,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
         )
 
     def _timeline_to_dict(self, timeline: list[HistoricalEvent]) -> list[dict]:

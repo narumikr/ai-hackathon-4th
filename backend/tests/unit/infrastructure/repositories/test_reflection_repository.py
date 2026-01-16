@@ -48,7 +48,7 @@ def test_save_new_reflection(db_session: Session, sample_travel_plan: TravelPlan
 
 def test_save_update_reflection(db_session: Session, sample_reflection: ReflectionModel):
     """前提: 既存Reflectionを取得し、update_notes()で変更
-    検証: IDが変わらない、updated_atが更新される
+    検証: IDが変わらない、user_notesが更新される
     """
     # Arrange
     repository = ReflectionRepository(db_session)
