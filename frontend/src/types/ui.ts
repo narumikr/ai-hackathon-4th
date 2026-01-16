@@ -145,3 +145,26 @@ export interface ModalProps {
   /** Additional CSS classes for the modal content */
   className?: string;
 }
+
+/**
+ * Accordion Component Props
+ */
+export interface AccordionItem {
+  /** Unique identifier for the accordion item */
+  id: string;
+  /** Title text displayed in the accordion header */
+  title: string;
+  /** Content to display when accordion item is expanded */
+  content: ReactNode;
+}
+
+export interface AccordionProps {
+  /** Array of accordion items */
+  items: AccordionItem[];
+  /** Allow multiple items to be open simultaneously (default: true) */
+  multiple?: boolean;
+  /** Array of item IDs that should be open by default */
+  defaultOpen?: string[];
+  /** Additional CSS classes */
+  className?: string;
+}
