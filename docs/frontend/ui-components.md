@@ -192,21 +192,6 @@
   - `size`: 'sm' | 'md' | 'lg' | 'xl'
   - `children`: ReactNode
 
-#### Dialog
-- **ファイル**: `components/ui/Dialog.tsx`
-- **用途**: 確認・警告メッセージ
-- **機能**:
-  - 確認/キャンセルボタン
-  - アイコン表示
-  - 危険な操作の警告
-- **Props**:
-  - `isOpen`: boolean
-  - `onClose`: () => void
-  - `onConfirm`: () => void
-  - `title`: string
-  - `message`: string
-  - `type`: 'info' | 'warning' | 'danger'
-
 #### LoadingSpinner
 - **ファイル**: `components/ui/LoadingSpinner.tsx`
 - **用途**: AI生成処理中の表示
@@ -274,7 +259,6 @@ frontend/src/components/
 │   ├── List.tsx
 │   ├── Accordion.tsx
 │   ├── Modal.tsx
-│   ├── Dialog.tsx
 │   ├── LoadingSpinner.tsx
 │   ├── Tooltip.tsx
 │   └── index.ts                 # エクスポート用
@@ -340,7 +324,7 @@ export interface BreadcrumbItem {
 Button, TextField, TextArea, Modal, LoadingSpinner, Header
 
 ### Phase 2（機能充実）
-Table, List, FormField, FileUploader, ImagePreview, Dialog
+Table, List, FormField, FileUploader, ImagePreview
 
 ### Phase 3（UX向上）
 Checkbox, RadioButton, Accordion, Tooltip, Breadcrumb
