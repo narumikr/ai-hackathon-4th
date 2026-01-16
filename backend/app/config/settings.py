@@ -51,6 +51,14 @@ class Settings(DatabaseSettings):
     upload_dir: str = "./uploads"
     max_upload_size: int = 10 * 1024 * 1024  # 10MB
 
+    # Gemini設定
+    gemini_model_name: str = "gemini-3-flash"
+    gemini_temperature: float = 0.7
+    gemini_max_output_tokens: int = 8192
+    gemini_timeout_seconds: int = 60
+    # TODO: 将来の拡張用 - thinking_levelパラメータの活用
+    gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）
+
     @field_validator("redis_url", "google_cloud_project")
     @classmethod
     def validate_required(cls, value: str | None) -> str:
