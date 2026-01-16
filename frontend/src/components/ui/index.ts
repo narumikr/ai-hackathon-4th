@@ -4,5 +4,6 @@ export { Checkbox } from './Checkbox';
 export { RadioButton } from './RadioButton';
 export { TextField } from './TextField';
 export { TextArea } from './TextArea';
+export { Table } from './Table';
 export { Tooltip } from './Tooltip';
 export { Accordion } from './Accordion';
