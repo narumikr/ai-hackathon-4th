@@ -79,10 +79,15 @@ export function Tooltip({
         <div
           id={tooltipId}
           role="tooltip"
-          className={['absolute', positionStyles[position], tooltipStyles].join(' ')}
+          className={['absolute', positionStyles[position], tooltipStyles]
+            .filter(Boolean)
+            .join(' ')}
         >
           {content}
-          <span className={[baseArrowStyles, arrowStyles[position]].join(' ')} aria-hidden="true" />
+          <span
+            className={[baseArrowStyles, arrowStyles[position]].filter(Boolean).join(' ')}
+            aria-hidden="true"
+          />
         </div>
       )}
     </div>
