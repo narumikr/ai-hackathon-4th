@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useId } from 'react';
 
 import type { CardProps } from '@/types/ui';
 
@@ -31,9 +32,20 @@ export function Card({
   className = '',
   children,
   onClick,
+  ariaLabel,
   ...props
 }: CardProps) {
   const isClickable = clickable || !!onClick;
+  const generatedId = useId();
+  const titleId = title && isClickable ? generatedId : undefined;
+
+  // アクセシビリティ警告: クリック可能なカードにはaria-labelまたはtitleが必要
+  if (isClickable && !title && !ariaLabel && process.env.NODE_ENV === 'development') {
+    console.warn(
+      'Card: Clickable cards should have either a "title" or "ariaLabel" prop for accessibility. ' +
+        'Screen readers need to know what the button does.'
+    );
+  }
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     onClick?.(e);
@@ -46,6 +58,15 @@ export function Card({
     }
   };
 
+  // aria属性の決定: titleがあればaria-labelledby、ariaLabelがあればaria-label、なければ空
+  const ariaProps = isClickable
+    ? titleId
+      ? { 'aria-labelledby': titleId }
+      : ariaLabel
+        ? { 'aria-label': ariaLabel }
+        : {}
+    : {};
+
   return (
     <div
       className={[baseStyles, variantStyles[variant], isClickable ? clickableStyles : '', className]
@@ -55,6 +76,7 @@ export function Card({
       onKeyDown={isClickable ? handleKeyDown : undefined}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
+      {...ariaProps}
       {...props}
     >
       {image && (
@@ -69,7 +91,11 @@ export function Card({
         </div>
       )}
       <div className="p-4">
-        {title && <h3 className="mb-1 font-semibold text-lg text-neutral-900">{title}</h3>}
+        {title && (
+          <h3 id={titleId} className="mb-1 font-semibold text-lg text-neutral-900">
+            {title}
+          </h3>
+        )}
         {description && <p className="text-neutral-600 text-sm">{description}</p>}
         {children}
         {actions && <div className="mt-4 flex gap-2">{actions}</div>}
