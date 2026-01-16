@@ -1,5 +1,6 @@
 import type {
   ButtonHTMLAttributes,
+  HTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
   TextareaHTMLAttributes,
@@ -122,6 +123,37 @@ export interface TextAreaProps
   fullWidth?: boolean;
   /** Change handler */
   onChange?: (value: string) => void;
+}
+
+/**
+ * Card Component Props
+ */
+export type CardVariant = 'default' | 'outlined' | 'elevated';
+
+export interface CardImageProps {
+  /** Image source URL */
+  src: string;
+  /** Image alt text */
+  alt: string;
+}
+
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  /** Card style variant */
+  variant?: CardVariant;
+  /** Image to display at the top of the card */
+  image?: CardImageProps;
+  /** Card title */
+  title?: string;
+  /** Card description text */
+  description?: string;
+  /** Action buttons or other elements */
+  actions?: ReactNode;
+  /** Whether the card is clickable */
+  clickable?: boolean;
+  /** Accessible label for clickable cards (required when clickable and no title) */
+  ariaLabel?: string;
+  /** Card content */
+  children?: ReactNode;
 }
 
 /**

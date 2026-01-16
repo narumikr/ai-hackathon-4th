@@ -1,9 +1,10 @@
 export { Button } from './Button';
-export { LoadingSpinner } from './LoadingSpinner';
+export { Card } from './Card';
 export { Checkbox } from './Checkbox';
+export { LoadingSpinner } from './LoadingSpinner';
 export { RadioButton } from './RadioButton';
-export { TextField } from './TextField';
 export { TextArea } from './TextArea';
+export { TextField } from './TextField';
 export { Table } from './Table';
 export { Tooltip } from './Tooltip';
 export { Accordion } from './Accordion';
