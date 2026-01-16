@@ -1,3 +1,4 @@
+import { LOADING_SPINNER } from '@/constants/ui';
 import type { LoadingSpinnerProps } from '@/types/ui';
 
 const sizeStyles = {
@@ -22,7 +23,7 @@ export function LoadingSpinner({
       className={`inline-flex ${sizeStyles[size]} ${variantStyles[variant]} ${className}`.trim()}
       // biome-ignore lint/a11y/useSemanticElements: role="status" is appropriate for loading indicator
       role="status"
-      aria-label="読み込み中"
+      aria-label={LOADING_SPINNER.ARIA_LABEL}
     >
       <svg
         className="h-full w-full animate-spin"
