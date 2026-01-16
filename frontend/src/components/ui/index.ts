@@ -5,3 +5,6 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { RadioButton } from './RadioButton';
 export { TextArea } from './TextArea';
 export { TextField } from './TextField';
+export { Table } from './Table';
+export { Tooltip } from './Tooltip';
+export { Accordion } from './Accordion';
