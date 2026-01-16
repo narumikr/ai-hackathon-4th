@@ -40,8 +40,8 @@ def validate_image_format(file_data: bytes, content_type: str) -> None:
         )
 
     # 早期失敗: 実際のファイル内容のチェック
-    # filetype.guess() で実際の画像形式を判定
-    kind = filetype.guess(file_data)
+    # filetype.guess() で実際の画像形式を判定（先頭261バイトのみを使用）
+    kind = filetype.guess(file_data[:261])
 
     if kind is None:
         raise UnsupportedImageFormatError(
@@ -54,6 +54,19 @@ def validate_image_format(file_data: bytes, content_type: str) -> None:
         raise UnsupportedImageFormatError(
             f"サポートされていない画像形式です: {image_format}。"
             f"対応形式: {', '.join(SUPPORTED_IMAGE_FORMATS)}"
+        )
+
+    mime_types_by_format = {
+        "jpg": {"image/jpeg", "image/jpg"},
+        "jpeg": {"image/jpeg", "image/jpg"},
+        "png": {"image/png"},
+        "webp": {"image/webp"},
+    }
+    expected_mime_types = mime_types_by_format.get(image_format)
+    if expected_mime_types is None or content_type not in expected_mime_types:
+        raise UnsupportedImageFormatError(
+            "MIMEタイプと実際の画像形式が一致しません。"
+            f"MIMEタイプ: {content_type}、実際の形式: {image_format}"
         )
 
 

@@ -90,10 +90,10 @@ def test_validate_image_format_MIMEと実際の形式が不一致():
     png_data = b"\x89PNG\r\n\x1a\n"
     content_type = "image/jpeg"
 
-    # 実際の形式がPNGなので、エラーにはならない（両方サポート対象のため）
-    # ただし、実際にはimghdr.what()がpngを返すので、JPEGとして検証されない
-    # このテストは、MIMEタイプチェックが先に行われることを確認
-    validate_image_format(png_data, content_type)  # JPEGとして検証が通る
+    with pytest.raises(
+        UnsupportedImageFormatError, match="MIMEタイプと実際の画像形式が一致しません"
+    ):
+        validate_image_format(png_data, content_type)
 
 
 def test_validate_file_size_サイズ制限内():

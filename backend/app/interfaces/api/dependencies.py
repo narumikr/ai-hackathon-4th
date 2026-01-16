@@ -16,7 +16,7 @@ async def get_settings_dependency() -> Settings:
     return get_settings()
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def get_storage_service() -> IStorageService:
     """ストレージサービスのシングルトンインスタンスを取得する.
 

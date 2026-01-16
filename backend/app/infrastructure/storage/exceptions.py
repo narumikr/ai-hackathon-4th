@@ -7,7 +7,7 @@ class StorageError(Exception):
     すべてのストレージ関連の例外の基底クラス
     """
 
-    pass
+    ...
 
 
 class UnsupportedImageFormatError(StorageError):
@@ -16,7 +16,7 @@ class UnsupportedImageFormatError(StorageError):
     JPEG, PNG, WebP以外の形式のファイルがアップロードされた場合に発生する例外
     """
 
-    pass
+    ...
 
 
 class FileSizeExceededError(StorageError):
@@ -25,7 +25,7 @@ class FileSizeExceededError(StorageError):
     アップロードされたファイルのサイズが上限を超えた場合に発生する例外
     """
 
-    pass
+    ...
 
 
 class StorageOperationError(StorageError):
@@ -35,4 +35,4 @@ class StorageOperationError(StorageError):
     ネットワークエラー、権限エラー、ファイルが存在しないなどが含まれる
     """
 
-    pass
+    ...
