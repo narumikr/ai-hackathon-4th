@@ -17,9 +17,9 @@ const getAlignClass = (align: 'left' | 'center' | 'right' = 'left') => {
 
 function SortIcon({ direction }: { direction: SortDirection }) {
   return (
-    <span className="ml-1 inline-flex flex-col items-center justify-center w-4 h-4">
+    <span className="ml-1 inline-flex h-4 w-4 flex-col items-center justify-center">
       <svg
-        className={`w-3 h-3 transition-colors ${
+        className={`h-3 w-3 transition-colors ${
           direction === 'asc' ? 'text-primary-600' : 'text-neutral-300'
         }`}
         viewBox="0 0 12 12"
@@ -29,7 +29,7 @@ function SortIcon({ direction }: { direction: SortDirection }) {
         <path d="M6 2L10 7H2L6 2Z" />
       </svg>
       <svg
-        className={`w-3 h-3 -mt-1 transition-colors ${
+        className={`-mt-1 h-3 w-3 transition-colors ${
           direction === 'desc' ? 'text-primary-600' : 'text-neutral-300'
         }`}
         viewBox="0 0 12 12"

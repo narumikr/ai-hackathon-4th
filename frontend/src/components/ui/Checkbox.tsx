@@ -1,7 +1,7 @@
 'use client';
 
 import type { CheckboxProps } from '@/types/ui';
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 const sizeStyles = {
   sm: 'w-4 h-4',
@@ -24,20 +24,30 @@ export function Checkbox({
   description,
   errorMessage,
   className = '',
+  indeterminate = false,
   ...props
 }: CheckboxProps) {
   const generatedId = useId();
   const checkboxId = id || `checkbox-${generatedId}`;
   const descriptionId = `${checkboxId}-description`;
+  const checkboxRef = useRef<HTMLInputElement>(null);
 
   // Use errorMessage if in error state, otherwise use description
   const displayDescription = error && errorMessage ? errorMessage : description;
   const hasDescription = Boolean(displayDescription);
 
+  // Handle indeterminate state
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
   return (
     <div className={`flex items-start ${className}`}>
       <div className="flex h-5 items-center">
         <input
+          ref={checkboxRef}
           id={checkboxId}
           type="checkbox"
           disabled={disabled}
