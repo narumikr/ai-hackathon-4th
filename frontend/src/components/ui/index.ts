@@ -5,3 +5,4 @@ export { RadioButton } from './RadioButton';
 export { TextField } from './TextField';
 export { TextArea } from './TextArea';
 export { Tooltip } from './Tooltip';
+export { Accordion } from './Accordion';
