@@ -185,6 +185,69 @@ export interface TableProps<T> {
   striped?: boolean;
   /** Enable hover effect on rows */
   hoverable?: boolean;
+}
+
+/*
+ * Tooltip Component Props
+ */
+export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
+
+export interface TooltipProps {
+  /** Tooltip content text */
+  content: string;
+  /** Tooltip position relative to trigger element */
+  position?: TooltipPosition;
+  /** Delay in milliseconds before showing tooltip */
+  delay?: number;
+  /** Trigger element */
+  children: ReactNode;
+  /** Additional CSS classes for tooltip container */
+  className?: string;
+}
+
+/**
+ * Modal Component Props
+ */
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
+
+export interface ModalProps {
+  /** Whether the modal is open */
+  isOpen: boolean;
+  /** Callback when the modal should close */
+  onClose: () => void;
+  /** Modal title */
+  title?: string;
+  /** Modal size */
+  size?: ModalSize;
+  /** Modal content */
+  children: ReactNode;
+  /** Whether to close when clicking overlay */
+  closeOnOverlayClick?: boolean;
+  /** Whether to close when pressing ESC key */
+  closeOnEsc?: boolean;
+  /** Additional CSS classes for the modal content */
+  className?: string;
+}
+
+/**
+ * Accordion Component Props
+ */
+export interface AccordionItem {
+  /** Unique identifier for the accordion item */
+  id: string;
+  /** Title text displayed in the accordion header */
+  title: string;
+  /** Content to display when accordion item is expanded */
+  content: ReactNode;
+}
+
+export interface AccordionProps {
+  /** Array of accordion items */
+  items: AccordionItem[];
+  /** Allow multiple items to be open simultaneously (default: true) */
+  multiple?: boolean;
+  /** Array of item IDs that should be open by default */
+  defaultOpen?: string[];
   /** Additional CSS classes */
   className?: string;
 }
