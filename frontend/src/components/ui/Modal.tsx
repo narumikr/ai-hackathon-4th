@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+import { UI_TEXT } from '@/constants/ui';
 import type { ModalProps } from '@/types/ui';
 
 const sizeStyles = {
@@ -161,7 +162,7 @@ export function Modal({
               type="button"
               onClick={onClose}
               className={closeButtonStyles}
-              aria-label="閉じる"
+              aria-label={UI_TEXT.MODAL_CLOSE}
             >
               <CloseIcon />
             </button>
