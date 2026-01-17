@@ -264,6 +264,72 @@ def test_travel_guide_property_travel_guide_completeness(data: TravelGuideInputs
 
 
 @given(data=_travel_guide_inputs())
+def test_travel_guide_property_checkpoint_list_inclusion(data: TravelGuideInputs) -> None:
+    """Property 8: Checkpoint list inclusionを検証する"""
+    plan_id, overview, timeline, spot_details, checkpoints, map_data, spot_names = data
+    composer = TravelGuideComposer()
+
+    guide = composer.compose(
+        plan_id=plan_id,
+        overview=overview,
+        timeline=timeline,
+        spot_details=spot_details,
+        checkpoints=checkpoints,
+        map_data=map_data,
+    )
+
+    # 検証1: チェックポイントリストが存在すること
+    assert guide.checkpoints
+
+    # 検証2: チェックポイントがspot_detailsに含まれるスポットを参照していること
+    checkpoint_spot_names = {checkpoint.spot_name for checkpoint in guide.checkpoints}
+    assert checkpoint_spot_names.issubset(set(spot_names))
+
+    # 検証3: チェックポイントの内容が保持されていること
+    assert len(guide.checkpoints) == len(checkpoints)
+    for stored_checkpoint, original_checkpoint in zip(
+        guide.checkpoints, checkpoints, strict=True
+    ):
+        assert stored_checkpoint.spot_name == original_checkpoint.spot_name
+        assert stored_checkpoint.checkpoints == original_checkpoint.checkpoints
+        assert stored_checkpoint.historical_context == original_checkpoint.historical_context
+
+
+@given(data=_travel_guide_inputs())
+def test_travel_guide_property_content_integration_completeness(
+    data: TravelGuideInputs,
+) -> None:
+    """Property 9: Content integration completenessを検証する"""
+    plan_id, overview, timeline, spot_details, checkpoints, map_data, spot_names = data
+    composer = TravelGuideComposer()
+
+    guide = composer.compose(
+        plan_id=plan_id,
+        overview=overview,
+        timeline=timeline,
+        spot_details=spot_details,
+        checkpoints=checkpoints,
+        map_data=map_data,
+    )
+
+    # 検証1: タイムラインがガイドに統合されていること
+    assert guide.timeline
+    for event in guide.timeline:
+        assert set(event.related_spots).issubset(set(spot_names))
+
+    # 検証2: 地図データがガイドに統合されていること
+    marker_labels = {marker["label"] for marker in guide.map_data["markers"]}
+    assert marker_labels.issubset(set(spot_names))
+
+    # 検証3: 歴史背景と見どころがガイドに統合されていること
+    assert guide.spot_details
+    for detail in guide.spot_details:
+        assert detail.historical_background.strip()
+        assert detail.highlights
+        for highlight in detail.highlights:
+            assert highlight.strip()
+
+@given(data=_travel_guide_inputs())
 def test_travel_guide_property_rejects_duplicate_spot_names(data: TravelGuideInputs) -> None:
     """バリデーションエラーケース: 重複したspot_nameを持つspot_detailsを拒否する"""
     plan_id, overview, timeline, spot_details, checkpoints, map_data, _ = data
