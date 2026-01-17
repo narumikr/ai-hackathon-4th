@@ -195,7 +195,7 @@ db-reset:
 
 # OpenAPI仕様書を生成（JSON形式）
 docs-generate-openapi:
-	cd {{backend_dir}} && {{uv}} run python3 scripts/generate_openapi.py
+	cd {{backend_dir}} && {{uv}} run python scripts/generate_openapi.py
 
 # バックエンドドキュメント全体を生成
 docs-generate-backend: docs-generate-openapi

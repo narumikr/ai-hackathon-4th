@@ -28,10 +28,10 @@ def generate_openapi_schema(output_path: Path) -> None:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(schema, f, ensure_ascii=False, indent=2)
 
-        print(f"OpenAPI schema generated: {output_path}")
+        print(f"OpenAPIスキーマを生成しました: {output_path}")
 
     except Exception as e:
-        print(f"Error generating OpenAPI schema: {e}", file=sys.stderr)
+        print(f"OpenAPIスキーマの生成中にエラーが発生しました: {e}", file=sys.stderr)
         sys.exit(1)
 
 
