@@ -1,4 +1,4 @@
-"""旅行計画取得ユースケース."""
+"""旅行計画取得ユースケース"""
 
 from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.use_cases.travel_plan_helpers import validate_required_str
@@ -7,13 +7,13 @@ from app.domain.travel_plan.repository import ITravelPlanRepository
 
 
 class GetTravelPlanUseCase:
-    """旅行計画取得ユースケース.
+    """旅行計画取得ユースケース
 
     IDを指定して単一の旅行計画を取得する。
     """
 
     def __init__(self, repository: ITravelPlanRepository):
-        """ユースケースを初期化する.
+        """ユースケースを初期化する
 
         Args:
             repository: TravelPlanリポジトリ
@@ -21,7 +21,7 @@ class GetTravelPlanUseCase:
         self._repository = repository
 
     def execute(self, plan_id: str) -> TravelPlanDTO:
-        """旅行計画を取得する.
+        """旅行計画を取得する
 
         Args:
             plan_id: 旅行計画ID
@@ -42,13 +42,13 @@ class GetTravelPlanUseCase:
 
 
 class ListTravelPlansUseCase:
-    """旅行計画一覧取得ユースケース.
+    """旅行計画一覧取得ユースケース
 
     ユーザーIDを指定して旅行計画の一覧を取得する。
     """
 
     def __init__(self, repository: ITravelPlanRepository):
-        """ユースケースを初期化する.
+        """ユースケースを初期化する
 
         Args:
             repository: TravelPlanリポジトリ
@@ -56,7 +56,7 @@ class ListTravelPlansUseCase:
         self._repository = repository
 
     def execute(self, user_id: str) -> list[TravelPlanDTO]:
-        """ユーザーの旅行計画一覧を取得する.
+        """ユーザーの旅行計画一覧を取得する
 
         Args:
             user_id: ユーザーID
