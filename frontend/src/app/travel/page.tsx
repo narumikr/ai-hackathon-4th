@@ -1,50 +1,42 @@
 import { Container } from '@/components/layout';
-import { Button } from '@/components/ui';
-import { BUTTON_LABELS, MESSAGES, PAGE_TITLES } from '@/constants';
+import { Button, Emoji } from '@/components/ui';
+import {
+  BUTTON_LABELS,
+  EMOJI_LABELS,
+  LABELS,
+  MESSAGES,
+  PAGE_DESCRIPTIONS,
+  PAGE_TITLES,
+  STATUS_COLORS,
+  STATUS_LABELS,
+} from '@/constants';
+import { type TravelStatus, sampleTravels } from '@/data';
 import Link from 'next/link';
-
-// サンプルデータ
-const sampleTravels = [
-  {
-    id: '1',
-    title: '京都 歴史探訪の旅',
-    destination: '京都府',
-    status: 'planning' as const,
-    spotsCount: 5,
-    createdAt: '2026-01-10',
-  },
-  {
-    id: '2',
-    title: '奈良 古代史の旅',
-    destination: '奈良県',
-    status: 'traveling' as const,
-    spotsCount: 4,
-    createdAt: '2026-01-08',
-  },
-  {
-    id: '3',
-    title: '広島 平和学習の旅',
-    destination: '広島県',
-    status: 'completed' as const,
-    spotsCount: 3,
-    createdAt: '2025-12-20',
-  },
-];
-
-const statusLabels = {
-  planning: '計画中',
-  traveling: '旅行中',
-  completed: '完了',
-};
-
-const statusColors = {
-  planning: 'bg-info text-white',
-  traveling: 'bg-warning text-white',
-  completed: 'bg-success text-white',
-};
 
 export default function TravelListPage() {
   const hasTravels = sampleTravels.length > 0;
+
+  const getStatusLabel = (status: TravelStatus) => {
+    switch (status) {
+      case 'planning':
+        return STATUS_LABELS.PLANNING;
+      case 'traveling':
+        return STATUS_LABELS.TRAVELING;
+      case 'completed':
+        return STATUS_LABELS.COMPLETED;
+    }
+  };
+
+  const getStatusColor = (status: TravelStatus) => {
+    switch (status) {
+      case 'planning':
+        return STATUS_COLORS.PLANNING;
+      case 'traveling':
+        return STATUS_COLORS.TRAVELING;
+      case 'completed':
+        return STATUS_COLORS.COMPLETED;
+    }
+  };
 
   return (
     <div className="py-8">
@@ -52,7 +44,7 @@ export default function TravelListPage() {
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="mb-2 font-bold text-3xl text-neutral-900">{PAGE_TITLES.TRAVEL_LIST}</h1>
-            <p className="text-neutral-600">作成した旅行計画を管理できます</p>
+            <p className="text-neutral-600">{PAGE_DESCRIPTIONS.TRAVEL_LIST}</p>
           </div>
           <Link href="/travel/new">
             <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
@@ -61,7 +53,9 @@ export default function TravelListPage() {
 
         {!hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4 text-6xl">🗺️</div>
+            <div className="mb-4 text-6xl">
+              <Emoji symbol="🗺️" label={EMOJI_LABELS.MAP} />
+            </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_TRAVELS}</p>
             <Link href="/travel/new">
               <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
@@ -80,15 +74,20 @@ export default function TravelListPage() {
                     <p className="text-neutral-500 text-sm">{travel.destination}</p>
                   </div>
                   <span
-                    className={`rounded-full px-3 py-1 font-medium text-xs ${statusColors[travel.status]}`}
+                    className={`rounded-full px-3 py-1 font-medium text-xs ${getStatusColor(travel.status)}`}
                   >
-                    {statusLabels[travel.status]}
+                    {getStatusLabel(travel.status)}
                   </span>
                 </div>
 
                 <div className="mb-4 flex items-center gap-4 text-neutral-600 text-sm">
-                  <span>📍 {travel.spotsCount}スポット</span>
-                  <span>📅 {travel.createdAt}</span>
+                  <span>
+                    <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {travel.spotsCount}
+                    {LABELS.SPOTS_COUNT}
+                  </span>
+                  <span>
+                    <Emoji symbol="📅" label={EMOJI_LABELS.CALENDAR} /> {travel.createdAt}
+                  </span>
                 </div>
 
                 <div className="flex gap-2">
