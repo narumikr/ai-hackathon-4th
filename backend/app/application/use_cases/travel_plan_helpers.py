@@ -59,7 +59,7 @@ def build_tourist_spots(spots: list[dict], *, allow_empty: bool = False) -> list
                     lng=_validate_number(lng, f"spots[{index}].location.lng"),
                 ),
                 description=spot.get("description"),
-                user_notes=spot.get("userNotes") or spot.get("user_notes"),
+                user_notes=spot.get("userNotes"),
             )
         )
 
