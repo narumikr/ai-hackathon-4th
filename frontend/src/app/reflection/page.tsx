@@ -1,27 +1,17 @@
 import { Container } from '@/components/layout';
-import { Button } from '@/components/ui';
-import { MESSAGES, PAGE_TITLES } from '@/constants';
+import { Button, Emoji } from '@/components/ui';
+import {
+  BUTTON_LABELS,
+  EMOJI_LABELS,
+  HINTS,
+  LABELS,
+  MESSAGES,
+  PAGE_DESCRIPTIONS,
+  PAGE_TITLES,
+  STATUS_LABELS,
+} from '@/constants';
+import { completedTravels } from '@/data';
 import Link from 'next/link';
-
-// サンプルデータ
-const completedTravels = [
-  {
-    id: '3',
-    title: '広島 平和学習の旅',
-    destination: '広島県',
-    completedAt: '2025-12-25',
-    hasReflection: true,
-    photosCount: 8,
-  },
-  {
-    id: '4',
-    title: '鎌倉 武家文化の旅',
-    destination: '神奈川県',
-    completedAt: '2025-11-15',
-    hasReflection: false,
-    photosCount: 0,
-  },
-];
 
 export default function ReflectionListPage() {
   const hasTravels = completedTravels.length > 0;
@@ -33,15 +23,17 @@ export default function ReflectionListPage() {
           <h1 className="mb-2 font-bold text-3xl text-neutral-900">
             {PAGE_TITLES.REFLECTION_LIST}
           </h1>
-          <p className="text-neutral-600">完了した旅行の振り返りを作成・確認できます</p>
+          <p className="text-neutral-600">{PAGE_DESCRIPTIONS.REFLECTION_LIST}</p>
         </div>
 
         {!hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4 text-6xl">📸</div>
+            <div className="mb-4 text-6xl">
+              <Emoji symbol="📸" label={EMOJI_LABELS.CAMERA} />
+            </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_REFLECTIONS}</p>
             <Link href="/travel">
-              <Button>旅行一覧へ</Button>
+              <Button>{BUTTON_LABELS.VIEW_TRAVEL_LIST_ALT}</Button>
             </Link>
           </div>
         ) : (
@@ -56,7 +48,7 @@ export default function ReflectionListPage() {
                     <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
                     {travel.hasReflection && (
                       <span className="rounded-full bg-success px-3 py-1 font-medium text-white text-xs">
-                        作成済み
+                        {STATUS_LABELS.REFLECTION_CREATED}
                       </span>
                     )}
                   </div>
@@ -64,21 +56,29 @@ export default function ReflectionListPage() {
                 </div>
 
                 <div className="mb-4 flex items-center gap-4 text-neutral-600 text-sm">
-                  <span>✅ 完了: {travel.completedAt}</span>
-                  {travel.photosCount > 0 && <span>📸 {travel.photosCount}枚</span>}
+                  <span>
+                    <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} /> {LABELS.COMPLETED_DATE}{' '}
+                    {travel.completedAt}
+                  </span>
+                  {travel.photosCount > 0 && (
+                    <span>
+                      <Emoji symbol="📸" label={EMOJI_LABELS.CAMERA} /> {travel.photosCount}
+                      {LABELS.PHOTOS_COUNT}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
                   {travel.hasReflection ? (
                     <Link href={`/reflection/${travel.id}`} className="flex-1">
                       <Button variant="primary" fullWidth>
-                        振り返りを見る
+                        {BUTTON_LABELS.VIEW_REFLECTION}
                       </Button>
                     </Link>
                   ) : (
                     <Link href={`/reflection/${travel.id}`} className="flex-1">
                       <Button variant="secondary" fullWidth>
-                        振り返りを作成
+                        {BUTTON_LABELS.CREATE_REFLECTION}
                       </Button>
                     </Link>
                   )}
@@ -90,11 +90,11 @@ export default function ReflectionListPage() {
 
         {/* ヒント */}
         <div className="mt-8 rounded-lg border border-primary-200 bg-primary-50 p-4">
-          <h3 className="mb-2 font-semibold text-primary-900 text-sm">💡 振り返りについて</h3>
+          <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.ABOUT_REFLECTION}</h3>
           <ul className="space-y-1 text-primary-800 text-sm">
-            <li>• 旅行の写真をアップロードして感想を入力してください</li>
-            <li>• AIが事前学習との比較を含めた振り返りパンフレットを生成します</li>
-            <li>• 生成されたパンフレットは保存・印刷できます</li>
+            {HINTS.REFLECTION.map((hint, index) => (
+              <li key={`hint-${index}`}>• {hint}</li>
+            ))}
           </ul>
         </div>
       </Container>
