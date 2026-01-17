@@ -9,7 +9,7 @@ from app.domain.travel_plan.repository import ITravelPlanRepository
 class GetTravelPlanUseCase:
     """旅行計画取得ユースケース
 
-    IDを指定して単一の旅行計画を取得する。
+    IDを指定して単一の旅行計画を取得する
     """
 
     def __init__(self, repository: ITravelPlanRepository):
@@ -44,7 +44,7 @@ class GetTravelPlanUseCase:
 class ListTravelPlansUseCase:
     """旅行計画一覧取得ユースケース
 
-    ユーザーIDを指定して旅行計画の一覧を取得する。
+    ユーザーIDを指定して旅行計画の一覧を取得する
     """
 
     def __init__(self, repository: ITravelPlanRepository):

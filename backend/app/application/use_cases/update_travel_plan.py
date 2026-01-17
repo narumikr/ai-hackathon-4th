@@ -12,7 +12,7 @@ from app.domain.travel_plan.repository import ITravelPlanRepository
 class UpdateTravelPlanUseCase:
     """旅行計画更新ユースケース
 
-    既存の旅行計画を更新する。
+    既存の旅行計画を更新する
     """
 
     def __init__(self, repository: ITravelPlanRepository):

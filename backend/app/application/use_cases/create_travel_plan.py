@@ -12,7 +12,7 @@ from app.domain.travel_plan.repository import ITravelPlanRepository
 class CreateTravelPlanUseCase:
     """旅行計画作成ユースケース
 
-    新しい旅行計画を作成し、リポジトリに保存する。
+    新しい旅行計画を作成し、リポジトリに保存する
     """
 
     def __init__(self, repository: ITravelPlanRepository):
