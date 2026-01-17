@@ -2,6 +2,7 @@
 
 import { useCallback, useId, useRef, useState } from 'react';
 
+import { FILE_UPLOADER } from '@/constants/ui';
 import type { FileUploaderProps } from '@/types/ui';
 
 const baseStyles = [
@@ -77,7 +78,7 @@ export function FileUploader({
   onError,
   disabled = false,
   className = '',
-  label = 'ファイルをドラッグ&ドロップ',
+  label = FILE_UPLOADER.DEFAULT_LABEL,
   helpText,
 }: FileUploaderProps) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -94,7 +95,7 @@ export function FileUploader({
         // Check file size
         if (maxSize && file.size > maxSize) {
           errors.push(
-            `${file.name} はファイルサイズ上限（${formatFileSize(maxSize)}）を超えています`
+            FILE_UPLOADER.ERROR_FILE_SIZE_EXCEEDED(file.name, formatFileSize(maxSize))
           );
           continue;
         }
@@ -120,7 +121,7 @@ export function FileUploader({
           });
 
           if (!isAccepted) {
-            errors.push(`${file.name} は許可されていないファイル形式です`);
+            errors.push(FILE_UPLOADER.ERROR_INVALID_FILE_TYPE(file.name));
             continue;
           }
         }
@@ -221,11 +222,11 @@ export function FileUploader({
   };
 
   const acceptHint = accept
-    ? `対応形式: ${accept}`
+    ? `${FILE_UPLOADER.ACCEPTED_FORMATS_PREFIX}${accept}`
     : undefined;
 
   const sizeHint = maxSize
-    ? `最大サイズ: ${formatFileSize(maxSize)}`
+    ? `${FILE_UPLOADER.MAX_SIZE_PREFIX}${formatFileSize(maxSize)}`
     : undefined;
 
   const hints = [acceptHint, sizeHint].filter(Boolean).join(' / ');
@@ -259,7 +260,7 @@ export function FileUploader({
           <UploadIcon className={iconStyles} />
           <p className={labelStyles}>{label}</p>
           <p className={hintStyles}>
-            {multiple ? 'またはクリックしてファイルを選択' : 'またはクリックしてファイルを選択'}
+            {FILE_UPLOADER.HINT_TEXT}
           </p>
           {hints && <p className={hintStyles}>{hints}</p>}
         </div>
