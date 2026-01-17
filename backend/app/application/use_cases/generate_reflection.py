@@ -287,8 +287,8 @@ class GenerateReflectionPamphletUseCase:
             prompt=prompt,
             response_schema=_REFLECTION_PAMPHLET_SCHEMA,
             system_instruction=(
-                "Return JSON that exactly matches the response schema. "
-                "Use Japanese for narrative fields."
+                "レスポンスはJSONのみで、スキーマに厳密に一致させてください。"
+                "説明文などの文章は日本語で出力してください。"
             ),
         )
         if not isinstance(structured, dict):
