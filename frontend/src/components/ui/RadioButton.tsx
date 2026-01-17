@@ -1,6 +1,7 @@
 'use client';
 
 import type { RadioButtonProps } from '@/types/ui';
+import { useId } from 'react';
 
 const sizeStyles = {
   sm: 'w-4 h-4',
@@ -21,16 +22,11 @@ export function RadioButton({
   disabled = false,
   error = false,
   description,
-  errorMessage,
   className = '',
   ...props
 }: RadioButtonProps) {
-  const radioId = id || `radio-${Math.random().toString(36).substring(7)}`;
-  const descriptionId = `${radioId}-description`;
-
-  // Use errorMessage if in error state, otherwise use description
-  const displayDescription = error && errorMessage ? errorMessage : description;
-  const hasDescription = Boolean(displayDescription);
+  const generatedId = useId();
+  const radioId = id || `radio-${generatedId}`;
 
   return (
     <div className={`flex items-start ${className}`}>
@@ -39,8 +35,6 @@ export function RadioButton({
           id={radioId}
           type="radio"
           disabled={disabled}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={hasDescription ? descriptionId : undefined}
           className={[
             sizeStyles[size],
             'border-2',
@@ -63,7 +57,7 @@ export function RadioButton({
           {...props}
         />
       </div>
-      {(label || displayDescription) && (
+      {(label || description) && (
         <div className="ml-3">
           {label && (
             <label
@@ -82,9 +76,8 @@ export function RadioButton({
               {label}
             </label>
           )}
-          {displayDescription && (
+          {description && (
             <p
-              id={descriptionId}
               className={[
                 'mt-0.5 text-sm',
                 disabled ? 'text-neutral-300' : 'text-neutral-600',
@@ -92,9 +85,8 @@ export function RadioButton({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              role={error ? 'alert' : undefined}
             >
-              {displayDescription}
+              {description}
             </p>
           )}
         </div>
