@@ -4,6 +4,8 @@ export { Checkbox } from './Checkbox';
 export { LoadingSpinner } from './LoadingSpinner';
 export { RadioButton } from './RadioButton';
 export { TextArea } from './TextArea';
+export { FormField } from './FormField';
+export { List } from './List';
 export { TextField } from './TextField';
 export { Table } from './Table';
 export { Tooltip } from './Tooltip';

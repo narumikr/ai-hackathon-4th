@@ -126,6 +126,44 @@ export interface TextAreaProps
 }
 
 /**
+ * FormField Component Props
+ */
+export interface FormFieldProps {
+  /** Field label */
+  label: string;
+  /** Whether the field is required */
+  required?: boolean;
+  /** Error message */
+  error?: string;
+  /** Help text displayed below the input */
+  helpText?: string;
+  /** Children (form input) */
+  children: ReactNode;
+  /** Additional CSS classes */
+  className?: string;
+  /** HTML for attribute - links label to input */
+  htmlFor?: string;
+}
+
+/**
+ * List Component Props
+ */
+export interface ListProps<T> {
+  /** Array of items to render */
+  items: T[];
+  /** Function to render each item */
+  renderItem: (item: T, index: number) => ReactNode;
+  /** Loading state */
+  loading?: boolean;
+  /** Message to display when list is empty */
+  emptyMessage?: string;
+  /** Additional CSS classes */
+  className?: string;
+  /** Key extractor function */
+  keyExtractor?: (item: T, index: number) => string | number;
+}
+
+/**
  * Card Component Props
  */
 export type CardVariant = 'default' | 'outlined' | 'elevated';

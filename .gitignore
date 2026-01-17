@@ -79,3 +79,4 @@ infrastructure/terraform/.terraform.lock.hcl
 # Google Cloud
 service-account-key.json
 *-credentials.json
+package-lock.json
