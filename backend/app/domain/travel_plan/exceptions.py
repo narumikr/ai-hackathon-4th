@@ -1,17 +1,17 @@
-"""TravelPlan集約のドメイン例外."""
+"""TravelPlan Aggregateのドメイン例外"""
 
 
 class TravelPlanDomainError(Exception):
-    """TravelPlan集約のドメインエラー基底クラス."""
+    """TravelPlan Aggregateのドメインエラー基底クラス"""
 
     pass
 
 
 class TravelPlanNotFoundError(TravelPlanDomainError):
-    """TravelPlanが見つからない."""
+    """TravelPlanが見つからない"""
 
     def __init__(self, plan_id: str):
-        """TravelPlanNotFoundErrorを初期化する.
+        """TravelPlanNotFoundErrorを初期化する
 
         Args:
             plan_id: 見つからなかった旅行計画ID
@@ -21,6 +21,6 @@ class TravelPlanNotFoundError(TravelPlanDomainError):
 
 
 class InvalidTravelPlanError(TravelPlanDomainError):
-    """TravelPlanのバリデーションエラー."""
+    """TravelPlanのバリデーションエラー"""
 
     pass

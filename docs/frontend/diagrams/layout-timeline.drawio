@@ -1,0 +1,227 @@
+<mxfile host="app.diagrams.net" modified="2026-01-14T00:00:00.000Z" agent="Kiro" version="24.0.0">
+  <diagram name="タイムラインレイアウト" id="timeline-layout">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- タイトル -->
+        <mxCell id="title" value="タイムラインレイアウト" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="150" y="10" width="260" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- 全体フレーム -->
+        <mxCell id="frame" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="400" height="740" as="geometry" />
+        </mxCell>
+        
+        <!-- スティッキーヘッダー -->
+        <mxCell id="sticky-header" value="Sticky Navigation" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="40" width="400" height="48" as="geometry" />
+        </mxCell>
+        
+        <!-- プログレスバー -->
+        <mxCell id="progress-bar" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#667eea;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="80" y="85" width="120" height="3" as="geometry" />
+        </mxCell>
+        
+        <!-- ナビリンク -->
+        <mxCell id="nav-links" value="概要 | 年表 | スポット" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="200" y="50" width="160" height="28" as="geometry" />
+        </mxCell>
+        
+        <!-- ヒーローセクション -->
+        <mxCell id="hero" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#667eea;strokeColor=none;gradientColor=#764ba2;gradientDirection=south;" vertex="1" parent="1">
+          <mxGeometry x="80" y="88" width="400" height="200" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="hero-title" value="京都の歴史旅行" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="130" y="150" width="300" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="hero-date" value="2026年2月15日〜17日" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#ffffff;opacity=90;" vertex="1" parent="1">
+          <mxGeometry x="130" y="185" width="300" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="scroll-hint" value="↓" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontColor=#ffffff;opacity=70;" vertex="1" parent="1">
+          <mxGeometry x="260" y="250" width="40" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- セクション1: 概要 -->
+        <mxCell id="section1-divider" value="━━━ 旅の概要 ━━━" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#667eea;" vertex="1" parent="1">
+          <mxGeometry x="130" y="300" width="300" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="section1-content" value="京都は794年に平安京として創建され、&#xa;1000年以上にわたり日本の都として&#xa;栄えました。この旅行では..." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333333;spacingLeft=20;" vertex="1" parent="1">
+          <mxGeometry x="100" y="330" width="360" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- セクション2: 年表 -->
+        <mxCell id="section2-divider" value="━━━ 歴史年表 ━━━" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#667eea;" vertex="1" parent="1">
+          <mxGeometry x="130" y="410" width="300" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- タイムライン -->
+        <mxCell id="timeline-line" value="" style="line;strokeWidth=2;html=1;strokeColor=#667eea;direction=south;" vertex="1" parent="1">
+          <mxGeometry x="120" y="440" width="10" height="150" as="geometry" />
+        </mxCell>
+        
+        <!-- タイムラインアイテム1 -->
+        <mxCell id="timeline-item1" value="┌─ 794年" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333333;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="120" y="440" width="100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="timeline-desc1" value="平安京遷都" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="130" y="460" width="200" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="timeline-img1" value="[画像]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="340" y="445" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- タイムラインアイテム2 -->
+        <mxCell id="timeline-item2" value="┌─ 1467年" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333333;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="120" y="500" width="100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="timeline-desc2" value="応仁の乱" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="130" y="520" width="200" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="timeline-img2" value="[画像]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="340" y="505" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- タイムラインアイテム3 -->
+        <mxCell id="timeline-item3" value="┌─ 1868年" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#333333;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="120" y="560" width="100" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="timeline-desc3" value="明治維新" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="130" y="580" width="200" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="timeline-img3" value="[画像]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="340" y="565" width="100" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- セクション3: スポット -->
+        <mxCell id="section3-divider" value="━━━ 観光スポット ━━━" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#667eea;" vertex="1" parent="1">
+          <mxGeometry x="130" y="620" width="300" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- スポットカード -->
+        <mxCell id="spot-card" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;strokeWidth=2;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="650" width="360" height="100" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="spot-image" value="[Large Image]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="660" width="100" height="80" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="spot-title" value="清水寺" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fontColor=#333333;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="220" y="660" width="230" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="spot-desc" value="778年創建の歴史ある寺院。&#xa;清水の舞台として知られる..." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="220" y="685" width="230" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="spot-button" value="詳細を見る →" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=bottom;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#667eea;fontStyle=1;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="720" width="130" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- スクロールインジケーター -->
+        <mxCell id="scroll-more" value="↓ スクロールで続きを見る" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="180" y="760" width="200" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- 説明 -->
+        <mxCell id="description" value="縦スクロール無限フィード + 時系列ストーリーテリング&#xa;Instagram/Mediumスタイルのタイムラインレイアウト" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="520" y="40" width="320" height="50" as="geometry" />
+        </mxCell>
+        
+        <!-- 特徴リスト -->
+        <mxCell id="features" value="✓ 実装難易度: 低〜中&#xa;✓ モバイル対応: 優&#xa;✓ 没入感: 中〜高&#xa;✓ 開発期間: 中&#xa;✓ 適用場面: コンテンツ量多、時系列重視" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=left;verticalAlign=top;whiteSpace=wrap;rounded=1;fontSize=11;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="520" y="110" width="320" height="120" as="geometry" />
+        </mxCell>
+        
+        <!-- スクロール連動機能 -->
+        <mxCell id="scroll-features-title" value="スクロール連動機能" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="520" y="250" width="200" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- プログレスバー -->
+        <mxCell id="progress-feature" value="1. プログレスバー" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="290" width="320" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="progress-bar-demo" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#667eea;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="530" y="310" width="200" height="3" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="progress-desc" value="読書進捗を視覚化" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#666666;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="740" y="300" width="100" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- スクロールスパイ -->
+        <mxCell id="spy-feature" value="2. スクロールスパイ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="340" width="320" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="spy-nav" value="概要 | 年表 | スポット" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="530" y="355" width="200" height="20" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="spy-active" value="●" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#667eea;" vertex="1" parent="1">
+          <mxGeometry x="600" y="370" width="20" height="10" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="spy-desc" value="現在位置を自動表示" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#666666;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="740" y="350" width="100" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- トップへ戻る -->
+        <mxCell id="top-feature" value="3. トップへ戻るボタン" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="400" width="320" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="top-button" value="↑" style="ellipse;whiteSpace=wrap;html=1;fillColor=#667eea;strokeColor=none;fontSize=16;fontColor=#ffffff;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="405" width="30" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="top-desc" value="右下に固定表示" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=9;fontColor=#666666;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="740" y="410" width="100" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- アニメーション -->
+        <mxCell id="animation-title" value="スクロール連動アニメーション" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="520" y="460" width="280" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- アニメーション例 -->
+        <mxCell id="anim-before" value="画面外" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="520" y="500" width="100" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="anim-arrow1" value="↓&#xa;スクロール" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="630" y="510" width="60" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="anim-after" value="フェードイン&#xa;スライドアップ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="500" width="100" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- 技術スタック -->
+        <mxCell id="tech-title" value="実装技術" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="520" y="580" width="200" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="tech-list" value="• React Scroll (スムーズスクロール)&#xa;• Framer Motion (アニメーション)&#xa;• Intersection Observer (表示検知)&#xa;• AOS / react-scroll-parallax" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=left;verticalAlign=top;whiteSpace=wrap;rounded=1;fontSize=11;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="520" y="620" width="320" height="100" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

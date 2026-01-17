@@ -16,6 +16,8 @@ dependencies = [
     "google-cloud-storage>=2.18.0",
     "python-multipart>=0.0.20",
     "pillow>=11.0.0",
+    "aiofiles>=25.1.0",
+    "filetype>=1.2.0",
 ]
 
 [project.optional-dependencies]

@@ -221,6 +221,25 @@ just dev-backend   # バックエンドのみ（http://localhost:8000）
 just dev-frontend  # フロントエンドのみ（http://localhost:3000）
 ```
 
+#### API仕様書
+
+バックエンドAPIの仕様書は以下の方法で確認できます。
+
+**ローカル開発環境**（開発サーバー起動後）:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+- OpenAPI JSON: http://localhost:8000/openapi.json
+
+**静的ファイル**:
+- [OpenAPI仕様書（JSON）](docs/backend/openapi.json)
+- [バックエンドAPI仕様書README](docs/backend/README.md)
+
+**仕様書の更新**:
+```bash
+# APIエンドポイントやスキーマを変更した後に実行
+just docs-generate-openapi
+```
+
 #### よく使うタスク
 
 ```bash
@@ -247,6 +266,9 @@ just migrate-up            # マイグレーション適用
 just migrate-down          # マイグレーション取り消し
 just migrate-history       # マイグレーション履歴表示
 just migrate-create "name" # マイグレーション作成
+
+# ドキュメント生成
+just docs-generate-openapi # OpenAPI仕様書を生成
 
 # クリーンアップ
 just clean-all             # キャッシュとビルド成果物を削除

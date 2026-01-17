@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -48,8 +49,18 @@ class Settings(DatabaseSettings):
     google_application_credentials: str | None = None  # ADC使用時は不要
 
     # ストレージ設定
+    storage_type: Literal["local", "gcs"] = "local"
     upload_dir: str = "./uploads"
     max_upload_size: int = 10 * 1024 * 1024  # 10MB
+    gcs_bucket_name: str | None = None  # GCSバケット名（本番環境用）
+
+    # Gemini設定
+    gemini_model_name: str = "gemini-3-flash"
+    gemini_temperature: float = 0.7
+    gemini_max_output_tokens: int = 8192
+    gemini_timeout_seconds: int = 60
+    # TODO: 将来の拡張用 - thinking_levelパラメータの活用
+    gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）
 
     @field_validator("redis_url", "google_cloud_project")
     @classmethod
