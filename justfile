@@ -190,3 +190,15 @@ migrate-current:
 # データベースリセット（開発用）
 db-reset:
     cd {{backend_dir}} && {{uv}} run alembic downgrade base && {{uv}} run alembic upgrade head
+
+# --- ドキュメント生成 ---
+
+# OpenAPI仕様書を生成（JSON形式）
+docs-generate-openapi:
+	cd {{backend_dir}} && {{uv}} run python scripts/generate_openapi.py
+
+# バックエンドドキュメント全体を生成
+docs-generate-backend: docs-generate-openapi
+
+# 全ドキュメントを生成
+docs-generate: docs-generate-backend
