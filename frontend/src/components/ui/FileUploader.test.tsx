@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { FILE_UPLOADER } from '@/constants/ui';
 import { FileUploader } from './FileUploader';
 
 const createFile = (name: string, size: number, type: string): File => {
@@ -20,7 +21,7 @@ describe('FileUploader', () => {
     it('renders with default label', () => {
       render(<FileUploader onUpload={mockOnUpload} />);
 
-      expect(screen.getByText('ファイルをドラッグ&ドロップ')).toBeInTheDocument();
+      expect(screen.getByText(FILE_UPLOADER.DEFAULT_LABEL)).toBeInTheDocument();
     });
 
     it('renders with custom label', () => {
@@ -32,7 +33,7 @@ describe('FileUploader', () => {
     it('renders click instruction', () => {
       render(<FileUploader onUpload={mockOnUpload} />);
 
-      expect(screen.getByText('またはクリックしてファイルを選択')).toBeInTheDocument();
+      expect(screen.getByText(FILE_UPLOADER.HINT_TEXT)).toBeInTheDocument();
     });
 
     it('renders upload icon', () => {
@@ -61,7 +62,7 @@ describe('FileUploader', () => {
     it('shows accepted file types hint', () => {
       render(<FileUploader onUpload={mockOnUpload} accept="image/*" />);
 
-      expect(screen.getByText(/対応形式: image\/\*/)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(`${FILE_UPLOADER.ACCEPTED_FORMATS_PREFIX}image/\\*`))).toBeInTheDocument();
     });
 
     it('passes accept to file input', () => {
@@ -76,13 +77,13 @@ describe('FileUploader', () => {
     it('shows max size hint in bytes', () => {
       render(<FileUploader onUpload={mockOnUpload} maxSize={1024} />);
 
-      expect(screen.getByText(/最大サイズ: 1 KB/)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(`${FILE_UPLOADER.MAX_SIZE_PREFIX}1 KB`))).toBeInTheDocument();
     });
 
     it('shows max size hint in MB', () => {
       render(<FileUploader onUpload={mockOnUpload} maxSize={5 * 1024 * 1024} />);
 
-      expect(screen.getByText(/最大サイズ: 5 MB/)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(`${FILE_UPLOADER.MAX_SIZE_PREFIX}5 MB`))).toBeInTheDocument();
     });
   });
 
