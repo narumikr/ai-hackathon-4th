@@ -321,3 +321,27 @@ export interface AccordionProps {
   /** Additional CSS classes */
   className?: string;
 }
+
+/**
+ * FileUploader Component Props
+ */
+export interface FileUploaderProps {
+  /** Accepted file types (e.g., "image/*", ".pdf,.doc") */
+  accept?: string;
+  /** Allow multiple file selection */
+  multiple?: boolean;
+  /** Maximum file size in bytes */
+  maxSize?: number;
+  /** Callback when files are selected */
+  onUpload: (files: File[]) => void;
+  /** Callback when an error occurs */
+  onError?: (error: string) => void;
+  /** Whether the uploader is disabled */
+  disabled?: boolean;
+  /** Additional CSS classes */
+  className?: string;
+  /** Custom label text */
+  label?: string;
+  /** Help text displayed below the dropzone */
+  helpText?: string;
+}

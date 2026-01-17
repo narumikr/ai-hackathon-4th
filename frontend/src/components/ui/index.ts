@@ -1,12 +1,13 @@
+export { Accordion } from './Accordion';
 export { Button } from './Button';
 export { Card } from './Card';
 export { Checkbox } from './Checkbox';
+export { FileUploader } from './FileUploader';
 export { LoadingSpinner } from './LoadingSpinner';
 export { RadioButton } from './RadioButton';
+export { Table } from './Table';
 export { TextArea } from './TextArea';
 export { FormField } from './FormField';
 export { List } from './List';
 export { TextField } from './TextField';
-export { Table } from './Table';
 export { Tooltip } from './Tooltip';
-export { Accordion } from './Accordion';
