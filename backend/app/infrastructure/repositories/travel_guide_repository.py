@@ -1,4 +1,4 @@
-"""TravelGuideリポジトリの実装."""
+"""TravelGuideリポジトリの実装"""
 
 import uuid
 from typing import cast
@@ -12,13 +12,13 @@ from app.infrastructure.persistence.models import TravelGuideModel
 
 
 class TravelGuideRepository(ITravelGuideRepository):
-    """TravelGuideリポジトリのSQLAlchemy実装.
+    """TravelGuideリポジトリのSQLAlchemy実装
 
-    ドメインエンティティとSQLAlchemyモデル間のマッピングを行う。
+    ドメインエンティティとSQLAlchemyモデル間のマッピングを行う
     """
 
     def __init__(self, session: Session):
-        """リポジトリを初期化する.
+        """リポジトリを初期化する
 
         Args:
             session: SQLAlchemyセッション
@@ -26,7 +26,7 @@ class TravelGuideRepository(ITravelGuideRepository):
         self._session = session
 
     def save(self, travel_guide: TravelGuide) -> TravelGuide:
-        """TravelGuideを保存する.
+        """TravelGuideを保存する
 
         Args:
             travel_guide: 保存するTravelGuideエンティティ
@@ -69,7 +69,7 @@ class TravelGuideRepository(ITravelGuideRepository):
         return self._to_entity(model)
 
     def find_by_id(self, guide_id: str) -> TravelGuide | None:
-        """IDでTravelGuideを検索する.
+        """IDでTravelGuideを検索する
 
         Args:
             guide_id: 旅行ガイドID
@@ -83,7 +83,7 @@ class TravelGuideRepository(ITravelGuideRepository):
         return self._to_entity(model)
 
     def find_by_plan_id(self, plan_id: str) -> TravelGuide | None:
-        """旅行計画IDでTravelGuideを検索する.
+        """旅行計画IDでTravelGuideを検索する
 
         Args:
             plan_id: 旅行計画ID
@@ -101,7 +101,7 @@ class TravelGuideRepository(ITravelGuideRepository):
         return self._to_entity(model)
 
     def delete(self, guide_id: str) -> None:
-        """TravelGuideを削除する.
+        """TravelGuideを削除する
 
         Args:
             guide_id: 削除する旅行ガイドID
@@ -112,7 +112,7 @@ class TravelGuideRepository(ITravelGuideRepository):
             self._session.commit()
 
     def _to_entity(self, model: TravelGuideModel) -> TravelGuide:
-        """SQLAlchemyモデル → ドメインエンティティ変換.
+        """SQLAlchemyモデル → ドメインエンティティ変換
 
         Args:
             model: SQLAlchemyモデル
@@ -166,7 +166,7 @@ class TravelGuideRepository(ITravelGuideRepository):
         )
 
     def _timeline_to_dict(self, timeline: list[HistoricalEvent]) -> list[dict]:
-        """HistoricalEvent → 辞書変換（JSON型で保存するため）.
+        """HistoricalEvent → 辞書変換（JSON型で保存するため）
 
         Args:
             timeline: HistoricalEventリスト
@@ -185,7 +185,7 @@ class TravelGuideRepository(ITravelGuideRepository):
         ]
 
     def _spot_details_to_dict(self, spot_details: list[SpotDetail]) -> list[dict]:
-        """SpotDetail → 辞書変換（JSON型で保存するため）.
+        """SpotDetail → 辞書変換（JSON型で保存するため）
 
         Args:
             spot_details: SpotDetailリスト
@@ -205,7 +205,7 @@ class TravelGuideRepository(ITravelGuideRepository):
         ]
 
     def _checkpoints_to_dict(self, checkpoints: list[Checkpoint]) -> list[dict]:
-        """Checkpoint → 辞書変換（JSON型で保存するため）.
+        """Checkpoint → 辞書変換（JSON型で保存するため）
 
         Args:
             checkpoints: Checkpointリスト
