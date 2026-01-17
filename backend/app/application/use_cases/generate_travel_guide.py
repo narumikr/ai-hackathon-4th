@@ -315,6 +315,13 @@ class GenerateTravelGuideUseCase:
         if not travel_plan.spots:
             raise ValueError("spots must not be empty.")
 
+        plan_spot_names = [spot.name for spot in travel_plan.spots]
+        duplicate_spots = {
+            spot_name for spot_name in plan_spot_names if plan_spot_names.count(spot_name) > 1
+        }
+        if duplicate_spots:
+            raise ValueError(f"duplicate spot names are not allowed: {sorted(duplicate_spots)}")
+
         historical_prompt = _build_historical_info_prompt(travel_plan)
         historical_info = await self._ai_service.generate_with_search(
             prompt=historical_prompt,
@@ -332,6 +339,8 @@ class GenerateTravelGuideUseCase:
                 "Use Japanese for narrative fields."
             ),
         )
+        if not isinstance(structured, dict):
+            raise ValueError("structured response must be a dict.")
 
         overview = _require_str(structured.get("overview"), "overview")
         timeline_items = _require_list(structured.get("timeline"), "timeline")
@@ -339,10 +348,10 @@ class GenerateTravelGuideUseCase:
         checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
         map_data_raw = _require_dict(structured.get("mapData"), "mapData")
 
-        plan_spot_names = {spot.name for spot in travel_plan.spots}
-        spot_details = _build_spot_details(spot_detail_items, plan_spot_names)
-        checkpoints = _build_checkpoints(checkpoint_items, plan_spot_names)
-        timeline = _build_timeline(timeline_items, plan_spot_names)
+        plan_spot_name_set = set(plan_spot_names)
+        spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
+        checkpoints = _build_checkpoints(checkpoint_items, plan_spot_name_set)
+        timeline = _build_timeline(timeline_items, plan_spot_name_set)
         map_data = _build_map_data(map_data_raw)
 
         generated_guide = self._composer.compose(

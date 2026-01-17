@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.application.ports.ai_service import IAIService
 from app.application.use_cases.generate_travel_guide import GenerateTravelGuideUseCase
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
+from app.infrastructure.persistence.models import TravelPlanModel
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 
@@ -208,3 +209,81 @@ async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session
     )
     with pytest.raises(TravelPlanNotFoundError):
         await use_case.execute(plan_id="non-existent-id")
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
+    db_session: Session,
+) -> None:
+    """前提条件: 旅行計画に同名スポットが含まれる。
+    実行: 旅行ガイドを生成する。
+    検証: ValueErrorが発生する。
+    """
+    # 前提条件: 旅行計画に同名スポットが含まれる。
+    duplicate_plan = TravelPlanModel(
+        user_id="test_user_002",
+        title="重複スポットテスト",
+        destination="京都",
+        spots=[
+            {
+                "id": "spot-dup-001",
+                "name": "清水寺",
+                "location": {"lat": 34.9949, "lng": 135.785},
+                "description": "重複テスト用",
+                "userNotes": "1回目",
+            },
+            {
+                "id": "spot-dup-002",
+                "name": "清水寺",
+                "location": {"lat": 34.9949, "lng": 135.785},
+                "description": "重複テスト用",
+                "userNotes": "2回目",
+            },
+        ],
+        status="planning",
+    )
+    db_session.add(duplicate_plan)
+    db_session.commit()
+    db_session.refresh(duplicate_plan)
+
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        historical_info="重複スポットの歴史情報。",
+        structured_data=_structured_guide_payload(),
+    )
+
+    # 実行 & 検証: ValueErrorが発生する。
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    with pytest.raises(ValueError):
+        await use_case.execute(plan_id=duplicate_plan.id)
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rejects_non_dict_structured_response(
+    db_session: Session, sample_travel_plan
+) -> None:
+    """前提条件: AIサービスが辞書以外の構造化データを返す。
+    実行: 旅行ガイドを生成する。
+    検証: ValueErrorが発生する。
+    """
+    # 前提条件: AIサービスが辞書以外の構造化データを返す。
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        historical_info="京都の歴史情報を検索結果から取得。",
+        structured_data=[],
+    )
+
+    # 実行 & 検証: ValueErrorが発生する。
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    with pytest.raises(ValueError):
+        await use_case.execute(plan_id=sample_travel_plan.id)
