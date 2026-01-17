@@ -1,4 +1,4 @@
-"""リポジトリ実装のエクスポート."""
+"""リポジトリ実装のエクスポート"""
 
 from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
