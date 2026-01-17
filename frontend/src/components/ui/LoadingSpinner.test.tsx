@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react';
 
+import { LOADING_SPINNER } from '@/constants/ui';
 import { LoadingSpinner } from './LoadingSpinner';
 
 describe('LoadingSpinner', () => {
@@ -32,7 +33,7 @@ describe('LoadingSpinner', () => {
       const { container } = render(<LoadingSpinner />);
 
       const wrapper = getContainer(container);
-      expect(wrapper).toHaveAttribute('aria-label', '読み込み中');
+      expect(wrapper).toHaveAttribute('aria-label', LOADING_SPINNER.ARIA_LABEL);
     });
   });
 
@@ -212,7 +213,7 @@ describe('LoadingSpinner', () => {
 
       expect(wrapper).toHaveClass('inline-flex', 'w-6', 'h-6', 'text-current', 'custom-class');
       expect(wrapper).toHaveAttribute('role', 'status');
-      expect(wrapper).toHaveAttribute('aria-label', '読み込み中');
+      expect(wrapper).toHaveAttribute('aria-label', LOADING_SPINNER.ARIA_LABEL);
       expect(spinner).toHaveClass('animate-spin', 'w-full', 'h-full');
     });
 

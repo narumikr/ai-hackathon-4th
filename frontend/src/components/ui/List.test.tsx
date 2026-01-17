@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
+import { LIST } from '@/constants/ui';
 import { List } from './List';
 
 interface TestItem {
@@ -53,7 +54,7 @@ describe('List', () => {
     it('shows default empty message when items array is empty', () => {
       render(<List items={[]} renderItem={renderTestItem} />);
 
-      expect(screen.getByText('データがありません')).toBeInTheDocument();
+      expect(screen.getByText(LIST.EMPTY_MESSAGE)).toBeInTheDocument();
     });
 
     it('shows custom empty message when provided', () => {
@@ -107,7 +108,7 @@ describe('List', () => {
     it('shows loading text when loading', () => {
       render(<List items={[]} renderItem={renderTestItem} loading />);
 
-      expect(screen.getByText('読み込み中...')).toBeInTheDocument();
+      expect(screen.getByText(LIST.LOADING_MESSAGE)).toBeInTheDocument();
     });
 
     it('does not render items when loading', () => {
@@ -120,7 +121,7 @@ describe('List', () => {
     it('does not render empty message when loading', () => {
       render(<List items={[]} renderItem={renderTestItem} loading />);
 
-      expect(screen.queryByText('データがありません')).not.toBeInTheDocument();
+      expect(screen.queryByText(LIST.EMPTY_MESSAGE)).not.toBeInTheDocument();
     });
 
     it('loading container has primary color styling', () => {

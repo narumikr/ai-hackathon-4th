@@ -1,5 +1,6 @@
 'use client';
 
+import { LIST } from '@/constants/ui';
 import type { ListProps } from '@/types/ui';
 import { LoadingSpinner } from './LoadingSpinner';
 
@@ -27,7 +28,7 @@ export function List<T>({
   items,
   renderItem,
   loading = false,
-  emptyMessage = 'データがありません',
+  emptyMessage = LIST.EMPTY_MESSAGE,
   className = '',
   keyExtractor,
 }: ListProps<T>) {
@@ -36,7 +37,7 @@ export function List<T>({
       <div className={[baseStyles, className].filter(Boolean).join(' ')}>
         <div className={loadingContainerStyles}>
           <LoadingSpinner size="lg" />
-          <span className={loadingTextStyles}>読み込み中...</span>
+          <span className={loadingTextStyles}>{LIST.LOADING_MESSAGE}</span>
         </div>
       </div>
     );
