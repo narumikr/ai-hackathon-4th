@@ -244,10 +244,10 @@ class GenerateReflectionPamphletUseCase:
         if travel_guide is None:
             raise TravelGuideNotFoundError(plan_id)
 
-        reflection.update_notes(user_notes)
-        saved_reflection = self._reflection_repository.save(reflection)
+        if not travel_plan.spots:
+            raise ValueError("travel plan spots must be a non-empty list.")
 
-        reflection_dto = ReflectionDTO.from_entity(saved_reflection)
+        reflection_dto = ReflectionDTO.from_entity(reflection)
 
         prompt = _build_reflection_prompt(
             destination=travel_plan.destination,
@@ -305,11 +305,14 @@ class GenerateReflectionPamphletUseCase:
         next_trip_suggestions = _build_next_trip_suggestions(next_trip_items)
 
         pamphlet = self._analyzer.build_pamphlet(
-            photos=saved_reflection.photos,
+            photos=reflection.photos,
             travel_summary=travel_summary,
             spot_reflections=spot_reflections,
             next_trip_suggestions=next_trip_suggestions,
         )
+
+        reflection.update_notes(user_notes)
+        saved_reflection = self._reflection_repository.save(reflection)
 
         return ReflectionPamphletDTO.from_pamphlet(
             pamphlet,
