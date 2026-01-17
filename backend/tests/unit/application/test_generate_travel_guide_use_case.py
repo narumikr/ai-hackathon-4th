@@ -1,4 +1,4 @@
-"""TravelGuide生成ユースケースのテスト."""
+"""TravelGuide生成ユースケースのテスト"""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from app.infrastructure.repositories.travel_plan_repository import TravelPlanRep
 
 
 class FakeAIService(IAIService):
-    """テスト用のAIサービス."""
+    """テスト用のAIサービス"""
 
     def __init__(self, historical_info: str, structured_data: dict[str, Any]) -> None:
         self.historical_info = historical_info

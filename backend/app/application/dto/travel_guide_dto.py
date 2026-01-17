@@ -1,4 +1,4 @@
-"""TravelGuide関連のDTO."""
+"""TravelGuide関連のDTO"""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -8,7 +8,7 @@ from app.domain.travel_guide.entity import TravelGuide
 
 @dataclass
 class TravelGuideDTO:
-    """TravelGuideのデータ転送オブジェクト.
+    """TravelGuideのデータ転送オブジェクト
 
     ドメインエンティティとインターフェース層の間でデータを転送するために使用。
     """
@@ -25,7 +25,7 @@ class TravelGuideDTO:
 
     @staticmethod
     def from_entity(entity: TravelGuide) -> "TravelGuideDTO":
-        """ドメインエンティティからDTOを生成する.
+        """ドメインエンティティからDTOを生成する
 
         Args:
             entity: TravelGuideエンティティ

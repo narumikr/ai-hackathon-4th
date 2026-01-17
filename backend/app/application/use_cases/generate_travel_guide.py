@@ -1,4 +1,4 @@
-"""旅行ガイド生成ユースケース."""
+"""旅行ガイド生成ユースケース"""
 
 from __future__ import annotations
 
@@ -103,42 +103,42 @@ _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
 
 
 def _require_str(value: object, field_name: str) -> str:
-    """必須の文字列フィールドを検証する."""
+    """必須の文字列フィールドを検証する"""
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} is required and must be a non-empty string.")
     return value.strip()
 
 
 def _require_list(value: object, field_name: str) -> list:
-    """必須の配列フィールドを検証する."""
+    """必須の配列フィールドを検証する"""
     if not isinstance(value, list) or not value:
         raise ValueError(f"{field_name} is required and must be a non-empty list.")
     return value
 
 
 def _require_dict(value: object, field_name: str) -> dict:
-    """必須の辞書フィールドを検証する."""
+    """必須の辞書フィールドを検証する"""
     if not isinstance(value, dict) or not value:
         raise ValueError(f"{field_name} is required and must be a non-empty dict.")
     return value
 
 
 def _require_number(value: object, field_name: str) -> float:
-    """数値フィールドの検証."""
+    """数値フィールドの検証"""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{field_name} must be a number.")
     return float(value)
 
 
 def _require_int(value: object, field_name: str) -> int:
-    """整数フィールドの検証."""
+    """整数フィールドの検証"""
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{field_name} must be an int.")
     return value
 
 
 def _build_timeline(items: list, spot_names: set[str]) -> list[HistoricalEvent]:
-    """年表データを値オブジェクトに変換する."""
+    """年表データを値オブジェクトに変換する"""
     timeline: list[HistoricalEvent] = []
     for index, item in enumerate(items):
         if not isinstance(item, dict):
@@ -168,7 +168,7 @@ def _build_timeline(items: list, spot_names: set[str]) -> list[HistoricalEvent]:
 
 
 def _build_spot_details(items: list, plan_spot_names: set[str]) -> list[SpotDetail]:
-    """スポット詳細データを値オブジェクトに変換する."""
+    """スポット詳細データを値オブジェクトに変換する"""
     spot_details: list[SpotDetail] = []
     for index, item in enumerate(items):
         if not isinstance(item, dict):
@@ -211,7 +211,7 @@ def _build_spot_details(items: list, plan_spot_names: set[str]) -> list[SpotDeta
 
 
 def _build_checkpoints(items: list, plan_spot_names: set[str]) -> list[Checkpoint]:
-    """チェックポイントデータを値オブジェクトに変換する."""
+    """チェックポイントデータを値オブジェクトに変換する"""
     checkpoints: list[Checkpoint] = []
     for index, item in enumerate(items):
         if not isinstance(item, dict):
@@ -241,7 +241,7 @@ def _build_checkpoints(items: list, plan_spot_names: set[str]) -> list[Checkpoin
 
 
 def _build_map_data(map_data: dict) -> MapData:
-    """地図データを検証して構築する."""
+    """地図データを検証して構築する"""
     center = _require_dict(map_data.get("center"), "mapData.center")
     lat = _require_number(center.get("lat"), "mapData.center.lat")
     lng = _require_number(center.get("lng"), "mapData.center.lng")
@@ -265,7 +265,7 @@ def _build_map_data(map_data: dict) -> MapData:
 
 
 class GenerateTravelGuideUseCase:
-    """旅行ガイド生成ユースケース.
+    """旅行ガイド生成ユースケース
 
     旅行計画を取得し、外部AI/検索サービスを用いて旅行ガイドを生成する。
     """
@@ -277,7 +277,7 @@ class GenerateTravelGuideUseCase:
         ai_service: IAIService,
         composer: TravelGuideComposer | None = None,
     ) -> None:
-        """ユースケースを初期化する.
+        """ユースケースを初期化する
 
         Args:
             plan_repository: TravelPlanリポジトリ
@@ -291,7 +291,7 @@ class GenerateTravelGuideUseCase:
         self._composer = composer or TravelGuideComposer()
 
     async def execute(self, plan_id: str) -> TravelGuideDTO:
-        """旅行ガイドを生成する.
+        """旅行ガイドを生成する
 
         Args:
             plan_id: 旅行計画ID
@@ -380,7 +380,7 @@ class GenerateTravelGuideUseCase:
 
 
 def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:
-    """歴史情報収集用のプロンプトを生成する."""
+    """歴史情報収集用のプロンプトを生成する"""
     spots_text = "\n".join(
         [
             f"- {spot.name} (lat: {spot.location.lat}, lng: {spot.location.lng})"
@@ -396,7 +396,7 @@ def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:
 
 
 def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) -> str:
-    """旅行ガイド生成用のプロンプトを生成する."""
+    """旅行ガイド生成用のプロンプトを生成する"""
     spots_text = "\n".join(
         [
             f"- {spot.name} (lat: {spot.location.lat}, lng: {spot.location.lng})"
