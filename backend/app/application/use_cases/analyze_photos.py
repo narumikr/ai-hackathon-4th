@@ -203,7 +203,6 @@ class AnalyzePhotosUseCase:
         if existing_reflection is not None:
             if existing_reflection.user_id != user_id:
                 raise ValueError("user_id does not match the reflection owner.")
-            existing_photo_ids = set()
             for photo in existing_reflection.photos:
                 if photo.id is None:
                     raise ValueError("photo id is required.")
