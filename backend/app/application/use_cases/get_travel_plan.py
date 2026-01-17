@@ -1,6 +1,7 @@
 """旅行計画取得ユースケース."""
 
 from app.application.dto.travel_plan_dto import TravelPlanDTO
+from app.application.use_cases.travel_plan_helpers import validate_required_str
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 
@@ -31,6 +32,8 @@ class GetTravelPlanUseCase:
         Raises:
             TravelPlanNotFoundError: 旅行計画が見つからない場合
         """
+        validate_required_str(plan_id, "plan_id")
+
         travel_plan = self._repository.find_by_id(plan_id)
         if travel_plan is None:
             raise TravelPlanNotFoundError(plan_id)
@@ -61,5 +64,7 @@ class ListTravelPlansUseCase:
         Returns:
             list[TravelPlanDTO]: 旅行計画リスト
         """
+        validate_required_str(user_id, "user_id")
+
         travel_plans = self._repository.find_by_user_id(user_id)
         return [TravelPlanDTO.from_entity(plan) for plan in travel_plans]

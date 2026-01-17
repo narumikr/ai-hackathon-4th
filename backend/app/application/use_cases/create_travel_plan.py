@@ -1,11 +1,12 @@
 """旅行計画作成ユースケース."""
 
-import uuid
-
 from app.application.dto.travel_plan_dto import TravelPlanDTO
-from app.domain.travel_plan.entity import TouristSpot, TravelPlan
+from app.application.use_cases.travel_plan_helpers import (
+    build_tourist_spots,
+    validate_required_str,
+)
+from app.domain.travel_plan.entity import TravelPlan
 from app.domain.travel_plan.repository import ITravelPlanRepository
-from app.domain.travel_plan.value_objects import Location
 
 
 class CreateTravelPlanUseCase:
@@ -43,25 +44,13 @@ class CreateTravelPlanUseCase:
         Raises:
             ValueError: バリデーションエラー
         """
-        # 辞書 → エンティティ変換
-        tourist_spots = []
-        for spot in spots:
-            spot_id = spot.get("id")
-            if not spot_id or not str(spot_id).strip():
-                spot_id = str(uuid.uuid4())
+        # 早期失敗: 必須フィールドの検証
+        validate_required_str(user_id, "user_id")
+        validate_required_str(title, "title")
+        validate_required_str(destination, "destination")
 
-            tourist_spots.append(
-                TouristSpot(
-                    id=str(spot_id),
-                    name=spot["name"],
-                    location=Location(
-                        lat=spot["location"]["lat"],
-                        lng=spot["location"]["lng"],
-                    ),
-                    description=spot.get("description"),
-                    user_notes=spot.get("userNotes"),
-                )
-            )
+        # 辞書 → エンティティ変換
+        tourist_spots = build_tourist_spots(spots)
 
         # ドメインエンティティの生成
         travel_plan = TravelPlan(

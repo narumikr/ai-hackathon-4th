@@ -1,12 +1,12 @@
 """旅行計画更新ユースケース."""
 
-import uuid
-
 from app.application.dto.travel_plan_dto import TravelPlanDTO
-from app.domain.travel_plan.entity import TouristSpot
+from app.application.use_cases.travel_plan_helpers import (
+    build_tourist_spots,
+    validate_required_str,
+)
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
-from app.domain.travel_plan.value_objects import Location
 
 
 class UpdateTravelPlanUseCase:
@@ -45,6 +45,9 @@ class UpdateTravelPlanUseCase:
             TravelPlanNotFoundError: 旅行計画が見つからない場合
             ValueError: バリデーションエラー
         """
+        # 早期失敗: 必須フィールドの検証
+        validate_required_str(plan_id, "plan_id")
+
         # 既存のエンティティを取得
         travel_plan = self._repository.find_by_id(plan_id)
         if travel_plan is None:
@@ -53,24 +56,7 @@ class UpdateTravelPlanUseCase:
         # 観光スポットの変換
         tourist_spots = None
         if spots is not None:
-            tourist_spots = []
-            for spot in spots:
-                spot_id = spot.get("id")
-                if not spot_id or not str(spot_id).strip():
-                    spot_id = str(uuid.uuid4())
-
-                tourist_spots.append(
-                    TouristSpot(
-                        id=str(spot_id),
-                        name=spot["name"],
-                        location=Location(
-                            lat=spot["location"]["lat"],
-                            lng=spot["location"]["lng"],
-                        ),
-                        description=spot.get("description"),
-                        user_notes=spot.get("userNotes"),
-                    )
-                )
+            tourist_spots = build_tourist_spots(spots, allow_empty=True)
 
         # エンティティの更新
         travel_plan.update_plan(
