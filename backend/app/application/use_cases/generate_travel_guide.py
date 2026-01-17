@@ -109,14 +109,14 @@ def _require_str(value: object, field_name: str) -> str:
     return value.strip()
 
 
-def _require_list(value: object, field_name: str) -> list:
+def _require_list(value: object, field_name: str) -> list[Any]:
     """必須の配列フィールドを検証する"""
     if not isinstance(value, list) or not value:
         raise ValueError(f"{field_name} is required and must be a non-empty list.")
     return value
 
 
-def _require_dict(value: object, field_name: str) -> dict:
+def _require_dict(value: object, field_name: str) -> dict[str, Any]:
     """必須の辞書フィールドを検証する"""
     if not isinstance(value, dict) or not value:
         raise ValueError(f"{field_name} is required and must be a non-empty dict.")
