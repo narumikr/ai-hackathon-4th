@@ -56,7 +56,8 @@ def upgrade() -> None:
     sa.Column('spot_details', sa.JSON(), nullable=False),
     sa.Column('checkpoints', sa.JSON(), nullable=False),
     sa.Column('map_data', sa.JSON(), nullable=False),
-    sa.Column('generated_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['plan_id'], ['travel_plans.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
