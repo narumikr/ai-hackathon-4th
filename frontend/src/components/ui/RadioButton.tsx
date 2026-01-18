@@ -88,12 +88,7 @@ export function RadioButton({
             <p
               id={descriptionId}
               role="alert"
-              className={[
-                'mt-0.5 text-sm',
-                'text-red-600',
-              ]
-                .filter(Boolean)
-                .join(' ')}
+              className={['mt-0.5 text-sm', 'text-red-600'].filter(Boolean).join(' ')}
             >
               {errorMessage}
             </p>
