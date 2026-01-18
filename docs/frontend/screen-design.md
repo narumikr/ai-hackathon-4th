@@ -29,7 +29,7 @@
 - **主要機能**:
   - 旅行計画一覧の表示
   - 新規旅行作成ボタン
-  - 各旅行の状態表示（planning/traveling/completed）
+  - 各旅行の状態表示（planning/completed）
   - 旅行の編集・削除機能
 - **コンポーネント**: 
   - `app/travel/page.tsx`
@@ -101,6 +101,7 @@
   - 処理進行状況の表示
   - 処理時間の目安表示
   - キャンセル機能（可能な場合）
+  - ガイド/振り返り生成ステータスに応じた表示切替
 - **コンポーネント**: `components/ui/LoadingSpinner.tsx`
 
 #### エラー画面
