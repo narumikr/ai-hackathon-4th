@@ -1,8 +1,8 @@
-# フロントエンド旅行計画シーケンス図
+# フロントエンド旅行計画シーケンス図（旅行前フェーズ）
 
 ## 概要
 
-歴史学習特化型旅行AIエージェントシステムのフロントエンド旅行計画部分のシーケンス図です。スタンダードレイアウトを採用し、Next.js 16 App Routerを使用した実装を前提としています。
+歴史学習特化型旅行AIエージェントシステムのフロントエンド旅行計画部分（旅行前フェーズ）のシーケンス図です。スタンダードレイアウトを採用し、Next.js 16 App Routerを使用した実装を前提としています。本ドキュメントでは旅行前フェーズ（旅行計画・ガイド生成）のみを対象とします。
 
 ## 関連ドキュメント
 
@@ -283,6 +283,7 @@ sequenceDiagram
 export function TravelGuide({ planId }: { planId: string }) {
   const [travelPlan, setTravelPlan] = useState<TravelPlan | null>(null);
   const [loading, setLoading] = useState(true);
+<<<<<<< HEAD
   const [generationStatus, setGenerationStatus] = useState<string>('');
   
   useEffect(() => {
@@ -305,6 +306,12 @@ export function TravelGuide({ planId }: { planId: string }) {
   }, [planId]);
   
   const fetchTravelPlan = async () => {
+=======
+  const [error, setError] = useState<string>('');
+  const [generationStatus, setGenerationStatus] = useState<string>('');
+  
+  const fetchTravelPlan = useCallback(async () => {
+>>>>>>> f62c2f9d203a975446bf316a18238fcace54dd3c
     try {
       const plan = await getTravelPlan(planId);
       setTravelPlan(plan);
@@ -313,6 +320,7 @@ export function TravelGuide({ planId }: { planId: string }) {
       if (plan.status === 'processing') {
         updateGenerationStatus(plan);
       }
+<<<<<<< HEAD
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
       setError(errorMessage);
@@ -320,6 +328,46 @@ export function TravelGuide({ planId }: { planId: string }) {
       setLoading(false);
     }
   };
+=======
+      
+      return plan;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [planId]);
+  
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    
+    const startPolling = async () => {
+      // 初回取得
+      const plan = await fetchTravelPlan();
+      
+      // 完了していない場合は5秒間隔でポーリング開始
+      if (isMounted && plan && plan.status === 'processing') {
+        interval = setInterval(async () => {
+          const updatedPlan = await fetchTravelPlan();
+          // completedになったらポーリング停止
+          if (updatedPlan && updatedPlan.status === 'completed') {
+            if (interval) clearInterval(interval);
+          }
+        }, 5000);
+      }
+    };
+    
+    startPolling();
+    
+    return () => {
+      isMounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [planId, fetchTravelPlan]);
+>>>>>>> f62c2f9d203a975446bf316a18238fcace54dd3c
   
   const updateGenerationStatus = (plan: TravelPlan) => {
     // AI生成の進行状況を表示
