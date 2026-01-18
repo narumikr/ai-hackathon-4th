@@ -129,7 +129,7 @@ describe('FileUploader', () => {
       render(<FileUploader onUpload={mockOnUpload} disabled />);
 
       const dropzone = screen.getByRole('button');
-      expect(dropzone).toHaveAttribute('aria-disabled', 'true');
+      expect(dropzone).toHaveAttribute('disabled');
     });
 
     it('has tabIndex -1 when disabled', () => {
@@ -143,7 +143,7 @@ describe('FileUploader', () => {
       render(<FileUploader onUpload={mockOnUpload} />);
 
       const dropzone = screen.getByRole('button');
-      expect(dropzone).toHaveAttribute('tabindex', '0');
+      expect(dropzone).not.toHaveAttribute('tabindex');
     });
 
     it('applies disabled styles', () => {
