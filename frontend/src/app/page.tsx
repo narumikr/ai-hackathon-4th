@@ -1,6 +1,6 @@
 import { Container } from '@/components/layout';
 import { Button, Emoji } from '@/components/ui';
-import { APP_DESCRIPTION, APP_NAME, BUTTON_LABELS, EMOJI_LABELS, HOME_CONTENT } from '@/constants';
+import { APP_DESCRIPTION, APP_NAME, BUTTON_LABELS, HOME_CONTENT } from '@/constants';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -34,22 +34,13 @@ export default function HomePage() {
             {HOME_CONTENT.SECTION_TITLES.MAIN_FEATURES}
           </h2>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {HOME_CONTENT.FEATURES.map((feature, index) => (
+            {HOME_CONTENT.FEATURES.map(feature => (
               <div
-                key={`feature-${index}`}
+                key={feature.title}
                 className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="mb-4 text-4xl">
-                  <Emoji
-                    symbol={feature.emoji}
-                    label={
-                      index === 0
-                        ? EMOJI_LABELS.BOOK
-                        : index === 1
-                          ? EMOJI_LABELS.MAP
-                          : EMOJI_LABELS.CAMERA
-                    }
-                  />
+                  <Emoji symbol={feature.emoji} label={feature.title} />
                 </div>
                 <h3 className="mb-2 font-semibold text-neutral-900 text-xl">{feature.title}</h3>
                 <p className="text-neutral-600">{feature.description}</p>
@@ -67,7 +58,7 @@ export default function HomePage() {
           </h2>
           <div className="mx-auto max-w-3xl space-y-8">
             {HOME_CONTENT.STEPS.map((step, index) => (
-              <div key={`step-${index}`} className="flex gap-4">
+              <div key={step.title} className="flex gap-4">
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-lg text-primary-950">
                   {index + 1}
                 </div>
