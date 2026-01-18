@@ -12,10 +12,36 @@ env:
   PNPM_VERSION: '8'
 
 jobs:
-  quality-check:
-    name: Code Quality Check
+  detect-changes:
+    name: Detect Changes
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  test-frontend:
+    name: Test Frontend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -33,6 +59,36 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
+      - name: Install Just
+        uses: extractions/setup-just@v2
+
+      - name: Install frontend dependencies
+        run: just install-frontend
+
+      - name: Run frontend tests
+        run: just test-frontend-ci
+
+      - name: Build frontend
+        run: just build-frontend
+
+      - name: Frontend test summary
+        run: |
+          echo "## Frontend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- All tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Build successful" >> $GITHUB_STEP_SUMMARY
+
+  test-backend:
+    name: Test Backend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -47,14 +103,11 @@ jobs:
       - name: Install Just
         uses: extractions/setup-just@v2
 
-      - name: Install all dependencies
-        run: just install-all
+      - name: Install backend dependencies
+        run: just install-backend
 
-      - name: Run all tests with coverage
-        run: just test-backend-cov && just test-frontend
-
-      - name: Build frontend
-        run: just build-frontend
+      - name: Run backend tests with coverage
+        run: just test-backend-cov
 
       - name: Upload backend coverage
         uses: codecov/codecov-action@v4
@@ -64,16 +117,61 @@ jobs:
           name: backend-coverage
           fail_ci_if_error: false
 
-      - name: Quality check summary
+      - name: Backend test summary
         run: |
-          echo "## Stage 2: Code Quality Check Results ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ All dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ All tests passed (frontend & backend)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Frontend build successful" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Backend coverage report generated" >> $GITHUB_STEP_SUMMARY
+          echo "## Backend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- All tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Coverage report generated" >> $GITHUB_STEP_SUMMARY
+
+  quality-check-complete:
+    name: Quality Check Complete
+    needs: [detect-changes, test-frontend, test-backend]
+    if: always() && !cancelled() && needs.detect-changes.result == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check results
+        run: |
+          frontend_changed="${{ needs.detect-changes.outputs.frontend }}"
+          backend_changed="${{ needs.detect-changes.outputs.backend }}"
+          frontend_result="${{ needs.test-frontend.result }}"
+          backend_result="${{ needs.test-backend.result }}"
+
+          echo "## Stage 2: Code Quality Check Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🎉 **All quality checks completed successfully!**" >> $GITHUB_STEP_SUMMARY
-          echo "PR is ready for review." >> $GITHUB_STEP_SUMMARY
+
+          if [ "$frontend_changed" == "true" ]; then
+            if [ "$frontend_result" == "success" ]; then
+              echo "- Frontend: Tests passed, Build successful" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Frontend: Failed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- Frontend: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$backend_changed" == "true" ]; then
+            if [ "$backend_result" == "success" ]; then
+              echo "- Backend: Tests passed, Coverage generated" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Backend: Failed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- Backend: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Fail if any required job failed
+          if [ "$frontend_changed" == "true" ] && [ "$frontend_result" != "success" ]; then
+            echo "Frontend quality check failed"
+            exit 1
+          fi
+          if [ "$backend_changed" == "true" ] && [ "$backend_result" != "success" ]; then
+            echo "Backend quality check failed"
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All quality checks completed successfully! PR is ready for review." >> $GITHUB_STEP_SUMMARY
 
   # Stage 1が失敗した場合の処理
   lint-check-failed:
@@ -84,7 +182,7 @@ jobs:
     steps:
       - name: Report failure
         run: |
-          echo "## ❌ Stage 1: Lint Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "## Stage 1: Lint Check Failed" >> $GITHUB_STEP_SUMMARY
           echo "Code Quality Check was skipped because lint check failed." >> $GITHUB_STEP_SUMMARY
           echo "Please fix the lint errors and push again." >> $GITHUB_STEP_SUMMARY
           exit 1
