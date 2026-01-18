@@ -1,5 +1,6 @@
 """TravelPlan API統合テスト."""
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -8,18 +9,27 @@ from app.infrastructure.persistence.models import TravelPlanModel
 from main import app
 
 
-def test_create_travel_plan(db_session: Session):
-    """前提条件: テスト用DBセッション
-    実行: POST /api/v1/travel-plans
-    検証: ステータスコード201、レスポンスデータ
-    """
-    # 前提条件: テスト用DBセッションを使用
+@pytest.fixture
+def api_client(db_session: Session):
+    """テスト用DBセッションを注入したTestClientを返す."""
 
     def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
     client = TestClient(app)
+
+    yield client
+
+    app.dependency_overrides.clear()
+
+
+def test_create_travel_plan(api_client: TestClient):
+    """前提条件: テスト用DBセッション
+    実行: POST /api/v1/travel-plans
+    検証: ステータスコード201、レスポンスデータ
+    """
+    # 前提条件: テスト用DBセッションを使用
 
     # リクエストデータ
     request_data = {
@@ -37,7 +47,7 @@ def test_create_travel_plan(db_session: Session):
     }
 
     # 実行: POST /api/v1/travel-plans
-    response = client.post("/api/v1/travel-plans", json=request_data)
+    response = api_client.post("/api/v1/travel-plans", json=request_data)
 
     # 検証: ステータスコード201、レスポンスデータ
     assert response.status_code == 201
@@ -52,25 +62,93 @@ def test_create_travel_plan(db_session: Session):
     assert "createdAt" in data
     assert "updatedAt" in data
 
-    # クリーンアップ
-    app.dependency_overrides.clear()
+
+def test_create_travel_plan_with_empty_spots(api_client: TestClient):
+    """前提条件: 空のspotsを含むリクエスト
+    実行: POST /api/v1/travel-plans
+    検証: ステータスコード201、spotsが空配列で返る
+    """
+    # 前提条件: テスト用DBセッションを使用
+
+    # リクエストデータ
+    request_data = {
+        "userId": "test_user_002",
+        "title": "奈良日帰りプラン",
+        "destination": "奈良",
+        "spots": [],
+    }
+
+    # 実行: POST /api/v1/travel-plans
+    response = api_client.post("/api/v1/travel-plans", json=request_data)
+
+    # 検証: ステータスコード201、spotsが空配列で返る
+    assert response.status_code == 201
+    data = response.json()
+    assert data["userId"] == "test_user_002"
+    assert data["title"] == "奈良日帰りプラン"
+    assert data["destination"] == "奈良"
+    assert data["spots"] == []
 
 
-def test_get_travel_plan(db_session: Session, sample_travel_plan: TravelPlanModel):
+def test_create_travel_plan_without_spots(api_client: TestClient):
+    """前提条件: spotsを未送信のリクエスト
+    実行: POST /api/v1/travel-plans
+    検証: ステータスコード201、spotsが空配列で返る
+    """
+    # 前提条件: テスト用DBセッションを使用
+
+    # リクエストデータ
+    request_data = {
+        "userId": "test_user_003",
+        "title": "広島歴史巡り",
+        "destination": "広島",
+    }
+
+    # 実行: POST /api/v1/travel-plans
+    response = api_client.post("/api/v1/travel-plans", json=request_data)
+
+    # 検証: ステータスコード201、spotsが空配列で返る
+    assert response.status_code == 201
+    data = response.json()
+    assert data["userId"] == "test_user_003"
+    assert data["title"] == "広島歴史巡り"
+    assert data["destination"] == "広島"
+    assert data["spots"] == []
+
+
+def test_create_travel_plan_with_null_spots(api_client: TestClient):
+    """前提条件: spotsがnullのリクエスト
+    実行: POST /api/v1/travel-plans
+    検証: ステータスコード422
+    """
+    # 前提条件: テスト用DBセッションを使用
+
+    # リクエストデータ
+    request_data = {
+        "userId": "test_user_004",
+        "title": "鎌倉散策",
+        "destination": "鎌倉",
+        "spots": None,
+    }
+
+    # 実行: POST /api/v1/travel-plans
+    response = api_client.post("/api/v1/travel-plans", json=request_data)
+
+    # 検証: ステータスコード422
+    assert response.status_code == 422
+
+
+def test_get_travel_plan(
+    api_client: TestClient, sample_travel_plan: TravelPlanModel
+):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: GET /api/v1/travel-plans/{id}
     検証: ステータスコード200、レスポンスデータ
     """
     # 前提条件: テスト用DBセッションとサンプルデータ
 
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
-
     # 実行: GET /api/v1/travel-plans/{id}
-    response = client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}")
+    response = api_client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}")
 
     # 検証: ステータスコード200、レスポンスデータ
     assert response.status_code == 200
@@ -80,48 +158,34 @@ def test_get_travel_plan(db_session: Session, sample_travel_plan: TravelPlanMode
     assert data["destination"] == sample_travel_plan.destination
     assert len(data["spots"]) == len(sample_travel_plan.spots)
 
-    # クリーンアップ
-    app.dependency_overrides.clear()
 
-
-def test_get_travel_plan_not_found(db_session: Session):
+def test_get_travel_plan_not_found(api_client: TestClient):
     """前提条件: 存在しないID
     実行: GET /api/v1/travel-plans/{non_existent_id}
     検証: ステータスコード404
     """
     # 前提条件: 存在しないID
 
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
-
     # 実行: GET /api/v1/travel-plans/{non_existent_id}
-    response = client.get("/api/v1/travel-plans/non-existent-id")
+    response = api_client.get("/api/v1/travel-plans/non-existent-id")
 
     # 検証: ステータスコード404
     assert response.status_code == 404
 
-    # クリーンアップ
-    app.dependency_overrides.clear()
 
-
-def test_list_travel_plans(db_session: Session, sample_travel_plan: TravelPlanModel):
+def test_list_travel_plans(
+    api_client: TestClient, sample_travel_plan: TravelPlanModel
+):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: GET /api/v1/travel-plans?user_id={id}
     検証: ステータスコード200、レスポンスリスト
     """
     # 前提条件: テスト用DBセッションとサンプルデータ
 
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
-
     # 実行: GET /api/v1/travel-plans?user_id={id}
-    response = client.get(f"/api/v1/travel-plans?user_id={sample_travel_plan.user_id}")
+    response = api_client.get(
+        f"/api/v1/travel-plans?user_id={sample_travel_plan.user_id}"
+    )
 
     # 検証: ステータスコード200、レスポンスリスト
     assert response.status_code == 200
@@ -130,22 +194,15 @@ def test_list_travel_plans(db_session: Session, sample_travel_plan: TravelPlanMo
     assert len(data) >= 1
     assert data[0]["id"] == sample_travel_plan.id
 
-    # クリーンアップ
-    app.dependency_overrides.clear()
 
-
-def test_update_travel_plan(db_session: Session, sample_travel_plan: TravelPlanModel):
+def test_update_travel_plan(
+    api_client: TestClient, sample_travel_plan: TravelPlanModel
+):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: PUT /api/v1/travel-plans/{id}
     検証: ステータスコード200、更新されたデータ
     """
     # 前提条件: テスト用DBセッションとサンプルデータ
-
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
 
     # リクエストデータ
     update_data = {
@@ -154,7 +211,7 @@ def test_update_travel_plan(db_session: Session, sample_travel_plan: TravelPlanM
     }
 
     # 実行: PUT /api/v1/travel-plans/{id}
-    response = client.put(
+    response = api_client.put(
         f"/api/v1/travel-plans/{sample_travel_plan.id}", json=update_data
     )
 
@@ -165,22 +222,13 @@ def test_update_travel_plan(db_session: Session, sample_travel_plan: TravelPlanM
     assert data["title"] == "京都歴史探訪の旅（更新版）"
     assert data["destination"] == "京都・大阪"
 
-    # クリーンアップ
-    app.dependency_overrides.clear()
 
-
-def test_update_travel_plan_not_found(db_session: Session):
+def test_update_travel_plan_not_found(api_client: TestClient):
     """前提条件: 存在しないID
     実行: PUT /api/v1/travel-plans/{non_existent_id}
     検証: ステータスコード404
     """
     # 前提条件: 存在しないID
-
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
 
     # リクエストデータ
     update_data = {
@@ -188,57 +236,38 @@ def test_update_travel_plan_not_found(db_session: Session):
     }
 
     # 実行: PUT /api/v1/travel-plans/{non_existent_id}
-    response = client.put("/api/v1/travel-plans/non-existent-id", json=update_data)
+    response = api_client.put("/api/v1/travel-plans/non-existent-id", json=update_data)
 
     # 検証: ステータスコード404
     assert response.status_code == 404
 
-    # クリーンアップ
-    app.dependency_overrides.clear()
 
-
-def test_delete_travel_plan(db_session: Session, sample_travel_plan: TravelPlanModel):
+def test_delete_travel_plan(
+    api_client: TestClient, db_session: Session, sample_travel_plan: TravelPlanModel
+):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: DELETE /api/v1/travel-plans/{id}
     検証: ステータスコード204、データが削除されている
     """
     # 前提条件: テスト用DBセッションとサンプルデータ
 
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
-
     # 実行: DELETE /api/v1/travel-plans/{id}
-    response = client.delete(f"/api/v1/travel-plans/{sample_travel_plan.id}")
+    response = api_client.delete(f"/api/v1/travel-plans/{sample_travel_plan.id}")
 
     # 検証: ステータスコード204、データが削除されている
     assert response.status_code == 204
     assert db_session.get(TravelPlanModel, sample_travel_plan.id) is None
 
-    # クリーンアップ
-    app.dependency_overrides.clear()
 
-
-def test_delete_travel_plan_not_found(db_session: Session):
+def test_delete_travel_plan_not_found(api_client: TestClient):
     """前提条件: 存在しないID
     実行: DELETE /api/v1/travel-plans/{non_existent_id}
     検証: ステータスコード404
     """
     # 前提条件: 存在しないID
 
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
-
     # 実行: DELETE /api/v1/travel-plans/{non_existent_id}
-    response = client.delete("/api/v1/travel-plans/non-existent-id")
+    response = api_client.delete("/api/v1/travel-plans/non-existent-id")
 
     # 検証: ステータスコード404
     assert response.status_code == 404
-
-    # クリーンアップ
-    app.dependency_overrides.clear()

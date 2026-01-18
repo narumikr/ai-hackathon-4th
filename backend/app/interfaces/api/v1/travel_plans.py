@@ -95,8 +95,14 @@ def list_travel_plans(
         list[TravelPlanResponse]: 旅行計画リスト
     """
     use_case = ListTravelPlansUseCase(repository)
-    dtos = use_case.execute(user_id=user_id)
-    return [TravelPlanResponse(**dto.__dict__) for dto in dtos]
+    try:
+        dtos = use_case.execute(user_id=user_id)
+        return [TravelPlanResponse(**dto.__dict__) for dto in dtos]
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
 
 
 @router.get(
@@ -125,6 +131,11 @@ def get_travel_plan(
     try:
         dto = use_case.execute(plan_id=plan_id)
         return TravelPlanResponse(**dto.__dict__)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
     except TravelPlanNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -119,10 +119,16 @@ class TravelGuideModel(Base):
     map_data: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
     # タイムスタンプ
-    generated_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
-        default=datetime.now(UTC),
+        default=lambda: datetime.now(UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
     # リレーションシップ

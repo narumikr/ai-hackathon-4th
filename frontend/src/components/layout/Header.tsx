@@ -50,10 +50,8 @@ export function Header({ className = '' }: HeaderProps) {
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                role="img"
                 aria-hidden="true"
               >
-                <title>メニューアイコン</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

@@ -31,12 +31,12 @@ export function MobileMenu({ isOpen, onClose, currentPath }: MobileMenuProps) {
   return (
     <>
       {/* Overlay */}
-      <div
+      <button
+        type="button"
         className="fixed inset-0 z-40 bg-black/50 lg:hidden"
         onClick={onClose}
-        onKeyDown={e => {
-          if (e.key === 'Escape') onClose();
-        }}
+        aria-label="メニューを閉じる"
+        tabIndex={-1}
       />
 
       {/* Menu Panel */}
@@ -55,10 +55,8 @@ export function MobileMenu({ isOpen, onClose, currentPath }: MobileMenuProps) {
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
-                role="img"
                 aria-hidden="true"
               >
-                <title>閉じるアイコン</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
