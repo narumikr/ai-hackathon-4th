@@ -275,6 +275,50 @@ def test_reflection_property_information_integration(
         max_size=5,
     ),
 )
+def test_reflection_property_information_reorganization(
+    photos: list[Photo],
+    travel_summary: str,
+    spot_reflections: list[SpotReflection],
+    next_trip_suggestions: list[str],
+) -> None:
+    """Property 12: Information reorganizationを検証する
+
+    前提条件:
+    - 1〜5個のPhotoが生成される
+    - 有効なtravel_summaryが生成される
+    - 1〜5個のユニークなspot_nameを持つSpotReflectionが生成される
+    - 1〜5個のnext_trip_suggestionsが生成される
+
+    検証項目:
+    - spot_reflectionsの順序と内容が保持されて再整理される
+    - next_trip_suggestionsの順序と内容が保持されて再整理される
+    """
+    analyzer = ReflectionAnalyzer()
+
+    pamphlet = analyzer.build_pamphlet(
+        photos=photos,
+        travel_summary=travel_summary,
+        spot_reflections=spot_reflections,
+        next_trip_suggestions=next_trip_suggestions,
+    )
+
+    # 検証1: spot_reflectionsの順序と内容が保持される
+    assert pamphlet.spot_reflections == tuple(spot_reflections)
+
+    # 検証2: next_trip_suggestionsの順序と内容が保持される
+    assert pamphlet.next_trip_suggestions == tuple(next_trip_suggestions)
+
+
+@given(
+    photos=_photo_list(),
+    travel_summary=_non_empty_printable_text(max_size=200),
+    spot_reflections=_spot_reflections(),
+    next_trip_suggestions=st.lists(
+        _non_empty_printable_text(max_size=120),
+        min_size=1,
+        max_size=5,
+    ),
+)
 def test_reflection_property_reflection_pamphlet_generation(
     photos: list[Photo],
     travel_summary: str,
@@ -320,6 +364,58 @@ def test_reflection_property_reflection_pamphlet_generation(
     # 検証5: next_trip_suggestionsが非空である（完全性）
     assert pamphlet.next_trip_suggestions
 
+
+@given(
+    photos=_photo_list(),
+    travel_summary=_non_empty_printable_text(max_size=200),
+    spot_reflections=_spot_reflections(),
+    next_trip_suggestions=st.lists(
+        _non_empty_printable_text(max_size=120),
+        min_size=1,
+        max_size=5,
+    ),
+)
+def test_reflection_property_reflection_pamphlet_completeness(
+    photos: list[Photo],
+    travel_summary: str,
+    spot_reflections: list[SpotReflection],
+    next_trip_suggestions: list[str],
+) -> None:
+    """Property 14: Reflection pamphlet completenessを検証する
+
+    前提条件:
+    - 1〜5個のPhotoが生成される
+    - 有効なtravel_summaryが生成される
+    - 1〜5個のユニークなspot_nameを持つSpotReflectionが生成される
+    - 1〜5個のnext_trip_suggestionsが生成される
+
+    検証項目:
+    - travel_summaryが非空である
+    - spot_reflectionsが旅行全体の振り返り情報を含む
+    - next_trip_suggestionsが次の旅の提案を含む
+    """
+    analyzer = ReflectionAnalyzer()
+
+    pamphlet = analyzer.build_pamphlet(
+        photos=photos,
+        travel_summary=travel_summary,
+        spot_reflections=spot_reflections,
+        next_trip_suggestions=next_trip_suggestions,
+    )
+
+    # 検証1: travel_summaryが非空である
+    assert pamphlet.travel_summary.strip()
+
+    # 検証2: spot_reflectionsが非空であり、内容が欠落していない
+    assert pamphlet.spot_reflections
+    for item in pamphlet.spot_reflections:
+        assert item["spot_name"].strip()
+        assert item["reflection"].strip()
+
+    # 検証3: next_trip_suggestionsが非空であり、内容が欠落していない
+    assert pamphlet.next_trip_suggestions
+    for suggestion in pamphlet.next_trip_suggestions:
+        assert suggestion.strip()
 
 @given(
     travel_summary=_non_empty_printable_text(max_size=200),

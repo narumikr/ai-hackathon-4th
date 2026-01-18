@@ -3,19 +3,49 @@ name: "Stage 1: Lint Check"
 on:
   pull_request:
     types: [opened, reopened, synchronize]
-    branches: [main, develop]
+    branches: [main, develop/**]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
 env:
   NODE_VERSION: '18'
   PYTHON_VERSION: '3.12'
   PNPM_VERSION: '8'
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  lint-check:
-    name: Lint Check
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  lint-frontend:
+    name: Lint Frontend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -32,6 +62,32 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
+      - name: Install Just
+        uses: extractions/setup-just@v2
+
+      - name: Install frontend dependencies
+        run: just install-frontend
+
+      - name: Run frontend quality checks
+        run: just check-quality-frontend
+
+      - name: Frontend lint summary
+        run: |
+          echo "## Frontend Lint Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Lint check passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Format check passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Type check passed" >> $GITHUB_STEP_SUMMARY
+
+  lint-backend:
+    name: Lint Backend
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -46,16 +102,65 @@ jobs:
       - name: Install Just
         uses: extractions/setup-just@v2
 
-      - name: Install all dependencies
-        run: just install-all
+      - name: Install backend dependencies
+        run: just install-backend
 
-      - name: Run quality checks
-        run: just check-quality
+      - name: Run backend quality checks
+        run: just check-quality-backend
 
-      - name: Lint check summary
+      - name: Backend lint summary
         run: |
-          echo "## Stage 1: Lint Check Results ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Quality checks passed (lint, format, typecheck)" >> $GITHUB_STEP_SUMMARY
+          echo "## Backend Lint Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Lint check passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Format check passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Type check passed" >> $GITHUB_STEP_SUMMARY
+
+  lint-check-complete:
+    name: Lint Check Complete
+    needs: [detect-changes, lint-frontend, lint-backend]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check results
+        run: |
+          frontend_changed="${{ needs.detect-changes.outputs.frontend }}"
+          backend_changed="${{ needs.detect-changes.outputs.backend }}"
+          frontend_result="${{ needs.lint-frontend.result }}"
+          backend_result="${{ needs.lint-backend.result }}"
+
+          echo "## Stage 1: Lint Check Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🎯 **Next**: Code Quality Check will start automatically" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$frontend_changed" == "true" ]; then
+            if [ "$frontend_result" == "success" ]; then
+              echo "- Frontend: Passed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Frontend: Failed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- Frontend: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$backend_changed" == "true" ]; then
+            if [ "$backend_result" == "success" ]; then
+              echo "- Backend: Passed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Backend: Failed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- Backend: Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Fail if any required job failed
+          if [ "$frontend_changed" == "true" ] && [ "$frontend_result" != "success" ]; then
+            echo "Frontend lint check failed"
+            exit 1
+          fi
+          if [ "$backend_changed" == "true" ] && [ "$backend_result" != "success" ]; then
+            echo "Backend lint check failed"
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Next: Code Quality Check will start automatically" >> $GITHUB_STEP_SUMMARY
