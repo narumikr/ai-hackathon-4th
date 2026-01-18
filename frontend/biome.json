@@ -1,13 +1,14 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "files": {
-    "ignore": [".next", "out", "node_modules", "next-env.d.ts", "coverage", "dist", "build"]
+    "ignore": [".next", "out", "node_modules", "next-env.d.ts", "coverage", "dist", "build", "test"]
   },
   "organizeImports": {
     "enabled": true
   },
   "linter": {
     "enabled": true,
+    "ignore": ["**/*.test.ts", "**/*.test.tsx"],
     "rules": {
       "recommended": true,
       "correctness": {
