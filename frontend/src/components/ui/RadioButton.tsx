@@ -22,11 +22,17 @@ export function RadioButton({
   disabled = false,
   error = false,
   description,
+  errorMessage,
   className = '',
   ...props
 }: RadioButtonProps) {
   const generatedId = useId();
   const radioId = id || `radio-${generatedId}`;
+  const descriptionId = `${radioId}-description`;
+
+  const showErrorMessage = error && errorMessage;
+  const showDescription = !showErrorMessage && description;
+  const hasDescribedBy = showErrorMessage || showDescription;
 
   return (
     <div className={`flex items-start ${className}`}>
@@ -35,6 +41,8 @@ export function RadioButton({
           id={radioId}
           type="radio"
           disabled={disabled}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={hasDescribedBy ? descriptionId : undefined}
           className={[
             sizeStyles[size],
             'border-2',
@@ -57,7 +65,7 @@ export function RadioButton({
           {...props}
         />
       </div>
-      {(label || description) && (
+      {(label || showDescription || showErrorMessage) && (
         <div className="ml-3">
           {label && (
             <label
@@ -76,8 +84,23 @@ export function RadioButton({
               {label}
             </label>
           )}
-          {description && (
+          {showErrorMessage && (
             <p
+              id={descriptionId}
+              role="alert"
+              className={[
+                'mt-0.5 text-sm',
+                'text-red-600',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {errorMessage}
+            </p>
+          )}
+          {showDescription && (
+            <p
+              id={descriptionId}
               className={[
                 'mt-0.5 text-sm',
                 disabled ? 'text-neutral-300' : 'text-neutral-600',

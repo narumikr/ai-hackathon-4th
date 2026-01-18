@@ -231,6 +231,8 @@ export function FileUploader({
       <button
         type="button"
         disabled={disabled}
+        aria-disabled={disabled ? 'true' : undefined}
+        tabIndex={disabled ? -1 : 0}
         aria-describedby={errorMessage ? `${id}-error` : helpText ? `${id}-help` : undefined}
         className={[baseStyles, getDropzoneStyles()].join(' ')}
         onDragOver={handleDragOver}
