@@ -58,6 +58,8 @@ def test_create_travel_plan(api_client: TestClient):
     assert len(data["spots"]) == 1
     assert data["spots"][0]["name"] == "清水寺"
     assert data["status"] == "planning"
+    assert data["guideGenerationStatus"] == "not_started"
+    assert data["reflectionGenerationStatus"] == "not_started"
     assert "id" in data
     assert "createdAt" in data
     assert "updatedAt" in data
@@ -88,6 +90,8 @@ def test_create_travel_plan_with_empty_spots(api_client: TestClient):
     assert data["title"] == "奈良日帰りプラン"
     assert data["destination"] == "奈良"
     assert data["spots"] == []
+    assert data["guideGenerationStatus"] == "not_started"
+    assert data["reflectionGenerationStatus"] == "not_started"
 
 
 def test_create_travel_plan_without_spots(api_client: TestClient):
@@ -114,6 +118,8 @@ def test_create_travel_plan_without_spots(api_client: TestClient):
     assert data["title"] == "広島歴史巡り"
     assert data["destination"] == "広島"
     assert data["spots"] == []
+    assert data["guideGenerationStatus"] == "not_started"
+    assert data["reflectionGenerationStatus"] == "not_started"
 
 
 def test_create_travel_plan_with_null_spots(api_client: TestClient):
@@ -157,6 +163,8 @@ def test_get_travel_plan(
     assert data["title"] == sample_travel_plan.title
     assert data["destination"] == sample_travel_plan.destination
     assert len(data["spots"]) == len(sample_travel_plan.spots)
+    assert data["guideGenerationStatus"] == sample_travel_plan.guide_generation_status
+    assert data["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
 
 
 def test_get_travel_plan_not_found(api_client: TestClient):
@@ -193,6 +201,8 @@ def test_list_travel_plans(
     assert isinstance(data, list)
     assert len(data) >= 1
     assert data[0]["id"] == sample_travel_plan.id
+    assert data[0]["guideGenerationStatus"] == sample_travel_plan.guide_generation_status
+    assert data[0]["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
 
 
 def test_update_travel_plan(
@@ -221,6 +231,34 @@ def test_update_travel_plan(
     assert data["id"] == sample_travel_plan.id
     assert data["title"] == "京都歴史探訪の旅（更新版）"
     assert data["destination"] == "京都・大阪"
+    assert data["guideGenerationStatus"] == "not_started"
+    assert data["reflectionGenerationStatus"] == "not_started"
+
+
+def test_update_travel_plan_status(
+    api_client: TestClient, sample_travel_plan: TravelPlanModel
+):
+    """前提条件: テスト用DBセッションとサンプルデータ
+    実行: PUT /api/v1/travel-plans/{id} でstatus更新
+    検証: ステータスコード200、statusが更新される
+    """
+    # 前提条件: テスト用DBセッションとサンプルデータ
+
+    # リクエストデータ
+    update_data = {
+        "status": "completed",
+    }
+
+    # 実行: PUT /api/v1/travel-plans/{id}
+    response = api_client.put(
+        f"/api/v1/travel-plans/{sample_travel_plan.id}", json=update_data
+    )
+
+    # 検証: ステータスコード200、statusが更新される
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == sample_travel_plan.id
+    assert data["status"] == "completed"
 
 
 def test_update_travel_plan_not_found(api_client: TestClient):

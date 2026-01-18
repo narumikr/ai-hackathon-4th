@@ -37,6 +37,16 @@ class TravelPlanModel(Base):
         default="planning",
         index=True,
     )
+    guide_generation_status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="not_started",
+    )
+    reflection_generation_status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="not_started",
+    )
 
     # タイムスタンプ
     created_at: Mapped[datetime] = mapped_column(

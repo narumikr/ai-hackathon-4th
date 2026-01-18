@@ -44,6 +44,8 @@ def test_create_travel_plan(db_session: Session):
     assert len(travel_plan.spots) == 1
     assert travel_plan.spots[0]["name"] == "東大寺"
     assert travel_plan.status == "planning"
+    assert travel_plan.guide_generation_status == "not_started"
+    assert travel_plan.reflection_generation_status == "not_started"
     assert travel_plan.created_at is not None
     assert travel_plan.updated_at is not None
 
@@ -250,3 +252,18 @@ def test_travel_plan_status_update(db_session: Session, sample_travel_plan: Trav
     assert sample_travel_plan.status == "completed"
     # updated_atが更新されていることを確認
     assert sample_travel_plan.updated_at >= sample_travel_plan.created_at
+
+
+def test_travel_plan_generation_status_update(
+    db_session: Session, sample_travel_plan: TravelPlanModel
+):
+    """TravelPlanの生成ステータス更新をテストする."""
+    # 生成ステータスを更新
+    sample_travel_plan.guide_generation_status = "processing"
+    sample_travel_plan.reflection_generation_status = "failed"
+    db_session.commit()
+    db_session.refresh(sample_travel_plan)
+
+    # 検証
+    assert sample_travel_plan.guide_generation_status == "processing"
+    assert sample_travel_plan.reflection_generation_status == "failed"

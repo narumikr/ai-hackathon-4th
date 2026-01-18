@@ -433,6 +433,14 @@
             "type": "string",
             "title": "Status"
           },
+          "guideGenerationStatus": {
+            "type": "string",
+            "title": "Guidegenerationstatus"
+          },
+          "reflectionGenerationStatus": {
+            "type": "string",
+            "title": "Reflectiongenerationstatus"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -452,6 +460,8 @@
           "destination",
           "spots",
           "status",
+          "guideGenerationStatus",
+          "reflectionGenerationStatus",
           "createdAt",
           "updatedAt"
         ],
@@ -500,6 +510,18 @@
             ],
             "title": "Spots",
             "description": "観光スポットリスト"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "旅行状態"
           }
         },
         "type": "object",

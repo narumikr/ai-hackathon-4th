@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from hypothesis import given, strategies as st
 
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
-from app.domain.travel_plan.value_objects import Location, PlanStatus
+from app.domain.travel_plan.value_objects import GenerationStatus, Location, PlanStatus
 
 
 def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.SearchStrategy[str]:
@@ -150,6 +150,8 @@ def test_travel_plan_property_travel_information_storage(
     assert plan.title == title
     assert plan.destination == destination
     assert plan.status == PlanStatus.PLANNING  # デフォルトはPLANNING
+    assert plan.guide_generation_status == GenerationStatus.NOT_STARTED
+    assert plan.reflection_generation_status == GenerationStatus.NOT_STARTED
 
     # 検証: 日時フィールドが正しく初期化される
     assert isinstance(plan.created_at, datetime)

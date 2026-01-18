@@ -7,6 +7,7 @@ from app.application.use_cases.travel_plan_helpers import (
 )
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
+from app.domain.travel_plan.value_objects import PlanStatus
 
 
 class UpdateTravelPlanUseCase:
@@ -29,6 +30,7 @@ class UpdateTravelPlanUseCase:
         title: str | None = None,
         destination: str | None = None,
         spots: list[dict] | None = None,
+        status: str | None = None,
     ) -> TravelPlanDTO:
         """旅行計画を更新する
 
@@ -37,6 +39,7 @@ class UpdateTravelPlanUseCase:
             title: 旅行タイトル（オプション）
             destination: 目的地（オプション）
             spots: 観光スポットリスト（オプション、辞書形式）
+            status: 旅行状態（オプション）
 
         Returns:
             TravelPlanDTO: 更新された旅行計画
@@ -64,6 +67,12 @@ class UpdateTravelPlanUseCase:
             destination=destination,
             spots=tourist_spots,
         )
+        if status is not None:
+            try:
+                plan_status = PlanStatus(status)
+            except ValueError as exc:
+                raise ValueError("status must be a valid PlanStatus.") from exc
+            travel_plan.update_status(plan_status)
 
         # 永続化
         updated_plan = self._repository.save(travel_plan)

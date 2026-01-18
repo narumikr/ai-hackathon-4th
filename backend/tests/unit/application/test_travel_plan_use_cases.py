@@ -8,6 +8,7 @@ from app.application.use_cases.get_travel_plan import (
     GetTravelPlanUseCase,
     ListTravelPlansUseCase,
 )
+from app.application.use_cases.update_travel_plan import UpdateTravelPlanUseCase
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 
@@ -43,6 +44,8 @@ def test_create_travel_plan_use_case_creates_plan(db_session: Session):
     assert dto.title == "京都歴史ツアー"
     assert dto.destination == "京都"
     assert dto.status == "planning"
+    assert dto.guide_generation_status == "not_started"
+    assert dto.reflection_generation_status == "not_started"
     assert len(dto.spots) == 1
     assert dto.spots[0]["name"] == "清水寺"
     assert dto.spots[0]["id"]
@@ -150,3 +153,24 @@ def test_list_travel_plans_use_case_returns_list(
     assert isinstance(dtos, list)
     assert len(dtos) >= 1
     assert any(dto.id == sample_travel_plan.id for dto in dtos)
+
+
+def test_update_travel_plan_use_case_updates_status(
+    db_session: Session, sample_travel_plan
+):
+    """前提条件: 既存の旅行計画
+    実行: statusを更新する
+    検証: statusが更新される
+    """
+    # 前提条件: 既存の旅行計画
+    repository = TravelPlanRepository(db_session)
+    use_case = UpdateTravelPlanUseCase(repository)
+
+    # 実行: statusを更新する
+    dto = use_case.execute(
+        plan_id=sample_travel_plan.id,
+        status="completed",
+    )
+
+    # 検証: statusが更新される
+    assert dto.status == "completed"

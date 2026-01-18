@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
-from app.domain.travel_plan.value_objects import Location, PlanStatus
+from app.domain.travel_plan.value_objects import GenerationStatus, Location, PlanStatus
 
 
 def test_create_travel_plan():
@@ -40,6 +40,8 @@ def test_create_travel_plan():
     assert len(plan.spots) == 1
     assert plan.spots[0].name == "清水寺"
     assert plan.status == PlanStatus.PLANNING
+    assert plan.guide_generation_status == GenerationStatus.NOT_STARTED
+    assert plan.reflection_generation_status == GenerationStatus.NOT_STARTED
     assert isinstance(plan.created_at, datetime)
     assert isinstance(plan.updated_at, datetime)
 
@@ -217,6 +219,60 @@ def test_complete_travel_plan():
     # 検証: statusがCOMPLETEDになり、updated_atも更新されている
     assert plan.status == PlanStatus.COMPLETED
     assert plan.updated_at > original_updated_at
+
+
+def test_update_travel_plan_status():
+    """前提条件: 既存のTravelPlan
+    実行: statusを更新
+    検証: statusが更新される
+    """
+    # 前提条件: 既存のTravelPlan
+    spot = TouristSpot(
+        id="spot-001",
+        name="清水寺",
+        location=Location(lat=34.9949, lng=135.785),
+    )
+    plan = TravelPlan(
+        user_id="test_user_001",
+        title="京都歴史ツアー",
+        destination="京都",
+        spots=[spot],
+    )
+
+    # 実行: statusを更新
+    plan.update_status(PlanStatus.COMPLETED)
+
+    # 検証: statusが更新される
+    assert plan.status == PlanStatus.COMPLETED
+
+
+def test_update_generation_statuses():
+    """前提条件: 既存のTravelPlan
+    実行: 生成ステータスを更新
+    検証: 各ステータスが更新される
+    """
+    # 前提条件: 既存のTravelPlan
+    spot = TouristSpot(
+        id="spot-001",
+        name="清水寺",
+        location=Location(lat=34.9949, lng=135.785),
+    )
+    plan = TravelPlan(
+        user_id="test_user_001",
+        title="京都歴史ツアー",
+        destination="京都",
+        spots=[spot],
+    )
+
+    # 実行: 生成ステータスを更新
+    plan.update_generation_statuses(
+        guide_status=GenerationStatus.PROCESSING,
+        reflection_status=GenerationStatus.FAILED,
+    )
+
+    # 検証: 各ステータスが更新される
+    assert plan.guide_generation_status == GenerationStatus.PROCESSING
+    assert plan.reflection_generation_status == GenerationStatus.FAILED
 
 
 def test_travel_plan_spots_defensive_copy():

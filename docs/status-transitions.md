@@ -55,6 +55,17 @@ stateDiagram-v2
 
 - 生成系APIで更新する
 - 計画ステータスとは独立して遷移する
+  - `TravelPlan.update_generation_statuses()` を呼び出し、`TravelPlanRepository.save()` で永続化する
+  - `PUT /travel-plans/{id}` では生成ステータスは更新しない
+
+### 更新タイミング
+
+- ガイド生成開始: `guide_generation_status = processing`
+- ガイド生成成功: `guide_generation_status = succeeded`
+- ガイド生成失敗: `guide_generation_status = failed`
+- 振り返り生成開始: `reflection_generation_status = processing`
+- 振り返り生成成功: `reflection_generation_status = succeeded`
+- 振り返り生成失敗: `reflection_generation_status = failed`
 
 ## 保存先
 
