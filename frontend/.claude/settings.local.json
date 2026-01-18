@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:run:*)",
+      "Bash(just test-frontend-ci:*)",
+      "Bash(npx vitest:*)",
+      "Bash(./node_modules/.bin/vitest run --reporter=verbose)",
+      "Bash(echo:*)",
+      "Bash(node node_modules/vitest/vitest.mjs run:*)",
+      "Bash(just test-all-ci:*)",
+      "Bash(just lint-frontend:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(just format-frontend:*)"
+    ]
+  }
+}
