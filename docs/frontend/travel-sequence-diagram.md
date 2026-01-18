@@ -283,28 +283,10 @@ sequenceDiagram
 export function TravelGuide({ planId }: { planId: string }) {
   const [travelPlan, setTravelPlan] = useState<TravelPlan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [generationStatus, setGenerationStatus] = useState<string>('');
   
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    
-    const checkAndPoll = async () => {
-      await fetchTravelPlan();
-      
-      // ガイド生成中の場合はポーリング（5秒間隔）
-      if (travelPlan?.status === 'processing') {
-        interval = setInterval(fetchTravelPlan, 5000);
-      }
-    };
-    
-    checkAndPoll();
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [planId]);
-  
-  const fetchTravelPlan = async () => {
+  const fetchTravelPlan = useCallback(async () => {
     try {
       const plan = await getTravelPlan(planId);
       setTravelPlan(plan);
@@ -313,13 +295,44 @@ export function TravelGuide({ planId }: { planId: string }) {
       if (plan.status === 'processing') {
         updateGenerationStatus(plan);
       }
+      
+      return plan;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
       setError(errorMessage);
+      return null;
     } finally {
       setLoading(false);
     }
-  };
+  }, [planId]);
+  
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    
+    const startPolling = async () => {
+      // 初回取得
+      const plan = await fetchTravelPlan();
+      
+      // 完了していない場合は5秒間隔でポーリング開始
+      if (isMounted && plan && plan.status === 'processing') {
+        interval = setInterval(async () => {
+          const updatedPlan = await fetchTravelPlan();
+          // completedになったらポーリング停止
+          if (updatedPlan && updatedPlan.status === 'completed') {
+            if (interval) clearInterval(interval);
+          }
+        }, 5000);
+      }
+    };
+    
+    startPolling();
+    
+    return () => {
+      isMounted = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [planId, fetchTravelPlan]);
   
   const updateGenerationStatus = (plan: TravelPlan) => {
     // AI生成の進行状況を表示
