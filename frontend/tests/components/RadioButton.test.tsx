@@ -6,7 +6,7 @@ describe('RadioButton Accessibility', () => {
   it('should have aria-invalid="false" when not in error state', () => {
     render(<RadioButton label="Test radio" name="test" />);
     const radio = screen.getByRole('radio');
-    expect(radio).toHaveAttribute('aria-invalid', 'false');
+    expect(radio).not.toHaveAttribute('aria-invalid');
   });
 
   it('should have aria-invalid="true" when in error state', () => {

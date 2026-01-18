@@ -41,6 +41,6 @@ export const sampleTravels: SampleTravel[] = [
     destination: '広島県',
     status: 'completed',
     spotsCount: 3,
-    createdAt: '2025-12-20',
+    createdAt: '2025-12-21',
   },
 ];
