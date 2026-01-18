@@ -41,7 +41,7 @@ export function RadioButton({
           id={radioId}
           type="radio"
           disabled={disabled}
-          aria-invalid={error ? 'true' : 'false'}
+          aria-invalid={error ? 'true' : undefined}
           aria-describedby={hasDescribedBy ? descriptionId : undefined}
           className={[
             sizeStyles[size],
