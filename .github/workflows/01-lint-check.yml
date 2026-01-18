@@ -17,6 +17,10 @@ env:
   PYTHON_VERSION: '3.12'
   PNPM_VERSION: '8'
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   detect-changes:
     name: Detect Changes
