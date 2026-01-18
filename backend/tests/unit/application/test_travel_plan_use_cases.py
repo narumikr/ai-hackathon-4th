@@ -77,6 +77,28 @@ def test_create_travel_plan_use_case_invalid_spot_raises(db_session: Session):
         )
 
 
+def test_create_travel_plan_use_case_allows_empty_spots(db_session: Session):
+    """前提条件: spotsが空配列の入力
+    実行: 旅行計画を作成する
+    検証: spotsが空配列で保存される
+    """
+    # 前提条件: spotsが空配列の入力
+    repository = TravelPlanRepository(db_session)
+    use_case = CreateTravelPlanUseCase(repository)
+
+    # 実行: 旅行計画を作成する
+    dto = use_case.execute(
+        user_id="test_user_002",
+        title="札幌散策プラン",
+        destination="札幌",
+        spots=[],
+    )
+
+    # 検証: spotsが空配列で保存される
+    assert dto.id
+    assert dto.spots == []
+
+
 def test_get_travel_plan_use_case_returns_plan(db_session: Session, sample_travel_plan):
     """前提条件: サンプルTravelPlanが存在する
     実行: 旅行計画を取得する

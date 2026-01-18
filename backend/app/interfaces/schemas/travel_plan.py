@@ -30,7 +30,7 @@ class CreateTravelPlanRequest(BaseModel):
     user_id: str = Field(..., min_length=1, alias="userId", description="ユーザーID")
     title: str = Field(..., min_length=1, description="旅行タイトル")
     destination: str = Field(..., min_length=1, description="目的地")
-    spots: list[TouristSpotSchema] = Field(..., min_length=1, description="観光スポットリスト")
+    spots: list[TouristSpotSchema] = Field(default_factory=list, description="観光スポットリスト")
 
     model_config = {"populate_by_name": True}
 

@@ -50,7 +50,7 @@ class CreateTravelPlanUseCase:
         validate_required_str(destination, "destination")
 
         # 辞書 → エンティティ変換
-        tourist_spots = build_tourist_spots(spots)
+        tourist_spots = build_tourist_spots(spots, allow_empty=True)
 
         # ドメインエンティティの生成
         travel_plan = TravelPlan(
