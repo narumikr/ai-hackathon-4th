@@ -1,3 +1,5 @@
+
+
 import { Container } from '@/components/layout';
 import { Button, Emoji, TextArea } from '@/components/ui';
 import {
@@ -11,9 +13,94 @@ import {
   PAGE_TITLES,
   PLACEHOLDERS,
 } from '@/constants';
-import { samplePreLearningInfo } from '@/data';
+import { samplePreLearningInfo, sampleReflectionContents, sampleTravels } from '@/data';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
-export default function ReflectionCreatePage() {
+export default async function ReflectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const travel = sampleTravels.find(t => t.id === id);
+
+  if (!travel) {
+    notFound();
+  }
+
+  const isCompleted = travel.hasReflection;
+  const reflectionContent = isCompleted
+    ? sampleReflectionContents.find(r => r.travelId === id)
+    : undefined;
+
+  // 閲覧モード（完了済み）
+  if (isCompleted && reflectionContent) {
+    return (
+      <div className="py-8">
+        <Container>
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-8 flex items-start justify-between">
+              <div>
+                <h1 className="mb-2 font-bold text-3xl text-neutral-900">
+                  {PAGE_TITLES.REFLECTION_CREATE}
+                </h1>
+                <p className="text-neutral-600">{PAGE_DESCRIPTIONS.REFLECTION_LIST}</p>
+              </div>
+              <Link href="/reflection">
+                <Button variant="ghost">{BUTTON_LABELS.BACK}</Button>
+              </Link>
+            </div>
+
+            {/* 旅行情報 */}
+            <div className="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
+              <h2 className="mb-1 font-semibold text-lg text-neutral-900">{travel.title}</h2>
+              <p className="text-neutral-600 text-sm">
+                {LABELS.COMPLETED_DATE} {travel.completedAt}
+              </p>
+            </div>
+
+            {/* 写真と感想（閲覧のみ） */}
+            <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 font-bold text-neutral-900 text-xl">
+                {FORM_LABELS.PHOTO_COMMENTS}
+              </h2>
+              <div className="space-y-6">
+                {reflectionContent.photos.map(photo => (
+                  <div
+                    key={photo.id}
+                    className="border-neutral-200 border-b pb-6 last:border-0 last:pb-0"
+                  >
+                    <div className="mb-3 flex items-start gap-4">
+                      <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-neutral-200">
+                        <span className="text-2xl">
+                          <Emoji symbol="🖼️" label={EMOJI_LABELS.PICTURE} />
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="mb-2 font-semibold text-neutral-700 text-sm">
+                          {LABELS.PHOTO_NUMBER} {photo.id}
+                        </h3>
+                        <p className="whitespace-pre-wrap text-neutral-800">{photo.comment}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* 全体的な感想（閲覧のみ） */}
+            <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 font-bold text-neutral-900 text-xl">
+                {FORM_LABELS.OVERALL_IMPRESSION}
+              </h2>
+              <p className="whitespace-pre-wrap text-neutral-800">
+                {reflectionContent.overallComment}
+              </p>
+            </section>
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
+  // 作成モード（未完了）
   return (
     <div className="py-8">
       <Container>
@@ -27,8 +114,10 @@ export default function ReflectionCreatePage() {
 
           {/* 旅行情報 */}
           <div className="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
-            <h2 className="mb-1 font-semibold text-lg text-neutral-900">広島 平和学習の旅</h2>
-            <p className="text-neutral-600 text-sm">{LABELS.COMPLETED_DATE} 2025-12-25</p>
+            <h2 className="mb-1 font-semibold text-lg text-neutral-900">{travel.title}</h2>
+            <p className="text-neutral-600 text-sm">
+              {LABELS.COMPLETED_DATE} {travel.completedAt}
+            </p>
           </div>
 
           {/* 写真アップロード */}
