@@ -8,6 +8,8 @@
 - `~/.claude/CLAUDE.md`を参照する。
 - `~/.claude/rules`を参照する。
 
+ただし、AskUserQuestion は、Codexでは利用できないため、Codexでは使用しないこと。
+
 ## コミット
 
 - コミット時のタイムアウトは120秒とする。

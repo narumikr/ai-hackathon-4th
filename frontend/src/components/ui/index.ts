@@ -11,3 +11,4 @@ export { FormField } from './FormField';
 export { List } from './List';
 export { TextField } from './TextField';
 export { Tooltip } from './Tooltip';
+export { Emoji } from './Emoji';

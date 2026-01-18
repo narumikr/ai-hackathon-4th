@@ -1,0 +1,161 @@
+import { Container } from '@/components/layout';
+import { Button, Emoji, TextArea } from '@/components/ui';
+import {
+  BUTTON_LABELS,
+  EMOJI_LABELS,
+  FORM_LABELS,
+  HELP_TEXTS,
+  HINTS,
+  LABELS,
+  PAGE_DESCRIPTIONS,
+  PAGE_TITLES,
+  PLACEHOLDERS,
+} from '@/constants';
+import { samplePreLearningInfo } from '@/data';
+
+export default function ReflectionCreatePage() {
+  return (
+    <div className="py-8">
+      <Container>
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-8">
+            <h1 className="mb-2 font-bold text-3xl text-neutral-900">
+              {PAGE_TITLES.REFLECTION_CREATE}
+            </h1>
+            <p className="text-neutral-600">{PAGE_DESCRIPTIONS.REFLECTION_CREATE}</p>
+          </div>
+
+          {/* 旅行情報 */}
+          <div className="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
+            <h2 className="mb-1 font-semibold text-lg text-neutral-900">広島 平和学習の旅</h2>
+            <p className="text-neutral-600 text-sm">{LABELS.COMPLETED_DATE} 2025-12-25</p>
+          </div>
+
+          {/* 写真アップロード */}
+          <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 font-bold text-neutral-900 text-xl">{FORM_LABELS.PHOTO_UPLOAD}</h2>
+
+            {/* ドロップゾーン */}
+            <button
+              type="button"
+              className="mb-6 flex h-64 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-neutral-300 border-dashed bg-neutral-50 transition-colors hover:border-primary-400"
+              aria-label={PLACEHOLDERS.UPLOAD_INSTRUCTION}
+            >
+              <div className="text-center">
+                <div className="mb-2 text-6xl">
+                  <Emoji symbol="📤" label="アップロード" />
+                </div>
+                <p className="mb-2 font-medium text-neutral-700">
+                  {PLACEHOLDERS.UPLOAD_INSTRUCTION}
+                </p>
+                <p className="text-neutral-500 text-sm">{HELP_TEXTS.UPLOAD_FORMAT}</p>
+              </div>
+            </button>
+
+            {/* アップロード済み写真プレビュー（サンプル） */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {[1, 2, 3].map(i => (
+                <div
+                  key={`photo-${i}`}
+                  className="group relative aspect-square overflow-hidden rounded-lg bg-neutral-200"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-300">
+                    <span className="text-4xl text-neutral-500">
+                      <Emoji symbol="🖼️" label={EMOJI_LABELS.PICTURE} />
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label="削除"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 各写真への感想 */}
+          <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 font-bold text-neutral-900 text-xl">
+              {FORM_LABELS.PHOTO_COMMENTS}
+            </h2>
+            <div className="space-y-6">
+              {[1, 2, 3].map(i => (
+                <div
+                  key={`comment-${i}`}
+                  className="border-neutral-200 border-b pb-6 last:border-0 last:pb-0"
+                >
+                  <div className="mb-3 flex items-start gap-4">
+                    <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-neutral-200">
+                      <span className="text-2xl">
+                        <Emoji symbol="🖼️" label={EMOJI_LABELS.PICTURE} />
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="mb-2 font-semibold text-neutral-700 text-sm">
+                        {LABELS.PHOTO_NUMBER} {i}
+                      </h3>
+                      <TextArea placeholder={PLACEHOLDERS.PHOTO_COMMENT} rows={3} fullWidth />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 全体的な感想 */}
+          <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 font-bold text-neutral-900 text-xl">
+              {FORM_LABELS.OVERALL_IMPRESSION}
+            </h2>
+            <TextArea
+              placeholder={PLACEHOLDERS.OVERALL_COMMENT}
+              rows={6}
+              fullWidth
+              maxLength={1000}
+              showCount
+            />
+          </section>
+
+          {/* 事前学習情報の表示（参考用） */}
+          <section className="mb-8 rounded-lg border border-neutral-200 bg-neutral-50 p-6">
+            <h2 className="mb-4 font-bold text-neutral-900 text-xl">{FORM_LABELS.PRE_LEARNING}</h2>
+            <div className="space-y-3 text-sm">
+              {samplePreLearningInfo.map((info, index) => (
+                <div
+                  key={`pre-learning-${index}`}
+                  className="rounded border border-neutral-200 bg-white p-3"
+                >
+                  <h3 className="mb-1 font-semibold text-neutral-900">{info.spotName}</h3>
+                  <p className="text-neutral-600">{info.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* アクションボタン */}
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Button variant="ghost" size="lg" className="flex-1">
+              {BUTTON_LABELS.CANCEL}
+            </Button>
+            <Button variant="primary" size="lg" className="flex-1">
+              {BUTTON_LABELS.GENERATE_REFLECTION}
+            </Button>
+          </div>
+
+          {/* 注意事項 */}
+          <div className="mt-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
+            <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.HINT_TITLE}</h3>
+            <ul className="space-y-1 text-primary-800 text-sm">
+              {HINTS.REFLECTION_CREATE.map((hint, index) => (
+                <li key={`hint-${index}`}>• {hint}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Container>
+    </div>
+  );
+}
