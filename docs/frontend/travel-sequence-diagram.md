@@ -283,35 +283,10 @@ sequenceDiagram
 export function TravelGuide({ planId }: { planId: string }) {
   const [travelPlan, setTravelPlan] = useState<TravelPlan | null>(null);
   const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
-  const [generationStatus, setGenerationStatus] = useState<string>('');
-  
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    
-    const checkAndPoll = async () => {
-      await fetchTravelPlan();
-      
-      // ガイド生成中の場合はポーリング（5秒間隔）
-      if (travelPlan?.status === 'processing') {
-        interval = setInterval(fetchTravelPlan, 5000);
-      }
-    };
-    
-    checkAndPoll();
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [planId]);
-  
-  const fetchTravelPlan = async () => {
-=======
   const [error, setError] = useState<string>('');
   const [generationStatus, setGenerationStatus] = useState<string>('');
   
   const fetchTravelPlan = useCallback(async () => {
->>>>>>> f62c2f9d203a975446bf316a18238fcace54dd3c
     try {
       const plan = await getTravelPlan(planId);
       setTravelPlan(plan);
@@ -320,15 +295,6 @@ export function TravelGuide({ planId }: { planId: string }) {
       if (plan.status === 'processing') {
         updateGenerationStatus(plan);
       }
-<<<<<<< HEAD
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-=======
       
       return plan;
     } catch (error) {
@@ -367,7 +333,6 @@ export function TravelGuide({ planId }: { planId: string }) {
       if (interval) clearInterval(interval);
     };
   }, [planId, fetchTravelPlan]);
->>>>>>> f62c2f9d203a975446bf316a18238fcace54dd3c
   
   const updateGenerationStatus = (plan: TravelPlan) => {
     // AI生成の進行状況を表示
