@@ -166,7 +166,8 @@ export function TravelForm() {
       const result = await createTravelPlan(requestData);
       router.push(`/travel/${result.id}`);
     } catch (error) {
-      setError(error.message);
+      const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -259,6 +260,7 @@ sequenceDiagram
         end
     end
     
+    Note over Browser: 印刷機能（印刷ボタンおよび印刷処理）は<br/>Phase 2で実装予定（現フェーズでは未実装）
     User->>Browser: 印刷ボタンクリック
     Browser->>TravelGuide: 印刷処理実行
     TravelGuide->>Browser: 印刷ダイアログ表示
@@ -284,14 +286,23 @@ export function TravelGuide({ planId }: { planId: string }) {
   const [generationStatus, setGenerationStatus] = useState<string>('');
   
   useEffect(() => {
-    fetchTravelPlan();
+    let interval: NodeJS.Timeout | null = null;
     
-    // ガイド生成中の場合はポーリング（5秒間隔）
-    if (travelPlan?.status === 'processing') {
-      const interval = setInterval(fetchTravelPlan, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [planId, travelPlan?.status]);
+    const checkAndPoll = async () => {
+      await fetchTravelPlan();
+      
+      // ガイド生成中の場合はポーリング（5秒間隔）
+      if (travelPlan?.status === 'processing') {
+        interval = setInterval(fetchTravelPlan, 5000);
+      }
+    };
+    
+    checkAndPoll();
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [planId]);
   
   const fetchTravelPlan = async () => {
     try {
@@ -303,7 +314,8 @@ export function TravelGuide({ planId }: { planId: string }) {
         updateGenerationStatus(plan);
       }
     } catch (error) {
-      setError(error.message);
+      const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -417,7 +429,7 @@ export function useTravel() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getTravelPlans]);
   
   const createTravel = useCallback(async (planData: CreateTravelPlanRequest) => {
     setLoading(true);
@@ -448,6 +460,8 @@ export function useTravel() {
 ## 6. API通信フロー
 
 ### API Client実装
+
+> **注意**: このサンプルコードではUI表示文言をリテラルで記述していますが、実際の実装では `frontend/src/constants/ui.ts` に定義した定数を使用してください。コーディング規約の詳細は別ドキュメントを参照してください。
 
 ```typescript
 // lib/api.ts
