@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.domain.travel_plan.value_objects import PlanStatus
+
 
 class LocationSchema(BaseModel):
     """地理的位置スキーマ."""
@@ -49,6 +51,7 @@ class UpdateTravelPlanRequest(BaseModel):
     title: str | None = Field(None, min_length=1, description="旅行タイトル")
     destination: str | None = Field(None, min_length=1, description="目的地")
     spots: list[TouristSpotSchema] | None = Field(None, description="観光スポットリスト")
+    status: str | None = Field(None, description="旅行状態")
 
     @field_validator("title", "destination")
     @classmethod
@@ -56,6 +59,20 @@ class UpdateTravelPlanRequest(BaseModel):
         """空文字列でないことを検証する."""
         if value is not None and not value.strip():
             raise ValueError("must not be empty")
+        return value
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str | None) -> str | None:
+        """旅行状態の妥当性を検証する."""
+        if value is None:
+            return None
+        if not value.strip():
+            raise ValueError("must not be empty")
+        try:
+            PlanStatus(value)
+        except ValueError as exc:
+            raise ValueError("invalid status") from exc
         return value
 
 
@@ -68,6 +85,8 @@ class TravelPlanResponse(BaseModel):
     destination: str
     spots: list[dict]
     status: str
+    guide_generation_status: str = Field(..., alias="guideGenerationStatus")
+    reflection_generation_status: str = Field(..., alias="reflectionGenerationStatus")
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
 

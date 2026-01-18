@@ -13,6 +13,15 @@ class PlanStatus(str, Enum):
     COMPLETED = "completed"
 
 
+class GenerationStatus(str, Enum):
+    """AI生成のステータス"""
+
+    NOT_STARTED = "not_started"
+    PROCESSING = "processing"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
 @dataclass(frozen=True)
 class Location(ValueObject):
     """地理的位置（緯度経度）"""

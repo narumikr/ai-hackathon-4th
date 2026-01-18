@@ -575,6 +575,12 @@ interface TouristSpot {
 }
 ```
 
+#### Generation Status Update Flow
+
+- 生成開始/成功/失敗は生成系APIで更新する
+- 実装方針: `TravelPlan.update_generation_statuses()` を呼び出し、`TravelPlanRepository.save()` で永続化する
+- `PUT /api/v1/travel-plans/{id}` は計画ステータスのみ更新し、生成ステータスは更新しない
+
 ### TravelGuide
 ```typescript
 interface TravelGuide {

@@ -28,6 +28,8 @@ def upgrade() -> None:
     sa.Column('destination', sa.String(length=255), nullable=False),
     sa.Column('spots', sa.JSON(), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
+    sa.Column('guide_generation_status', sa.String(length=50), nullable=False),
+    sa.Column('reflection_generation_status', sa.String(length=50), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')

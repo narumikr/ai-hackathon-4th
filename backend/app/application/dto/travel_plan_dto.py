@@ -19,6 +19,8 @@ class TravelPlanDTO:
     destination: str
     spots: list[dict]
     status: str
+    guide_generation_status: str
+    reflection_generation_status: str
     created_at: datetime
     updated_at: datetime
 
@@ -51,6 +53,8 @@ class TravelPlanDTO:
                 for spot in entity.spots
             ],
             status=entity.status.value,
+            guide_generation_status=entity.guide_generation_status.value,
+            reflection_generation_status=entity.reflection_generation_status.value,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.repository import ITravelPlanRepository
-from app.domain.travel_plan.value_objects import Location, PlanStatus
+from app.domain.travel_plan.value_objects import GenerationStatus, Location, PlanStatus
 from app.infrastructure.persistence.models import TravelPlanModel
 
 
@@ -46,6 +46,8 @@ class TravelPlanRepository(ITravelPlanRepository):
                 destination=travel_plan.destination,
                 spots=self._spots_to_dict(travel_plan.spots),
                 status=travel_plan.status.value,
+                guide_generation_status=travel_plan.guide_generation_status.value,
+                reflection_generation_status=travel_plan.reflection_generation_status.value,
             )
             self._session.add(model)
         else:
@@ -58,6 +60,8 @@ class TravelPlanRepository(ITravelPlanRepository):
             model.destination = travel_plan.destination
             model.spots = self._spots_to_dict(travel_plan.spots)
             model.status = travel_plan.status.value
+            model.guide_generation_status = travel_plan.guide_generation_status.value
+            model.reflection_generation_status = travel_plan.reflection_generation_status.value
 
         self._session.commit()
         self._session.refresh(model)
@@ -140,6 +144,8 @@ class TravelPlanRepository(ITravelPlanRepository):
             destination=model.destination,
             spots=spots,
             status=PlanStatus(model.status),
+            guide_generation_status=GenerationStatus(model.guide_generation_status),
+            reflection_generation_status=GenerationStatus(model.reflection_generation_status),
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

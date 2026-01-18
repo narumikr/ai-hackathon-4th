@@ -179,6 +179,7 @@ def update_travel_plan(
             title=request.title,
             destination=request.destination,
             spots=spots_dict,
+            status=request.status,
         )
         return TravelPlanResponse(**dto.__dict__)
     except TravelPlanNotFoundError as e:
