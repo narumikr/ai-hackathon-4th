@@ -56,6 +56,108 @@ def test_create_travel_plan(db_session: Session):
     app.dependency_overrides.clear()
 
 
+def test_create_travel_plan_with_empty_spots(db_session: Session):
+    """前提条件: 空のspotsを含むリクエスト
+    実行: POST /api/v1/travel-plans
+    検証: ステータスコード201、spotsが空配列で返る
+    """
+    # 前提条件: テスト用DBセッションを使用
+
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+
+    # リクエストデータ
+    request_data = {
+        "userId": "test_user_002",
+        "title": "奈良日帰りプラン",
+        "destination": "奈良",
+        "spots": [],
+    }
+
+    # 実行: POST /api/v1/travel-plans
+    response = client.post("/api/v1/travel-plans", json=request_data)
+
+    # 検証: ステータスコード201、spotsが空配列で返る
+    assert response.status_code == 201
+    data = response.json()
+    assert data["userId"] == "test_user_002"
+    assert data["title"] == "奈良日帰りプラン"
+    assert data["destination"] == "奈良"
+    assert data["spots"] == []
+
+    # クリーンアップ
+    app.dependency_overrides.clear()
+
+
+def test_create_travel_plan_without_spots(db_session: Session):
+    """前提条件: spotsを未送信のリクエスト
+    実行: POST /api/v1/travel-plans
+    検証: ステータスコード201、spotsが空配列で返る
+    """
+    # 前提条件: テスト用DBセッションを使用
+
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+
+    # リクエストデータ
+    request_data = {
+        "userId": "test_user_003",
+        "title": "広島歴史巡り",
+        "destination": "広島",
+    }
+
+    # 実行: POST /api/v1/travel-plans
+    response = client.post("/api/v1/travel-plans", json=request_data)
+
+    # 検証: ステータスコード201、spotsが空配列で返る
+    assert response.status_code == 201
+    data = response.json()
+    assert data["userId"] == "test_user_003"
+    assert data["title"] == "広島歴史巡り"
+    assert data["destination"] == "広島"
+    assert data["spots"] == []
+
+    # クリーンアップ
+    app.dependency_overrides.clear()
+
+
+def test_create_travel_plan_with_null_spots(db_session: Session):
+    """前提条件: spotsがnullのリクエスト
+    実行: POST /api/v1/travel-plans
+    検証: ステータスコード422
+    """
+    # 前提条件: テスト用DBセッションを使用
+
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+
+    # リクエストデータ
+    request_data = {
+        "userId": "test_user_004",
+        "title": "鎌倉散策",
+        "destination": "鎌倉",
+        "spots": None,
+    }
+
+    # 実行: POST /api/v1/travel-plans
+    response = client.post("/api/v1/travel-plans", json=request_data)
+
+    # 検証: ステータスコード422
+    assert response.status_code == 422
+
+    # クリーンアップ
+    app.dependency_overrides.clear()
+
+
 def test_get_travel_plan(db_session: Session, sample_travel_plan: TravelPlanModel):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: GET /api/v1/travel-plans/{id}

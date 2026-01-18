@@ -21,8 +21,6 @@ def _validate_number(value: object, field_name: str) -> float:
 
 def build_tourist_spots(spots: list[dict], *, allow_empty: bool = False) -> list[TouristSpot]:
     """観光スポット辞書をTouristSpotエンティティに変換する"""
-    if spots is None:
-        raise ValueError("spots is required.")
     if not isinstance(spots, list):
         raise ValueError("spots must be a list.")
     if not spots and not allow_empty:

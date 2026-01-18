@@ -295,7 +295,6 @@
               "$ref": "#/components/schemas/TouristSpotSchema"
             },
             "type": "array",
-            "minItems": 1,
             "title": "Spots",
             "description": "観光スポットリスト"
           }
@@ -304,8 +303,7 @@
         "required": [
           "userId",
           "title",
-          "destination",
-          "spots"
+          "destination"
         ],
         "title": "CreateTravelPlanRequest",
         "description": "旅行計画作成リクエスト."
