@@ -13,6 +13,10 @@ export interface SampleTravel {
   status: TravelStatus;
   spotsCount: number;
   createdAt: string;
+  // 以下、完了時の情報（オプショナル）
+  completedAt?: string;
+  hasReflection?: boolean;
+  photosCount?: number;
 }
 
 /**
@@ -42,5 +46,30 @@ export const sampleTravels: SampleTravel[] = [
     status: 'completed',
     spotsCount: 3,
     createdAt: '2025-12-20',
+    completedAt: '2025-12-25',
+    hasReflection: true,
+    photosCount: 8,
+  },
+  {
+    id: '4',
+    title: '鎌倉 武家文化の旅',
+    destination: '神奈川県',
+    status: 'completed',
+    spotsCount: 6,
+    createdAt: '2025-11-10',
+    completedAt: '2025-11-15',
+    hasReflection: false,
+    photosCount: 0,
+  },
+  {
+    id: '5',
+    title: '金沢 伝統工芸の旅',
+    destination: '石川県',
+    status: 'completed',
+    spotsCount: 4,
+    createdAt: '2025-10-05',
+    completedAt: '2025-10-12',
+    hasReflection: true,
+    photosCount: 12,
   },
 ];

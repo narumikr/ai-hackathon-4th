@@ -10,10 +10,11 @@ import {
   PAGE_TITLES,
   STATUS_LABELS,
 } from '@/constants';
-import { completedTravels } from '@/data';
+import { sampleTravels } from '@/data';
 import Link from 'next/link';
 
 export default function ReflectionListPage() {
+  const completedTravels = sampleTravels.filter(t => t.status === 'completed');
   const hasTravels = completedTravels.length > 0;
 
   return (
@@ -60,7 +61,7 @@ export default function ReflectionListPage() {
                     <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} /> {LABELS.COMPLETED_DATE}{' '}
                     {travel.completedAt}
                   </span>
-                  {travel.photosCount > 0 && (
+                  {(travel.photosCount ?? 0) > 0 && (
                     <span>
                       <Emoji symbol="📸" label={EMOJI_LABELS.CAMERA} /> {travel.photosCount}
                       {LABELS.PHOTOS_COUNT}
