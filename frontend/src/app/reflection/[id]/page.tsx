@@ -56,7 +56,7 @@ export default function ReflectionCreatePage() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {[1, 2, 3].map(i => (
                 <div
-                  key={`photo-${i}`}
+                  key={i}
                   className="group relative aspect-square overflow-hidden rounded-lg bg-neutral-200"
                 >
                   <div className="absolute inset-0 flex items-center justify-center bg-neutral-300">
@@ -83,10 +83,7 @@ export default function ReflectionCreatePage() {
             </h2>
             <div className="space-y-6">
               {[1, 2, 3].map(i => (
-                <div
-                  key={`comment-${i}`}
-                  className="border-neutral-200 border-b pb-6 last:border-0 last:pb-0"
-                >
+                <div key={i} className="border-neutral-200 border-b pb-6 last:border-0 last:pb-0">
                   <div className="mb-3 flex items-start gap-4">
                     <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-neutral-200">
                       <span className="text-2xl">
@@ -123,11 +120,8 @@ export default function ReflectionCreatePage() {
           <section className="mb-8 rounded-lg border border-neutral-200 bg-neutral-50 p-6">
             <h2 className="mb-4 font-bold text-neutral-900 text-xl">{FORM_LABELS.PRE_LEARNING}</h2>
             <div className="space-y-3 text-sm">
-              {samplePreLearningInfo.map((info, index) => (
-                <div
-                  key={`pre-learning-${index}`}
-                  className="rounded border border-neutral-200 bg-white p-3"
-                >
+              {samplePreLearningInfo.map(info => (
+                <div key={info.spotName} className="rounded border border-neutral-200 bg-white p-3">
                   <h3 className="mb-1 font-semibold text-neutral-900">{info.spotName}</h3>
                   <p className="text-neutral-600">{info.description}</p>
                 </div>
@@ -149,8 +143,8 @@ export default function ReflectionCreatePage() {
           <div className="mt-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
             <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.HINT_TITLE}</h3>
             <ul className="space-y-1 text-primary-800 text-sm">
-              {HINTS.REFLECTION_CREATE.map((hint, index) => (
-                <li key={`hint-${index}`}>• {hint}</li>
+              {HINTS.REFLECTION_CREATE.map(hint => (
+                <li key={hint}>• {hint}</li>
               ))}
             </ul>
           </div>

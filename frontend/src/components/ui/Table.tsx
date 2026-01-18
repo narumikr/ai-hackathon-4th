@@ -97,9 +97,12 @@ export function Table<T extends Record<string, unknown>>({
       return data;
     }
 
+    const sortKey = sortState.key;
+    if (!sortKey) return data;
+
     return [...data].sort((a, b) => {
-      const aValue = a[sortState.key!];
-      const bValue = b[sortState.key!];
+      const aValue = a[sortKey];
+      const bValue = b[sortKey];
 
       if (aValue === bValue) return 0;
       if (aValue === null || aValue === undefined) return 1;
@@ -233,6 +236,13 @@ export function Table<T extends Record<string, unknown>>({
                   }`}
                   style={column.width ? { width: column.width } : undefined}
                   onClick={() => isSortable && handleSort(column)}
+                  onKeyDown={e => {
+                    if (isSortable && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault();
+                      handleSort(column);
+                    }
+                  }}
+                  tabIndex={isSortable ? 0 : undefined}
                   aria-sort={
                     isSorted
                       ? sortState.direction === 'asc'
@@ -281,9 +291,20 @@ export function Table<T extends Record<string, unknown>>({
                   key={key}
                   className={getRowStyles(rowIndex, isSelected)}
                   onClick={() => onRowClick?.(row, rowIndex)}
+                  onKeyDown={e => {
+                    if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault();
+                      onRowClick(row, rowIndex);
+                    }
+                  }}
+                  tabIndex={onRowClick ? 0 : undefined}
                 >
                   {selectable && (
-                    <td className={bodyCellStyles} onClick={e => e.stopPropagation()}>
+                    <td
+                      className={bodyCellStyles}
+                      onClick={e => e.stopPropagation()}
+                      onKeyDown={e => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={isSelected}
                         onChange={() => handleSelectRow(key)}

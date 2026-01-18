@@ -30,7 +30,7 @@ export const TABLE_LABELS = {
 
   // Default messages
   EMPTY_MESSAGE: 'データがありません',
-}
+};
 
 /*
  * UI表示文言の定義
@@ -48,20 +48,19 @@ export const UI_TEXT = {
 export const FILE_UPLOADER = {
   /** デフォルトのラベル */
   DEFAULT_LABEL: 'ファイルをドラッグ&ドロップ',
-  
+
   /** ヒントテキスト */
   HINT_TEXT: 'またはクリックしてファイルを選択',
-  
+
   /** エラーメッセージテンプレート */
-  ERROR_FILE_SIZE_EXCEEDED: (fileName: string, maxSize: string) => 
+  ERROR_FILE_SIZE_EXCEEDED: (fileName: string, maxSize: string) =>
     `${fileName} はファイルサイズ上限（${maxSize}）を超えています`,
-  ERROR_INVALID_FILE_TYPE: (fileName: string) => 
-    `${fileName} は許可されていないファイル形式です`,
-  
+  ERROR_INVALID_FILE_TYPE: (fileName: string) => `${fileName} は許可されていないファイル形式です`,
+
   /** 補足情報の接頭辞 */
   ACCEPTED_FORMATS_PREFIX: '対応形式: ',
   MAX_SIZE_PREFIX: '最大サイズ: ',
-}
+};
 
 /**
  * UI表示文言定数

@@ -92,8 +92,8 @@ export default function ReflectionListPage() {
         <div className="mt-8 rounded-lg border border-primary-200 bg-primary-50 p-4">
           <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.ABOUT_REFLECTION}</h3>
           <ul className="space-y-1 text-primary-800 text-sm">
-            {HINTS.REFLECTION.map((hint, index) => (
-              <li key={`hint-${index}`}>• {hint}</li>
+            {HINTS.REFLECTION.map(hint => (
+              <li key={hint}>• {hint}</li>
             ))}
           </ul>
         </div>

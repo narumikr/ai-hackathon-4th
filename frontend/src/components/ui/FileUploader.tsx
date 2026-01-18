@@ -19,10 +19,9 @@ const normalStyles = [
 
 const dragOverStyles = ['border-primary-500 bg-primary-100'].join(' ');
 
-const disabledStyles = [
-  'border-neutral-200 bg-neutral-100',
-  'cursor-not-allowed opacity-50',
-].join(' ');
+const disabledStyles = ['border-neutral-200 bg-neutral-100', 'cursor-not-allowed opacity-50'].join(
+  ' '
+);
 
 const errorStyles = ['border-red-400 bg-red-50'].join(' ');
 
@@ -94,9 +93,7 @@ export function FileUploader({
       for (const file of files) {
         // Check file size
         if (maxSize && file.size > maxSize) {
-          errors.push(
-            FILE_UPLOADER.ERROR_FILE_SIZE_EXCEEDED(file.name, formatFileSize(maxSize))
-          );
+          errors.push(FILE_UPLOADER.ERROR_FILE_SIZE_EXCEEDED(file.name, formatFileSize(maxSize)));
           continue;
         }
 
@@ -221,9 +218,7 @@ export function FileUploader({
     return normalStyles;
   };
 
-  const acceptHint = accept
-    ? `${FILE_UPLOADER.ACCEPTED_FORMATS_PREFIX}${accept}`
-    : undefined;
+  const acceptHint = accept ? `${FILE_UPLOADER.ACCEPTED_FORMATS_PREFIX}${accept}` : undefined;
 
   const sizeHint = maxSize
     ? `${FILE_UPLOADER.MAX_SIZE_PREFIX}${formatFileSize(maxSize)}`
@@ -233,10 +228,9 @@ export function FileUploader({
 
   return (
     <div className={className}>
-      <div
-        role="button"
-        tabIndex={disabled ? -1 : 0}
-        aria-disabled={disabled}
+      <button
+        type="button"
+        disabled={disabled}
         aria-describedby={errorMessage ? `${id}-error` : helpText ? `${id}-help` : undefined}
         className={[baseStyles, getDropzoneStyles()].join(' ')}
         onDragOver={handleDragOver}
@@ -259,12 +253,10 @@ export function FileUploader({
         <div className={contentStyles}>
           <UploadIcon className={iconStyles} />
           <p className={labelStyles}>{label}</p>
-          <p className={hintStyles}>
-            {FILE_UPLOADER.HINT_TEXT}
-          </p>
+          <p className={hintStyles}>{FILE_UPLOADER.HINT_TEXT}</p>
           {hints && <p className={hintStyles}>{hints}</p>}
         </div>
-      </div>
+      </button>
       {errorMessage && (
         <p id={`${id}-error`} className={errorMessageStyles} role="alert">
           {errorMessage}

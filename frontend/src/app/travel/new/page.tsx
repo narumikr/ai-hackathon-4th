@@ -95,8 +95,8 @@ export default function TravelNewPage() {
           <div className="mt-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
             <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.HINT_TITLE}</h3>
             <ul className="space-y-1 text-primary-800 text-sm">
-              {HINTS.TRAVEL_NEW.map((hint, index) => (
-                <li key={`hint-${index}`}>• {hint}</li>
+              {HINTS.TRAVEL_NEW.map(hint => (
+                <li key={hint}>• {hint}</li>
               ))}
             </ul>
           </div>

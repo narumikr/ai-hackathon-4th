@@ -62,7 +62,9 @@ describe('FileUploader', () => {
     it('shows accepted file types hint', () => {
       render(<FileUploader onUpload={mockOnUpload} accept="image/*" />);
 
-      expect(screen.getByText(new RegExp(`${FILE_UPLOADER.ACCEPTED_FORMATS_PREFIX}image/\\*`))).toBeInTheDocument();
+      expect(
+        screen.getByText(new RegExp(`${FILE_UPLOADER.ACCEPTED_FORMATS_PREFIX}image/\\*`))
+      ).toBeInTheDocument();
     });
 
     it('passes accept to file input', () => {
@@ -77,13 +79,17 @@ describe('FileUploader', () => {
     it('shows max size hint in bytes', () => {
       render(<FileUploader onUpload={mockOnUpload} maxSize={1024} />);
 
-      expect(screen.getByText(new RegExp(`${FILE_UPLOADER.MAX_SIZE_PREFIX}1 KB`))).toBeInTheDocument();
+      expect(
+        screen.getByText(new RegExp(`${FILE_UPLOADER.MAX_SIZE_PREFIX}1 KB`))
+      ).toBeInTheDocument();
     });
 
     it('shows max size hint in MB', () => {
       render(<FileUploader onUpload={mockOnUpload} maxSize={5 * 1024 * 1024} />);
 
-      expect(screen.getByText(new RegExp(`${FILE_UPLOADER.MAX_SIZE_PREFIX}5 MB`))).toBeInTheDocument();
+      expect(
+        screen.getByText(new RegExp(`${FILE_UPLOADER.MAX_SIZE_PREFIX}5 MB`))
+      ).toBeInTheDocument();
     });
   });
 
@@ -312,9 +318,7 @@ describe('FileUploader', () => {
   describe('file validation', () => {
     describe('file size validation', () => {
       it('rejects files larger than maxSize', () => {
-        render(
-          <FileUploader onUpload={mockOnUpload} onError={mockOnError} maxSize={1024} />
-        );
+        render(<FileUploader onUpload={mockOnUpload} onError={mockOnError} maxSize={1024} />);
 
         const dropzone = screen.getByRole('button');
         const file = createFile('large.png', 2048, 'image/png');
@@ -330,9 +334,7 @@ describe('FileUploader', () => {
       });
 
       it('accepts files within maxSize', () => {
-        render(
-          <FileUploader onUpload={mockOnUpload} onError={mockOnError} maxSize={2048} />
-        );
+        render(<FileUploader onUpload={mockOnUpload} onError={mockOnError} maxSize={2048} />);
 
         const dropzone = screen.getByRole('button');
         const file = createFile('small.png', 1024, 'image/png');
@@ -366,9 +368,7 @@ describe('FileUploader', () => {
 
     describe('file type validation', () => {
       it('rejects files with wrong extension', () => {
-        render(
-          <FileUploader onUpload={mockOnUpload} onError={mockOnError} accept=".png,.jpg" />
-        );
+        render(<FileUploader onUpload={mockOnUpload} onError={mockOnError} accept=".png,.jpg" />);
 
         const dropzone = screen.getByRole('button');
         const file = createFile('document.pdf', 1024, 'application/pdf');
@@ -414,9 +414,7 @@ describe('FileUploader', () => {
       });
 
       it('rejects files not matching wildcard MIME type', () => {
-        render(
-          <FileUploader onUpload={mockOnUpload} onError={mockOnError} accept="image/*" />
-        );
+        render(<FileUploader onUpload={mockOnUpload} onError={mockOnError} accept="image/*" />);
 
         const dropzone = screen.getByRole('button');
         const file = createFile('document.pdf', 1024, 'application/pdf');
@@ -526,11 +524,7 @@ describe('FileUploader', () => {
 
     it('hides help text when error is shown', () => {
       render(
-        <FileUploader
-          onUpload={mockOnUpload}
-          maxSize={1024}
-          helpText="Upload your files here"
-        />
+        <FileUploader onUpload={mockOnUpload} maxSize={1024} helpText="Upload your files here" />
       );
 
       const dropzone = screen.getByRole('button');
@@ -625,9 +619,7 @@ describe('FileUploader', () => {
     });
 
     it('file input has aria-label', () => {
-      const { container } = render(
-        <FileUploader onUpload={mockOnUpload} label="Upload images" />
-      );
+      const { container } = render(<FileUploader onUpload={mockOnUpload} label="Upload images" />);
 
       const input = container.querySelector('input[type="file"]');
       expect(input).toHaveAttribute('aria-label', 'Upload images');

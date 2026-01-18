@@ -359,7 +359,10 @@ describe('Table', () => {
     it('ソートされたカラムにaria-sort属性が設定されること', () => {
       render(<Table columns={testColumns} data={testData} sortable />);
       const ageHeader = screen.getByText('年齢').closest('th');
-      fireEvent.click(ageHeader!);
+      expect(ageHeader).not.toBeNull();
+      if (ageHeader) {
+        fireEvent.click(ageHeader);
+      }
 
       expect(ageHeader).toHaveAttribute('aria-sort', 'ascending');
     });
@@ -367,8 +370,11 @@ describe('Table', () => {
     it('降順ソート時にaria-sort="descending"が設定されること', () => {
       render(<Table columns={testColumns} data={testData} sortable />);
       const ageHeader = screen.getByText('年齢').closest('th');
-      fireEvent.click(ageHeader!);
-      fireEvent.click(ageHeader!);
+      expect(ageHeader).not.toBeNull();
+      if (ageHeader) {
+        fireEvent.click(ageHeader);
+        fireEvent.click(ageHeader);
+      }
 
       expect(ageHeader).toHaveAttribute('aria-sort', 'descending');
     });
