@@ -1,4 +1,4 @@
-"""Reflectionリポジトリの実装."""
+"""Reflectionリポジトリの実装"""
 
 import uuid
 
@@ -11,13 +11,13 @@ from app.infrastructure.persistence.models import ReflectionModel
 
 
 class ReflectionRepository(IReflectionRepository):
-    """ReflectionリポジトリのSQLAlchemy実装.
+    """ReflectionリポジトリのSQLAlchemy実装
 
-    ドメインエンティティとSQLAlchemyモデル間のマッピングを行う。
+    ドメインエンティティとSQLAlchemyモデル間のマッピングを行う
     """
 
     def __init__(self, session: Session):
-        """リポジトリを初期化する.
+        """リポジトリを初期化する
 
         Args:
             session: SQLAlchemyセッション
@@ -25,7 +25,7 @@ class ReflectionRepository(IReflectionRepository):
         self._session = session
 
     def save(self, reflection: Reflection) -> Reflection:
-        """Reflectionを保存する.
+        """Reflectionを保存する
 
         Args:
             reflection: 保存するReflectionエンティティ
@@ -63,7 +63,7 @@ class ReflectionRepository(IReflectionRepository):
         return self._to_entity(model)
 
     def find_by_id(self, reflection_id: str) -> Reflection | None:
-        """IDでReflectionを検索する.
+        """IDでReflectionを検索する
 
         Args:
             reflection_id: 振り返りID
@@ -77,7 +77,7 @@ class ReflectionRepository(IReflectionRepository):
         return self._to_entity(model)
 
     def find_by_plan_id(self, plan_id: str) -> Reflection | None:
-        """旅行計画IDでReflectionを検索する.
+        """旅行計画IDでReflectionを検索する
 
         Args:
             plan_id: 旅行計画ID
@@ -93,7 +93,7 @@ class ReflectionRepository(IReflectionRepository):
         return self._to_entity(model)
 
     def delete(self, reflection_id: str) -> None:
-        """Reflectionを削除する.
+        """Reflectionを削除する
 
         Args:
             reflection_id: 削除する振り返りID
@@ -104,7 +104,7 @@ class ReflectionRepository(IReflectionRepository):
             self._session.commit()
 
     def _to_entity(self, model: ReflectionModel) -> Reflection:
-        """SQLAlchemyモデル → ドメインエンティティ変換.
+        """SQLAlchemyモデル → ドメインエンティティ変換
 
         Args:
             model: SQLAlchemyモデル
@@ -140,7 +140,7 @@ class ReflectionRepository(IReflectionRepository):
         )
 
     def _photos_to_dict(self, photos: list[Photo]) -> list[dict]:
-        """Photo → 辞書変換（JSON型で保存するため）.
+        """Photo → 辞書変換（JSON型で保存するため）
 
         Args:
             photos: Photoリスト

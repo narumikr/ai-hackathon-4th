@@ -1,4 +1,4 @@
-"""旅行計画作成ユースケース."""
+"""旅行計画作成ユースケース"""
 
 from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.use_cases.travel_plan_helpers import (
@@ -10,13 +10,13 @@ from app.domain.travel_plan.repository import ITravelPlanRepository
 
 
 class CreateTravelPlanUseCase:
-    """旅行計画作成ユースケース.
+    """旅行計画作成ユースケース
 
-    新しい旅行計画を作成し、リポジトリに保存する。
+    新しい旅行計画を作成し、リポジトリに保存する
     """
 
     def __init__(self, repository: ITravelPlanRepository):
-        """ユースケースを初期化する.
+        """ユースケースを初期化する
 
         Args:
             repository: TravelPlanリポジトリ
@@ -30,7 +30,7 @@ class CreateTravelPlanUseCase:
         destination: str,
         spots: list[dict],
     ) -> TravelPlanDTO:
-        """旅行計画を作成する.
+        """旅行計画を作成する
 
         Args:
             user_id: ユーザーID
