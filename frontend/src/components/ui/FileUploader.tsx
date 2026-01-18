@@ -156,7 +156,7 @@ export function FileUploader({
   );
 
   const handleDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
+    (e: React.DragEvent<HTMLButtonElement>) => {
       e.preventDefault();
       e.stopPropagation();
       if (!disabled) {
@@ -166,14 +166,14 @@ export function FileUploader({
     [disabled]
   );
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
+    (e: React.DragEvent<HTMLButtonElement>) => {
       e.preventDefault();
       e.stopPropagation();
       setIsDragOver(false);
@@ -193,7 +193,7 @@ export function FileUploader({
   }, [disabled]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
       if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
         e.preventDefault();
         inputRef.current?.click();

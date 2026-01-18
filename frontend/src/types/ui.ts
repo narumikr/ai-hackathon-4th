@@ -197,7 +197,7 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * Table Column Definition
  */
-export interface ColumnDef<T, K extends keyof T = keyof T> {
+export interface ColumnDef<T, K extends keyof T & string = keyof T & string> {
   /** Unique key for the column */
   key: K;
   /** Column header title */
@@ -255,6 +255,8 @@ export interface TableProps<T> {
   striped?: boolean;
   /** Enable hover effect on rows */
   hoverable?: boolean;
+  /** Additional CSS class */
+  className?: string;
 }
 
 /*

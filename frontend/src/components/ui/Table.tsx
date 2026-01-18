@@ -42,7 +42,7 @@ function SortIcon({ direction }: { direction: SortDirection }) {
   );
 }
 
-export function Table<T extends Record<string, unknown>>({
+export function Table<T extends object>({
   columns,
   data,
   sortable = false,
@@ -101,8 +101,8 @@ export function Table<T extends Record<string, unknown>>({
     if (!sortKey) return data;
 
     return [...data].sort((a, b) => {
-      const aValue = a[sortKey];
-      const bValue = b[sortKey];
+      const aValue = a[sortKey as keyof T];
+      const bValue = b[sortKey as keyof T];
 
       if (aValue === bValue) return 0;
       if (aValue === null || aValue === undefined) return 1;
@@ -153,9 +153,9 @@ export function Table<T extends Record<string, unknown>>({
   }, [data, getRowKey, selectedKeys]);
 
   const getCellValue = (row: T, column: ColumnDef<T>, rowIndex: number) => {
-    const value = row[column.key as keyof T];
+    const value = row[column.key as keyof T & string];
     if (column.render) {
-      return column.render(value, row, rowIndex);
+      return column.render(value as T[keyof T & string], row, rowIndex);
     }
     if (value === null || value === undefined) {
       return '-';
