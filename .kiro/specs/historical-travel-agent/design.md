@@ -556,6 +556,8 @@ interface TravelPlan {
   destination: string;
   spots: TouristSpot[];
   status: 'planning' | 'completed';  // 旅行の状態
+  guideGenerationStatus: 'not_started' | 'processing' | 'succeeded' | 'failed';
+  reflectionGenerationStatus: 'not_started' | 'processing' | 'succeeded' | 'failed';
   createdAt: Date;
   updatedAt: Date;
   guide?: TravelGuide;
