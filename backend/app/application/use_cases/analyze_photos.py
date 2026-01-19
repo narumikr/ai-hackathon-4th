@@ -223,8 +223,8 @@ class AnalyzePhotosUseCase:
                 prompt=prompt,
                 image_uri=photo["url"],
                 system_instruction=(
-                    "Return JSON only. "
-                    "Keys: detectedSpots, historicalElements, landmarks, confidence."
+                    "JSONのみを返してください。"
+                    "キー: detectedSpots, historicalElements, landmarks, confidence"
                 ),
                 temperature=0.0,
             )
