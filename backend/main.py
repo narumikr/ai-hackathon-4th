@@ -1,4 +1,4 @@
-"""FastAPI application entry point."""
+"""FastAPI application entry point"""
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config.settings import get_settings
-from app.interfaces.api.v1 import travel_plans
+from app.interfaces.api.v1 import travel_guides, travel_plans
 from app.interfaces.middleware import (
     generic_exception_handler,
     http_exception_handler,
@@ -19,7 +19,7 @@ from app.interfaces.middleware import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """アプリケーションのライフサイクル管理."""
+    """アプリケーションのライフサイクル管理"""
     # 起動時の処理
     print("Starting up...")
     yield
@@ -48,15 +48,16 @@ app.add_exception_handler(Exception, generic_exception_handler)
 
 # APIルーターの登録
 app.include_router(travel_plans.router, prefix="/api/v1")
+app.include_router(travel_guides.router, prefix="/api/v1")
 
 
 @app.get("/")
 async def root() -> dict[str, str]:
-    """ルートエンドポイント."""
+    """ルートエンドポイント"""
     return {"message": "Historical Travel Agent API"}
 
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    """ヘルスチェックエンドポイント."""
+    """ヘルスチェックエンドポイント"""
     return {"status": "ok"}
