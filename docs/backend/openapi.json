@@ -221,10 +221,95 @@
         }
       }
     },
+    "/api/v1/travel-guides/{guide_id}": {
+      "get": {
+        "tags": [
+          "travel-guides"
+        ],
+        "summary": "旅行ガイドを取得",
+        "description": "旅行ガイドを取得する\n\nArgs:\n    guide_id: 旅行ガイドID\n    repository: TravelGuideRepository\n\nReturns:\n    TravelGuideResponse: 旅行ガイド\n\nRaises:\n    HTTPException: 旅行ガイドが見つからない（404）",
+        "operationId": "get_travel_guide_api_v1_travel_guides__guide_id__get",
+        "parameters": [
+          {
+            "name": "guide_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Guide Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TravelGuideResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/travel-guides": {
+      "post": {
+        "tags": [
+          "travel-guides"
+        ],
+        "summary": "旅行ガイドを生成",
+        "description": "旅行ガイドを生成する\n\nArgs:\n    request: 旅行ガイド生成リクエスト\n    db: SQLAlchemyセッション\n    ai_service: AIサービス\n\nReturns:\n    TravelGuideResponse: 生成された旅行ガイド\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）など",
+        "operationId": "generate_travel_guide_api_v1_travel_guides_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateTravelGuideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TravelGuideResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
-        "description": "ルートエンドポイント.",
+        "description": "ルートエンドポイント",
         "operationId": "root__get",
         "responses": {
           "200": {
@@ -247,7 +332,7 @@
     "/health": {
       "get": {
         "summary": "Health",
-        "description": "ヘルスチェックエンドポイント.",
+        "description": "ヘルスチェックエンドポイント",
         "operationId": "health_health_get",
         "responses": {
           "200": {
@@ -270,6 +355,33 @@
   },
   "components": {
     "schemas": {
+      "CheckpointSchema": {
+        "properties": {
+          "spotName": {
+            "type": "string",
+            "title": "Spotname"
+          },
+          "checkpoints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Checkpoints"
+          },
+          "historicalContext": {
+            "type": "string",
+            "title": "Historicalcontext"
+          }
+        },
+        "type": "object",
+        "required": [
+          "spotName",
+          "checkpoints",
+          "historicalContext"
+        ],
+        "title": "CheckpointSchema",
+        "description": "チェックポイントスキーマ"
+      },
       "CreateTravelPlanRequest": {
         "properties": {
           "userId": {
@@ -308,6 +420,22 @@
         "title": "CreateTravelPlanRequest",
         "description": "旅行計画作成リクエスト."
       },
+      "GenerateTravelGuideRequest": {
+        "properties": {
+          "planId": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Planid",
+            "description": "旅行計画ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planId"
+        ],
+        "title": "GenerateTravelGuideRequest",
+        "description": "旅行ガイド生成リクエスト"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -320,6 +448,38 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HistoricalEventSchema": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "event": {
+            "type": "string",
+            "title": "Event"
+          },
+          "significance": {
+            "type": "string",
+            "title": "Significance"
+          },
+          "relatedSpots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Relatedspots"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "event",
+          "significance",
+          "relatedSpots"
+        ],
+        "title": "HistoricalEventSchema",
+        "description": "歴史イベントスキーマ"
       },
       "LocationSchema": {
         "properties": {
@@ -345,6 +505,93 @@
         ],
         "title": "LocationSchema",
         "description": "地理的位置スキーマ."
+      },
+      "MapDataSchema": {
+        "properties": {
+          "center": {
+            "$ref": "#/components/schemas/LocationSchema"
+          },
+          "zoom": {
+            "type": "integer",
+            "title": "Zoom"
+          },
+          "markers": {
+            "items": {
+              "$ref": "#/components/schemas/MapMarkerSchema"
+            },
+            "type": "array",
+            "title": "Markers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "center",
+          "zoom",
+          "markers"
+        ],
+        "title": "MapDataSchema",
+        "description": "地図データスキーマ"
+      },
+      "MapMarkerSchema": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "title": "Lat"
+          },
+          "lng": {
+            "type": "number",
+            "title": "Lng"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lng",
+          "label"
+        ],
+        "title": "MapMarkerSchema",
+        "description": "地図マーカースキーマ"
+      },
+      "SpotDetailSchema": {
+        "properties": {
+          "spotName": {
+            "type": "string",
+            "title": "Spotname"
+          },
+          "historicalBackground": {
+            "type": "string",
+            "title": "Historicalbackground"
+          },
+          "highlights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Highlights"
+          },
+          "recommendedVisitTime": {
+            "type": "string",
+            "title": "Recommendedvisittime"
+          },
+          "historicalSignificance": {
+            "type": "string",
+            "title": "Historicalsignificance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "spotName",
+          "historicalBackground",
+          "highlights",
+          "recommendedVisitTime",
+          "historicalSignificance"
+        ],
+        "title": "SpotDetailSchema",
+        "description": "スポット詳細スキーマ"
       },
       "TouristSpotSchema": {
         "properties": {
@@ -402,6 +649,70 @@
         ],
         "title": "TouristSpotSchema",
         "description": "観光スポットスキーマ."
+      },
+      "TravelGuideResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "planId": {
+            "type": "string",
+            "title": "Planid"
+          },
+          "overview": {
+            "type": "string",
+            "title": "Overview"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/HistoricalEventSchema"
+            },
+            "type": "array",
+            "title": "Timeline"
+          },
+          "spotDetails": {
+            "items": {
+              "$ref": "#/components/schemas/SpotDetailSchema"
+            },
+            "type": "array",
+            "title": "Spotdetails"
+          },
+          "checkpoints": {
+            "items": {
+              "$ref": "#/components/schemas/CheckpointSchema"
+            },
+            "type": "array",
+            "title": "Checkpoints"
+          },
+          "mapData": {
+            "$ref": "#/components/schemas/MapDataSchema"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "planId",
+          "overview",
+          "timeline",
+          "spotDetails",
+          "checkpoints",
+          "mapData",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "TravelGuideResponse",
+        "description": "旅行ガイドレスポンス"
       },
       "TravelPlanResponse": {
         "properties": {

@@ -290,11 +290,12 @@ class GenerateTravelGuideUseCase:
         self._ai_service = ai_service
         self._composer = composer or TravelGuideComposer()
 
-    async def execute(self, plan_id: str) -> TravelGuideDTO:
+    async def execute(self, plan_id: str, *, commit: bool = True) -> TravelGuideDTO:
         """旅行ガイドを生成する
 
         Args:
             plan_id: 旅行計画ID
+            commit: Trueの場合はトランザクションをコミットする
 
         Returns:
             TravelGuideDTO: 生成された旅行ガイド
@@ -365,7 +366,7 @@ class GenerateTravelGuideUseCase:
 
         existing = self._guide_repository.find_by_plan_id(travel_plan.id)
         if existing is None:
-            saved_guide = self._guide_repository.save(generated_guide)
+            saved_guide = self._guide_repository.save(generated_guide, commit=commit)
         else:
             existing.update_guide(
                 overview=generated_guide.overview,
@@ -374,7 +375,7 @@ class GenerateTravelGuideUseCase:
                 checkpoints=generated_guide.checkpoints,
                 map_data=generated_guide.map_data,
             )
-            saved_guide = self._guide_repository.save(existing)
+            saved_guide = self._guide_repository.save(existing, commit=commit)
 
         return TravelGuideDTO.from_entity(saved_guide)
 
