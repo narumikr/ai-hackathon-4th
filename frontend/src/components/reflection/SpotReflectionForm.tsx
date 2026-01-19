@@ -34,29 +34,33 @@ export const SpotReflectionForm: React.FC<SpotReflectionFormProps> = ({
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-lg text-neutral-900">{spot.name}</h3>
             {spot.isAdded && (
-              <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700 font-medium">
+              <span className="rounded-full bg-primary-100 px-2 py-0.5 font-medium text-primary-700 text-xs">
                 追加スポット
               </span>
             )}
           </div>
           {spot.isAdded && (
-            <p className="text-xs text-neutral-500 mt-1">振り返りで追加したスポットです</p>
+            <p className="mt-1 text-neutral-500 text-xs">振り返りで追加したスポットです</p>
           )}
         </div>
         {spot.isAdded && onRemove && (
-          <button onClick={() => onRemove(spot.id)} className="text-sm text-danger hover:underline">
+          <button
+            type="button"
+            onClick={() => onRemove(spot.id)}
+            className="text-danger text-sm hover:underline"
+          >
             削除
           </button>
         )}
       </div>
 
       <div className="mb-6">
-        <div className="mb-2 block font-semibold text-sm text-neutral-700">写真</div>
+        <div className="mb-2 block font-semibold text-neutral-700 text-sm">写真</div>
         <ImageUploader images={spot.photoPreviews} onImagesChange={handleImagesChange} />
       </div>
 
       <div>
-        <label className="mb-2 block font-semibold text-sm text-neutral-700">感想</label>
+        <div className="mb-2 block font-semibold text-neutral-700 text-sm">感想</div>
         <TextArea
           value={spot.comment}
           onChange={handleCommentChange}

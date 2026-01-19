@@ -13,7 +13,7 @@ import {
   PAGE_TITLES,
   PLACEHOLDERS,
 } from '@/constants';
-import { sampleGuide, sampleReflectionContents, sampleTravels } from '@/data';
+import { sampleGuide, sampleTravels } from '@/data';
 import type { ReflectionSpot } from '@/types/reflection';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -90,12 +90,6 @@ export default function ReflectionDetailPage() {
   };
 
   const handleSubmit = () => {
-    // 実際の実装ではここでAPIリクエストを送信
-    console.log('Submitting reflection:', {
-      travelId: id,
-      spots,
-      overallComment,
-    });
     alert('振り返りを生成しました！（デモ）');
   };
 
@@ -126,7 +120,7 @@ export default function ReflectionDetailPage() {
           {/* 旅行情報 */}
           <div className="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
             <h2 className="mb-1 font-semibold text-lg text-neutral-900">{travel.title}</h2>
-            <div className="flex gap-4 text-sm text-neutral-600">
+            <div className="flex gap-4 text-neutral-600 text-sm">
               <span>
                 {LABELS.COMPLETED_DATE} {travel.completedAt}
               </span>
@@ -135,8 +129,8 @@ export default function ReflectionDetailPage() {
           </div>
 
           {/* スポットごとの振り返り */}
-          <div className="space-y-6 mb-8">
-            <h2 className="font-bold text-xl text-neutral-900 border-b pb-2">
+          <div className="mb-8 space-y-6">
+            <h2 className="border-b pb-2 font-bold text-neutral-900 text-xl">
               観光スポットの振り返り
             </h2>
             {spots.map(spot => (

@@ -74,8 +74,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     onImagesChange(imageFiles, newPreviews);
   };
 
-
-
   return (
     <div>
       <input
@@ -88,15 +86,22 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       />
 
       {/* ドロップゾーン */}
-      <div
-        className={`mb-4 flex h-48 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed transition-colors ${isDragging
+      <button
+        type="button"
+        className={`mb-4 flex h-48 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
+          isDragging
             ? 'border-primary-500 bg-primary-50'
             : 'border-neutral-300 bg-neutral-50 hover:border-primary-400'
-          }`}
+        }`}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            fileInputRef.current?.click();
+          }
+        }}
+        onClick={handleClick}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={handleClick}
         aria-label={PLACEHOLDERS.UPLOAD_INSTRUCTION}
       >
         <div className="text-center">
@@ -106,15 +111,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           <p className="mb-1 font-medium text-neutral-700">{PLACEHOLDERS.UPLOAD_INSTRUCTION}</p>
           <p className="text-neutral-500 text-xs">{HELP_TEXTS.UPLOAD_FORMAT}</p>
         </div>
-      </div>
+      </button>
 
       {/* プレビューエリア */}
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
           {images.map((src, index) => (
             <div
-              key={`${src}-${index}`}
-              className="group relative aspect-square overflow-hidden rounded-lg bg-neutral-100 border border-neutral-200"
+              key={src}
+              className="group relative aspect-square overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt={`Uploaded ${index + 1}`} className="h-full w-full object-cover" />
