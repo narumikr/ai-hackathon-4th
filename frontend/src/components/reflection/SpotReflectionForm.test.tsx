@@ -138,9 +138,7 @@ describe('SpotReflectionForm', () => {
   describe('image upload handling', () => {
     it('calls onUpdate with new images when images are added', () => {
       const spot = createMockSpot();
-      const { container } = render(
-        <SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />
-      );
+      const { container } = render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = new File(['content'], 'test.png', { type: 'image/png' });
@@ -165,9 +163,7 @@ describe('SpotReflectionForm', () => {
         photoPreviews: ['blob:existing-url'],
       });
 
-      const { container } = render(
-        <SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />
-      );
+      const { container } = render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
       const newFile = new File(['new'], 'new.png', { type: 'image/png' });
@@ -239,9 +235,7 @@ describe('SpotReflectionForm', () => {
   describe('base styles', () => {
     it('has proper container styles', () => {
       const spot = createMockSpot();
-      const { container } = render(
-        <SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />
-      );
+      const { container } = render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
 
       const formContainer = container.firstChild;
       expect(formContainer).toHaveClass('rounded-lg', 'border', 'border-neutral-200', 'bg-white');

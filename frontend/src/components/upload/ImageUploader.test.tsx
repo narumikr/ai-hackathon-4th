@@ -34,13 +34,17 @@ describe('ImageUploader', () => {
     });
 
     it('renders upload icon', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       expect(container.querySelector('[role="img"]')).toBeInTheDocument();
     });
 
     it('has hidden file input', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const input = container.querySelector('input[type="file"]');
       expect(input).toBeInTheDocument();
@@ -48,14 +52,18 @@ describe('ImageUploader', () => {
     });
 
     it('accepts multiple files', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const input = container.querySelector('input[type="file"]');
       expect(input).toHaveAttribute('multiple');
     });
 
     it('accepts only images', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const input = container.querySelector('input[type="file"]');
       expect(input).toHaveAttribute('accept', 'image/*');
@@ -64,7 +72,9 @@ describe('ImageUploader', () => {
 
   describe('drag and drop interaction', () => {
     it('updates styles on drag over', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const dropzone = container.querySelector('button');
       if (dropzone) {
@@ -74,7 +84,9 @@ describe('ImageUploader', () => {
     });
 
     it('reverts styles on drag leave', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const dropzone = container.querySelector('button');
       if (dropzone) {
@@ -85,7 +97,9 @@ describe('ImageUploader', () => {
     });
 
     it('calls onImagesChange when valid images are dropped', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const dropzone = container.querySelector('button');
       const file = createFile('test.png', 1024, 'image/png');
@@ -102,10 +116,11 @@ describe('ImageUploader', () => {
     });
 
     it('filters out non-image files', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const dropzone = container.querySelector('button');
-      const imageFile = createFile('test.png', 1024, 'image/png');
       const pdfFile = createFile('doc.pdf', 1024, 'application/pdf');
 
       // Mock alert
@@ -128,7 +143,9 @@ describe('ImageUploader', () => {
 
   describe('file selection via click', () => {
     it('triggers file input when dropzone is clicked', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
       const clickSpy = vi.spyOn(input, 'click');
@@ -141,7 +158,9 @@ describe('ImageUploader', () => {
     });
 
     it('triggers file input on Enter key', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
       const clickSpy = vi.spyOn(input, 'click');
@@ -154,7 +173,9 @@ describe('ImageUploader', () => {
     });
 
     it('triggers file input on Space key', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
       const clickSpy = vi.spyOn(input, 'click');
@@ -167,7 +188,9 @@ describe('ImageUploader', () => {
     });
 
     it('calls onImagesChange when files are selected', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
       const file = createFile('test.png', 1024, 'image/png');
@@ -234,7 +257,9 @@ describe('ImageUploader', () => {
     });
 
     it('does not display preview area when no images', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const previewArea = container.querySelector('.grid');
       expect(previewArea).not.toBeInTheDocument();
@@ -394,14 +419,18 @@ describe('ImageUploader', () => {
 
   describe('base styles', () => {
     it('has proper dropzone base styles', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const dropzone = container.querySelector('button');
       expect(dropzone).toHaveClass('w-full', 'border-2', 'border-dashed', 'rounded-lg');
     });
 
     it('has neutral colors by default', () => {
-      const { container } = render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      const { container } = render(
+        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+      );
 
       const dropzone = container.querySelector('button');
       expect(dropzone).toHaveClass('border-neutral-300', 'bg-neutral-50');

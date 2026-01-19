@@ -171,7 +171,7 @@ describe('ReflectionViewer', () => {
 
       render(<ReflectionViewer travel={travel} reflection={reflection} />);
 
-      photos.forEach((photo, index) => {
+      photos.forEach((_photo, index) => {
         expect(screen.getByText(`写真 ${index + 1} のコメント`)).toBeInTheDocument();
       });
     });
