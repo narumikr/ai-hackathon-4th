@@ -152,13 +152,6 @@ async def generate_travel_guide(
             detail=f"Travel plan not found: {plan_id}",
         )
 
-    _update_guide_status_or_raise(
-        plan_repository,
-        plan_id,
-        GenerationStatus.PROCESSING,
-        commit=False,
-    )
-
     use_case = GenerateTravelGuideUseCase(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
@@ -167,12 +160,6 @@ async def generate_travel_guide(
 
     try:
         dto = await use_case.execute(plan_id=plan_id, commit=False)
-        _update_guide_status_or_raise(
-            plan_repository,
-            plan_id,
-            GenerationStatus.SUCCEEDED,
-            commit=False,
-        )
         db.commit()
         return TravelGuideResponse(**dto.__dict__)
     except TravelPlanNotFoundError as exc:

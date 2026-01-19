@@ -53,13 +53,13 @@
     - **Property 5: Travel guide completeness**
     - **Validates: Requirements 1.3, 1.4, 1.5**
 
-  - [ ] 3.5 Reflection集約の実装
+  - [ ] 3.5 振り返り集約の実装
     - Reflection, Photoエンティティの実装
     - ImageAnalysis, ReflectionPamphlet値オブジェクトの実装
     - ReflectionAnalyzerドメインサービスの実装
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ] 3.6 Reflection集約のプロパティテスト
+  - [ ] 3.6 振り返り集約のプロパティテスト
     - **Property 10: Image analysis execution**
     - **Property 11: Information integration**
     - **Property 13: Reflection pamphlet generation**

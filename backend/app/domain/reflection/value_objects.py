@@ -1,4 +1,4 @@
-"""Reflection Aggregateの値オブジェクト"""
+"""振り返り集約の値オブジェクト"""
 
 from dataclasses import dataclass
 from typing import TypedDict

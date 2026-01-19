@@ -206,7 +206,7 @@ historical-travel-agent/
 │   │   │   │   ├── repository.py    # ITravelGuideRepository インターフェース
 │   │   │   │   ├── services.py      # TravelGuideComposer ドメインサービス
 │   │   │   │   └── exceptions.py
-│   │   │   ├── reflection/          # Reflection集約
+│   │   │   ├── reflection/          # 振り返り集約
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── entity.py        # Reflection, Photo エンティティ
 │   │   │   │   ├── value_objects.py # ImageAnalysis, ReflectionPamphlet
@@ -376,7 +376,7 @@ historical-travel-agent/
 
 #### Backend Structure
 - **Domain-Driven Design (DDD)**: ドメイン層、アプリケーション層、インフラ層、インターフェース層の4層分離
-- **Aggregates**: TravelPlan, TravelGuide, Reflection の3つの集約でビジネスロジックを整理
+- **Aggregates**: TravelPlan, TravelGuide, 振り返りの3つの集約でビジネスロジックを整理
 - **Repository Pattern**: ドメイン層でインターフェース定義、インフラ層で実装（依存性逆転）
 - **Use Cases**: アプリケーション層で明確なユースケース境界による責任分離
 - **Value Objects**: 不変な値オブジェクトでドメインモデルの整合性を保証
@@ -468,7 +468,7 @@ cd deployment/terraform && terraform apply
 - `TravelGuideComposer` ドメインサービス: 年表、地図、見どころを統合してガイドを構成
 - `ITravelGuideRepository` インターフェース
 
-**Reflection集約**:
+**振り返り集約**:
 - `Reflection` エンティティ: 振り返りのルート集約
 - `Photo` エンティティ: 写真
 - `ImageAnalysis`, `ReflectionPamphlet` 値オブジェクト

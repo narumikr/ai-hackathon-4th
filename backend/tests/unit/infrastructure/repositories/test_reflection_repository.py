@@ -1,4 +1,4 @@
-"""ReflectionRepositoryのテスト"""
+"""振り返りリポジトリのテスト"""
 
 import pytest
 from sqlalchemy.orm import Session
@@ -10,7 +10,7 @@ from app.infrastructure.repositories.reflection_repository import ReflectionRepo
 
 
 def test_save_new_reflection(db_session: Session, sample_travel_plan: TravelPlanModel):
-    """前提: 新規Reflectionエンティティを作成（idはNone）
+    """前提: 新規振り返りエンティティを作成（idはNone）
     検証: IDが自動生成される、photosがJSON型で保存される
     """
     # Arrange
@@ -47,7 +47,7 @@ def test_save_new_reflection(db_session: Session, sample_travel_plan: TravelPlan
 
 
 def test_save_update_reflection(db_session: Session, sample_reflection: ReflectionModel):
-    """前提: 既存Reflectionを取得し、update_notes()で変更
+    """前提: 既存振り返りを取得し、update_notes()で変更
     検証: IDが変わらない、user_notesが更新される
     """
     # Arrange
@@ -66,7 +66,7 @@ def test_save_update_reflection(db_session: Session, sample_reflection: Reflecti
 
 
 def test_find_by_id_existing(db_session: Session, sample_reflection: ReflectionModel):
-    """検証: Reflectionエンティティが返却される、PhotoとImageAnalysisが正しく復元される"""
+    """検証: 振り返りエンティティが返却される、PhotoとImageAnalysisが正しく復元される"""
     # Arrange
     repository = ReflectionRepository(db_session)
 
@@ -96,7 +96,7 @@ def test_find_by_id_not_found(db_session: Session):
 
 
 def test_find_by_plan_id_existing(db_session: Session, sample_reflection: ReflectionModel):
-    """検証: Reflectionエンティティが返却される"""
+    """検証: 振り返りエンティティが返却される"""
     # Arrange
     repository = ReflectionRepository(db_session)
 
