@@ -71,7 +71,7 @@
 #### 振り返り一覧画面 (`/reflection`)
 - **目的**: 完了した旅行の振り返り管理
 - **主要機能**:
-  - 完了済み旅行の一覧表示
+  - 完了ステータス（APIのstatus）の旅行一覧表示
   - 振り返り作成状況の表示
   - 新規振り返り作成への導線
   - 既存振り返りパンフレットの閲覧
@@ -79,19 +79,27 @@
   - `app/reflection/page.tsx`
   - `components/reflection/ReflectionList.tsx`
 
-#### 写真アップロード・振り返り作成画面 (`/reflection/[id]`)
-- **目的**: 旅行後の写真と感想の収集
+#### 振り返り作成画面 (`/reflection/[id]`)
+- **目的**: 旅行後のスポット別写真と感想の収集
 - **主要機能**:
-  - 画像アップロード（ドラッグ&ドロップ対応）
-  - 複数画像の一括アップロード
-  - 各写真への説明・感想入力
-  - 全体的な旅行感想の入力
-  - 旅行前情報（ガイド）との比較表示
-  - 振り返りパンフレット生成トリガー
+  - **計画スポット表示**: 旅行計画に含まれていたスポットの一覧表示
+  - **スポット別画像アップロード**: 各スポットに対する複数画像のアップロード（ドラッグ&ドロップ対応）
+  - **スポット別感想入力**: 各スポットに対する感想入力（任意）
+  - **スポット追加機能**: 
+    - 計画になかった観光スポットの追加
+    - 観光スポット名の入力（必須）
+    - 追加スポットへの画像アップロード・感想入力
+  - **全体感想入力**: 旅行全体に対する感想入力（任意）
+  - **旅行前情報との比較**: 旅行ガイドとの比較表示
+  - **振り返りパンフレット生成**: AI処理トリガー
+- **データ仕様**:
+  - 追加されたスポットは振り返り専用データとして保存
+  - 元の旅行計画には影響しない
 - **コンポーネント**:
   - `app/reflection/[id]/page.tsx`
+  - `components/reflection/SpotReflectionForm.tsx`
+  - `components/reflection/SpotAdder.tsx`
   - `components/upload/ImageUploader.tsx`
-  - `components/upload/ReflectionForm.tsx`
 
 ### 4. 共通機能画面
 
@@ -128,7 +136,7 @@ frontend/src/
 │   ├── reflection/
 │   │   ├── page.tsx            # 振り返り一覧画面
 │   │   └── [id]/
-│   │       └── page.tsx        # 写真アップロード・振り返り作成画面
+│   │       └── page.tsx        # 振り返り作成画面
 │   └── api/                     # Next.js API Routes (プロキシ用)
 │       └── proxy/
 ├── components/
@@ -143,14 +151,15 @@ frontend/src/
 │   │   ├── TravelForm.tsx
 │   │   └── SpotSelector.tsx
 │   ├── upload/                  # アップロード関連
-│   │   ├── ImageUploader.tsx
-│   │   └── ReflectionForm.tsx
+│   │   └── ImageUploader.tsx
 │   ├── display/                 # 表示関連
 │   │   ├── TravelGuide.tsx
 │   │   ├── Timeline.tsx
 │   │   └── HistoricalMap.tsx
 │   └── reflection/              # 振り返り関連
-│       └── ReflectionList.tsx
+│       ├── ReflectionList.tsx
+│       ├── SpotReflectionForm.tsx
+│       └── SpotAdder.tsx
 ├── lib/
 │   ├── api.ts                   # APIクライアント
 │   ├── utils.ts                 # ユーティリティ関数
@@ -176,8 +185,11 @@ frontend/src/
 5. 旅行ガイド表示画面で生成されたガイドを確認・印刷
 
 ### 旅行後フェーズ
-1. 振り返り一覧画面で振り返り対象の旅行を選択
-2. 写真アップロード画面で旅行写真と感想を入力
+1. 振り返り一覧画面で完了ステータスの旅行から振り返り対象を選択
+2. 振り返り作成画面で：
+   - 計画に含まれていたスポットの写真・感想を入力
+   - 必要に応じて計画になかったスポットを追加
+   - 旅行全体の感想を入力
 3. AI処理による振り返りパンフレット生成（ローディング画面）
 
 ## 技術仕様
