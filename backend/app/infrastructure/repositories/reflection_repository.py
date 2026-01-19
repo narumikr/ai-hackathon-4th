@@ -1,4 +1,4 @@
-"""Reflectionリポジトリの実装"""
+"""振り返りリポジトリの実装"""
 
 import uuid
 
@@ -11,7 +11,7 @@ from app.infrastructure.persistence.models import ReflectionModel
 
 
 class ReflectionRepository(IReflectionRepository):
-    """ReflectionリポジトリのSQLAlchemy実装
+    """振り返りリポジトリのSQLAlchemy実装
 
     ドメインエンティティとSQLAlchemyモデル間のマッピングを行う
     """
@@ -25,16 +25,16 @@ class ReflectionRepository(IReflectionRepository):
         self._session = session
 
     def save(self, reflection: Reflection) -> Reflection:
-        """Reflectionを保存する
+        """振り返りを保存する
 
         Args:
-            reflection: 保存するReflectionエンティティ
+            reflection: 保存する振り返りエンティティ
 
         Returns:
-            Reflection: 保存されたReflection（IDが割り当てられている）
+            Reflection: 保存された振り返り（IDが割り当てられている）
 
         Raises:
-            ValueError: 更新時にReflectionが見つからない場合
+            ValueError: 更新時に振り返りが見つからない場合
         """
         # ドメインエンティティ → SQLAlchemyモデル変換
         if reflection.id is None:
@@ -63,7 +63,7 @@ class ReflectionRepository(IReflectionRepository):
         return self._to_entity(model)
 
     def find_by_id(self, reflection_id: str) -> Reflection | None:
-        """IDでReflectionを検索する
+        """IDで振り返りを検索する
 
         Args:
             reflection_id: 振り返りID
@@ -77,7 +77,7 @@ class ReflectionRepository(IReflectionRepository):
         return self._to_entity(model)
 
     def find_by_plan_id(self, plan_id: str) -> Reflection | None:
-        """旅行計画IDでReflectionを検索する
+        """旅行計画IDで振り返りを検索する
 
         Args:
             plan_id: 旅行計画ID
@@ -93,7 +93,7 @@ class ReflectionRepository(IReflectionRepository):
         return self._to_entity(model)
 
     def delete(self, reflection_id: str) -> None:
-        """Reflectionを削除する
+        """振り返りを削除する
 
         Args:
             reflection_id: 削除する振り返りID

@@ -1,4 +1,4 @@
-"""Reflection Aggregateのプロパティテスト"""
+"""振り返り集約のプロパティテスト"""
 
 from __future__ import annotations
 
@@ -238,7 +238,7 @@ def test_reflection_property_information_integration(
     - すべての入力データ（plan_id, user_id, photos, user_notes）が一致して格納される
     - photosの防御的コピーが機能する（外部からの変更を防止）
     """
-    # 実行: Reflection作成
+    # 実行: 振り返り作成
     reflection = Reflection(
         plan_id=plan_id,
         user_id=user_id,

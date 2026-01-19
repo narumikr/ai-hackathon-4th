@@ -1,4 +1,4 @@
-"""Reflection Aggregateのドメインサービス"""
+"""振り返り集約のドメインサービス"""
 
 from app.domain.reflection.entity import Photo
 from app.domain.reflection.exceptions import InvalidReflectionError

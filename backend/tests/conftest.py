@@ -142,7 +142,7 @@ def sample_travel_guide(
 def sample_reflection(
     db_session: Session, sample_travel_plan: TravelPlanModel
 ) -> ReflectionModel:
-    """サンプルReflectionデータを作成する."""
+    """サンプル振り返りデータを作成する."""
     reflection = ReflectionModel(
         plan_id=sample_travel_plan.id,
         user_id="test_user_001",

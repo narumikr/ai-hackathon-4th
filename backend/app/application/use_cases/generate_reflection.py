@@ -187,7 +187,7 @@ class GenerateReflectionPamphletUseCase:
         Args:
             plan_repository: TravelPlanリポジトリ
             guide_repository: TravelGuideリポジトリ
-            reflection_repository: Reflectionリポジトリ
+            reflection_repository: 振り返りリポジトリ
             ai_service: AIサービス
             analyzer: ReflectionAnalyzer（省略時はデフォルトを使用）
         """

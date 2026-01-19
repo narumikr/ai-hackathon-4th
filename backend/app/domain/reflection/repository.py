@@ -1,4 +1,4 @@
-"""Reflection Aggregateのリポジトリインターフェース"""
+"""振り返り集約のリポジトリインターフェース"""
 
 from abc import ABC, abstractmethod
 
@@ -6,7 +6,7 @@ from app.domain.reflection.entity import Reflection
 
 
 class IReflectionRepository(ABC):
-    """Reflectionリポジトリのインターフェース
+    """振り返りリポジトリのインターフェース
 
     ドメイン層でのリポジトリインターフェース定義
     実装はインフラ層で提供される
@@ -14,10 +14,10 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def save(self, reflection: Reflection) -> Reflection:
-        """Reflectionを保存する
+        """振り返りを保存する
 
         Args:
-            reflection: 保存するReflectionエンティティ
+            reflection: 保存する振り返りエンティティ
 
         Returns:
             Reflection: 保存されたReflection（IDが割り当てられている）
@@ -26,7 +26,7 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def find_by_id(self, reflection_id: str) -> Reflection | None:
-        """IDでReflectionを検索する
+        """IDで振り返りを検索する
 
         Args:
             reflection_id: 振り返りID
@@ -38,7 +38,7 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def find_by_plan_id(self, plan_id: str) -> Reflection | None:
-        """旅行計画IDでReflectionを検索する
+        """旅行計画IDで振り返りを検索する
 
         Args:
             plan_id: 旅行計画ID
@@ -50,7 +50,7 @@ class IReflectionRepository(ABC):
 
     @abstractmethod
     def delete(self, reflection_id: str) -> None:
-        """Reflectionを削除する
+        """振り返りを削除する
 
         Args:
             reflection_id: 削除する振り返りID

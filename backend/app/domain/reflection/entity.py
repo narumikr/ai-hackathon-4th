@@ -1,4 +1,4 @@
-"""Reflection Aggregateのエンティティ"""
+"""振り返り集約のエンティティ"""
 
 from datetime import UTC, datetime
 
@@ -76,7 +76,7 @@ class Reflection(Entity):
         id: str | None = None,
         created_at: datetime | None = None,
     ):
-        """Reflectionを初期化する
+        """振り返りを初期化する
 
         Args:
             plan_id: 旅行計画ID
