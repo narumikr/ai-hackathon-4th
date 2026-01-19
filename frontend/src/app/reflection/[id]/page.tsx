@@ -9,9 +9,11 @@ import {
   FORM_LABELS,
   HINTS,
   LABELS,
+  MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   PLACEHOLDERS,
+  SECTION_TITLES,
 } from '@/constants';
 import { sampleGuide, sampleTravels } from '@/data';
 import type { ReflectionSpot } from '@/types/reflection';
@@ -60,13 +62,11 @@ export default function ReflectionDetailPage() {
   }, [travel, id, router]);
 
   if (!travel) {
-    // notFound() はサーバーコンポーネント推奨だが、クライアントでも動く場合がある。
-    // クライアントサイドレンダリング中に404を表示するのはUIで行う。
-    return <div className="py-20 text-center">Travel not found</div>;
+    return <div className="py-20 text-center">{MESSAGES.TRAVEL_NOT_FOUND}</div>;
   }
 
   if (isLoading) {
-    return <div className="py-20 text-center">Loading...</div>;
+    return <div className="py-20 text-center">{MESSAGES.LOADING}</div>;
   }
 
   const handleSpotUpdate = (spotId: string, updates: Partial<ReflectionSpot>) => {
@@ -90,16 +90,10 @@ export default function ReflectionDetailPage() {
   };
 
   const handleSubmit = () => {
-    alert('振り返りを生成しました！（デモ）');
+    // TODO: 実際の実装ではここでAPIリクエストを送信し、
+    // 成功時に適切なUIフィードバック（トースト表示や画面遷移など）を行う
+    alert(MESSAGES.REFLECTION_GENERATED);
   };
-
-  // 閲覧モード（完了済みで、かつ編集ボタンを押していない場合など）
-  // 今回は「reflection/[id]」は常に編集可能なフォームとして表示し、
-  // 完了済みの場合は値が入っている状態とする仕様変更と解釈できるが、
-  // 元のコードでは閲覧モードがあった。
-  // リクエストは「画面実装に反映」で仕様変更は「旅行後フェーズのreflectionの仕様を変更」。
-  // 新しいデザインに従い、完了済みでもこのリッチな表示（各スポットごとの写真など）で見せるべき。
-  // ここでは統一してフォーム形式で表示し（閲覧も兼ねる）、保存ボタンを表示する。
 
   return (
     <div className="py-8">
@@ -131,7 +125,7 @@ export default function ReflectionDetailPage() {
           {/* スポットごとの振り返り */}
           <div className="mb-8 space-y-6">
             <h2 className="border-b pb-2 font-bold text-neutral-900 text-xl">
-              観光スポットの振り返り
+              {SECTION_TITLES.SPOT_REFLECTIONS}
             </h2>
             {spots.map(spot => (
               <SpotReflectionForm
