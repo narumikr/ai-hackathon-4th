@@ -206,7 +206,7 @@ historical-travel-agent/
 │   │   │   │   ├── repository.py    # ITravelGuideRepository インターフェース
 │   │   │   │   ├── services.py      # TravelGuideComposer ドメインサービス
 │   │   │   │   └── exceptions.py
-│   │   │   ├── reflection/          # Reflection集約
+│   │   │   ├── reflection/          # 振り返り集約
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── entity.py        # Reflection, Photo エンティティ
 │   │   │   │   ├── value_objects.py # ImageAnalysis, ReflectionPamphlet
@@ -468,7 +468,7 @@ cd deployment/terraform && terraform apply
 - `TravelGuideComposer` ドメインサービス: 年表、地図、見どころを統合してガイドを構成
 - `ITravelGuideRepository` インターフェース
 
-**Reflection集約**:
+**振り返り集約**:
 - `Reflection` エンティティ: 振り返りのルート集約
 - `Photo` エンティティ: 写真
 - `ImageAnalysis`, `ReflectionPamphlet` 値オブジェクト

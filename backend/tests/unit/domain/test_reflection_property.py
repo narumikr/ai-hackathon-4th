@@ -17,7 +17,7 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
 
     Hypothesis Strategy: テストデータ生成の設計図
 
-    Reflection集約のバリデーション要件に適合:
+    振り返り集約のバリデーション要件に適合:
     - 空文字列は拒否される (`not value or not value.strip()`)
     - 空白のみの文字列も拒否される
 
