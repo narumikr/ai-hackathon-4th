@@ -1,6 +1,7 @@
 'use client';
 
 import { TextArea } from '@/components/ui';
+import { BUTTON_LABELS, FORM_LABELS, HELP_TEXTS, PLACEHOLDERS, STATUS_LABELS } from '@/constants';
 import type { ReflectionSpot } from '@/types/reflection';
 import type React from 'react';
 import { ImageUploader } from '../upload/ImageUploader';
@@ -35,13 +36,11 @@ export const SpotReflectionForm: React.FC<SpotReflectionFormProps> = ({
             <h3 className="font-bold text-lg text-neutral-900">{spot.name}</h3>
             {spot.isAdded && (
               <span className="rounded-full bg-primary-100 px-2 py-0.5 font-medium text-primary-700 text-xs">
-                追加スポット
+                {STATUS_LABELS.ADDED_SPOT}
               </span>
             )}
           </div>
-          {spot.isAdded && (
-            <p className="mt-1 text-neutral-500 text-xs">振り返りで追加したスポットです</p>
-          )}
+          {spot.isAdded && <p className="mt-1 text-neutral-500 text-xs">{HELP_TEXTS.ADDED_SPOT}</p>}
         </div>
         {spot.isAdded && onRemove && (
           <button
@@ -49,22 +48,26 @@ export const SpotReflectionForm: React.FC<SpotReflectionFormProps> = ({
             onClick={() => onRemove(spot.id)}
             className="text-danger text-sm hover:underline"
           >
-            削除
+            {BUTTON_LABELS.REMOVE}
           </button>
         )}
       </div>
 
       <div className="mb-6">
-        <div className="mb-2 block font-semibold text-neutral-700 text-sm">写真</div>
+        <div className="mb-2 block font-semibold text-neutral-700 text-sm">
+          {FORM_LABELS.PHOTOS}
+        </div>
         <ImageUploader images={spot.photoPreviews} onImagesChange={handleImagesChange} />
       </div>
 
       <div>
-        <div className="mb-2 block font-semibold text-neutral-700 text-sm">感想</div>
+        <div className="mb-2 block font-semibold text-neutral-700 text-sm">
+          {FORM_LABELS.COMMENT}
+        </div>
         <TextArea
           value={spot.comment}
           onChange={handleCommentChange}
-          placeholder={`${spot.name}での思い出や感想を書いてみましょう...`}
+          placeholder={PLACEHOLDERS.SPOT_COMMENT(spot.name)}
           rows={3}
           fullWidth
         />

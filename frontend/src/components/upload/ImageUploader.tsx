@@ -1,23 +1,38 @@
 'use client';
 
 import { Emoji } from '@/components/ui';
-import { HELP_TEXTS, PLACEHOLDERS } from '@/constants';
+import { ERROR_MESSAGES, HELP_TEXTS, LABELS, PLACEHOLDERS } from '@/constants';
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ImageUploaderProps {
   images: string[]; // プレビュー用のURL
   onImagesChange: (files: File[], previews: string[]) => void;
+  onRemoveImage?: (index: number) => void;
   maxImages?: number;
+  maxSizeMB?: number;
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   images,
   onImagesChange,
+  onRemoveImage,
   maxImages = 5,
+  maxSizeMB = 10,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // メモリリーク防止: コンポーネントアンマウント時にオブジェクトURLを解放
+  useEffect(() => {
+    return () => {
+      images.forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [images]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -52,26 +67,41 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     // 画像のみフィルタリング
     const imageFiles = newFiles.filter(file => file.type.startsWith('image/'));
 
-    if (imageFiles.length === 0) return;
+    if (imageFiles.length === 0) {
+      alert(ERROR_MESSAGES.INVALID_FILE_TYPE);
+      return;
+    }
 
     // 現在の枚数チェック
     if (images.length + imageFiles.length > maxImages) {
-      alert(`写真は最大${maxImages}枚までアップロードできます`);
+      alert(ERROR_MESSAGES.MAX_IMAGES_EXCEEDED(maxImages));
+      return;
+    }
+
+    // ファイルサイズチェック
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    const oversizedFiles = imageFiles.filter(file => file.size > maxSizeBytes);
+    if (oversizedFiles.length > 0) {
+      oversizedFiles.forEach(file => {
+        alert(ERROR_MESSAGES.FILE_SIZE_EXCEEDED(file.name, maxSizeMB));
+      });
       return;
     }
 
     // プレビュー生成
     const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
 
-    // 親コンポーネントに通知（本来は既存のファイルと合わせる必要があるが、
-    // ここでは簡易的に追加分だけ処理するか、親でマージするかを決める。
-    // 今回は親で管理しているリストに追加する形を想定して、Fileオブジェクトを渡す）
-
-    // 注意: ここでは既存のimagesはURL(string)のみ受け取っているため、
-    // 完全なFileオブジェクトのリストを維持するには親側での管理が重要。
-    // このコンポーネントは「新しく追加されたファイル」を通知する。
-
+    // 親コンポーネントに新しく追加されたファイルとそのプレビューのみを通知
     onImagesChange(imageFiles, newPreviews);
+  };
+
+  const handleRemove = (index: number) => {
+    // オブジェクトURLを解放
+    const urlToRevoke = images[index];
+    if (urlToRevoke.startsWith('blob:')) {
+      URL.revokeObjectURL(urlToRevoke);
+    }
+    onRemoveImage?.(index);
   };
 
   return (
@@ -123,15 +153,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt={`Uploaded ${index + 1}`} className="h-full w-full object-cover" />
-              <button
-                type="button"
-                // 削除機能は別途実装が必要 (Props拡張が必要)
-                // onClick={() => handleRemove(index)}
-                className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white text-xs opacity-0 transition-opacity group-hover:opacity-100"
-                aria-label="削除"
-              >
-                ✕
-              </button>
+              {onRemoveImage && (
+                <button
+                  type="button"
+                  onClick={() => handleRemove(index)}
+                  className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label={LABELS.REMOVE_IMAGE}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))}
         </div>

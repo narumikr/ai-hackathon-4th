@@ -117,6 +117,7 @@ export const PAGE_TITLES = {
   TRAVEL_GUIDE: '旅行ガイド',
   REFLECTION_LIST: '振り返り一覧',
   REFLECTION_CREATE: '振り返り作成',
+  REFLECTION_PAMPHLET: '振り返りパンフレット',
 } as const;
 
 /**
@@ -137,6 +138,7 @@ export const BUTTON_LABELS = {
   VIEW_DETAILS: '詳細を見る',
   EDIT: '編集',
   DELETE: '削除',
+  REMOVE: '削除',
   SAVE: '保存',
   CANCEL: 'キャンセル',
   BACK: '戻る',
@@ -148,6 +150,7 @@ export const BUTTON_LABELS = {
   GENERATE_GUIDE: '旅行ガイドを生成',
   GENERATE_REFLECTION: '振り返りパンフレットを生成',
   ADD_SPOT: '＋ スポットを追加',
+  ADD: '追加',
   START_NOW: '今すぐ始める',
   VIEW_TRAVEL_LIST: '旅行一覧を見る',
   VIEW_TRAVEL_LIST_ALT: '旅行一覧へ',
@@ -164,6 +167,9 @@ export const MESSAGES = {
   NO_REFLECTIONS: '振り返りがありません。完了した旅行から振り返りを作成してください。',
   LOADING: '読み込み中...',
   ERROR: 'エラーが発生しました。',
+  TRAVEL_NOT_FOUND: '旅行が見つかりません',
+  REFLECTION_NOT_FOUND: '振り返りが見つかりません',
+  REFLECTION_GENERATED: '振り返りを生成しました！',
 } as const;
 
 /**
@@ -174,6 +180,7 @@ export const STATUS_LABELS = {
   TRAVELING: '旅行中',
   COMPLETED: '完了',
   REFLECTION_CREATED: '作成済み',
+  ADDED_SPOT: '追加スポット',
 } as const;
 
 /**
@@ -196,7 +203,10 @@ export const FORM_LABELS = {
   PHOTO_UPLOAD: '📸 写真をアップロード',
   PHOTO_COMMENTS: '✍️ 写真ごとの感想',
   OVERALL_IMPRESSION: '📝 旅行全体の感想',
+  OVERALL_IMPRESSION_PLAIN: '全体的な感想',
   PRE_LEARNING: '📚 事前学習で学んだこと（参考）',
+  PHOTOS: '写真',
+  COMMENT: '感想',
 } as const;
 
 /**
@@ -212,6 +222,8 @@ export const PLACEHOLDERS = {
   OVERALL_COMMENT:
     '旅行全体を通しての感想を入力してください。事前学習との違いや、新たな発見などを記入すると、より充実した振り返りができます...',
   UPLOAD_INSTRUCTION: 'クリックまたはドラッグ&ドロップで写真を追加',
+  SPOT_COMMENT: (spotName: string) => `${spotName}での思い出や感想を書いてみましょう...`,
+  SPOT_NAME: 'スポット名を入力 (例: 原爆ドーム近くのカフェ)',
 } as const;
 
 /**
@@ -221,6 +233,19 @@ export const HELP_TEXTS = {
   DESTINATION: '訪問する都道府県や地域を入力してください',
   SPOTS: '訪問予定の観光スポットを入力してください（複数可）',
   UPLOAD_FORMAT: 'JPG, PNG形式に対応（最大10MB）',
+  ADDED_SPOT: '振り返りで追加したスポットです',
+  ADD_SPOT_INSTRUCTION:
+    '計画になかった立ち寄り場所や、特に印象に残った場所を追加して記録に残しましょう。',
+} as const;
+
+/**
+ * エラーメッセージ
+ */
+export const ERROR_MESSAGES = {
+  MAX_IMAGES_EXCEEDED: (maxImages: number) => `写真は最大${maxImages}枚までアップロードできます`,
+  INVALID_FILE_TYPE: '画像ファイルのみアップロードできます',
+  FILE_SIZE_EXCEEDED: (fileName: string, maxSize: number) =>
+    `${fileName} はファイルサイズ上限（${maxSize}MB）を超えています`,
 } as const;
 
 /**
@@ -235,6 +260,10 @@ export const SECTION_TITLES = {
   SPOT_DETAILS: '📍 観光スポット詳細',
   HISTORICAL_CONTEXT: '🏛️ 歴史的背景',
   CHECKPOINTS: '✅ チェックポイント',
+  SPOT_REFLECTIONS: '観光スポットの振り返り',
+  SPOT_MEMORIES: '観光スポットの思い出',
+  ADD_SPOT: 'スポットを追加する',
+  MEMORY_SCENE: (index: number) => `思い出の場面 #${index}`,
 } as const;
 
 /**
@@ -332,6 +361,7 @@ export const LABELS = {
   COMPLETED_DATE: '完了:',
   HINT_TITLE: '💡 ヒント',
   ABOUT_REFLECTION: '💡 振り返りについて',
+  REMOVE_IMAGE: '削除',
 } as const;
 
 /**

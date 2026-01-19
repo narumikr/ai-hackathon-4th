@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, TextField } from '@/components/ui';
+import { BUTTON_LABELS, HELP_TEXTS, PLACEHOLDERS, SECTION_TITLES } from '@/constants';
 import type React from 'react';
 import { useState } from 'react';
 
@@ -21,21 +22,19 @@ export const SpotAdder: React.FC<SpotAdderProps> = ({ onAdd }) => {
 
   return (
     <div className="rounded-lg border border-neutral-300 border-dashed bg-neutral-50 p-6">
-      <h3 className="mb-4 font-bold text-lg text-neutral-900">スポットを追加する</h3>
-      <p className="mb-4 text-neutral-600 text-sm">
-        計画になかった立ち寄り場所や、特に印象に残った場所を追加して記録に残しましょう。
-      </p>
+      <h3 className="mb-4 font-bold text-lg text-neutral-900">{SECTION_TITLES.ADD_SPOT}</h3>
+      <p className="mb-4 text-neutral-600 text-sm">{HELP_TEXTS.ADD_SPOT_INSTRUCTION}</p>
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="flex-1">
           <TextField
             value={name}
             onChange={setName}
-            placeholder="スポット名を入力 (例: 原爆ドーム近くのカフェ)"
+            placeholder={PLACEHOLDERS.SPOT_NAME}
             fullWidth
           />
         </div>
         <Button type="submit" variant="secondary" disabled={!name.trim()}>
-          追加
+          {BUTTON_LABELS.ADD}
         </Button>
       </form>
     </div>
