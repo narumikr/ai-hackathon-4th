@@ -20,7 +20,7 @@ class IReflectionRepository(ABC):
             reflection: 保存する振り返りエンティティ
 
         Returns:
-            Reflection: 保存されたReflection（IDが割り当てられている）
+            Reflection: 保存された振り返り（IDが割り当てられている）
         """
         pass
 
@@ -32,7 +32,7 @@ class IReflectionRepository(ABC):
             reflection_id: 振り返りID
 
         Returns:
-            Reflection | None: 見つかった場合はReflection、見つからない場合はNone
+            Reflection | None: 見つかった場合は振り返り、見つからない場合はNone
         """
         pass
 
@@ -44,7 +44,7 @@ class IReflectionRepository(ABC):
             plan_id: 旅行計画ID
 
         Returns:
-            Reflection | None: 見つかった場合はReflection、見つからない場合はNone
+            Reflection | None: 見つかった場合は振り返り、見つからない場合はNone
         """
         pass
 

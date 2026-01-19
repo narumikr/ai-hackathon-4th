@@ -376,7 +376,7 @@ historical-travel-agent/
 
 #### Backend Structure
 - **Domain-Driven Design (DDD)**: ドメイン層、アプリケーション層、インフラ層、インターフェース層の4層分離
-- **Aggregates**: TravelPlan, TravelGuide, Reflection の3つの集約でビジネスロジックを整理
+- **Aggregates**: TravelPlan, TravelGuide, 振り返りの3つの集約でビジネスロジックを整理
 - **Repository Pattern**: ドメイン層でインターフェース定義、インフラ層で実装（依存性逆転）
 - **Use Cases**: アプリケーション層で明確なユースケース境界による責任分離
 - **Value Objects**: 不変な値オブジェクトでドメインモデルの整合性を保証

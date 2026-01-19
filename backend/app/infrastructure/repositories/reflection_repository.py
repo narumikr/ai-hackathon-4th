@@ -69,7 +69,7 @@ class ReflectionRepository(IReflectionRepository):
             reflection_id: 振り返りID
 
         Returns:
-            Reflection | None: 見つかった場合はReflection、見つからない場合はNone
+            Reflection | None: 見つかった場合は振り返り、見つからない場合はNone
         """
         model = self._session.get(ReflectionModel, reflection_id)
         if model is None:
@@ -83,7 +83,7 @@ class ReflectionRepository(IReflectionRepository):
             plan_id: 旅行計画ID
 
         Returns:
-            Reflection | None: 見つかった場合はReflection、見つからない場合はNone
+            Reflection | None: 見つかった場合は振り返り、見つからない場合はNone
         """
         model = (
             self._session.query(ReflectionModel).filter(ReflectionModel.plan_id == plan_id).first()
