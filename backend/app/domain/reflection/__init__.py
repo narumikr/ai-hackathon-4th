@@ -1,1 +1,1 @@
-"""Reflection Aggregate"""
+"""振り返り集約"""

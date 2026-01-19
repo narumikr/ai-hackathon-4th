@@ -1,14 +1,14 @@
-"""Reflection Aggregateのドメイン例外"""
+"""振り返り集約のドメイン例外"""
 
 
 class ReflectionDomainError(Exception):
-    """Reflection Aggregateのドメインエラー基底クラス"""
+    """振り返り集約のドメインエラー基底クラス"""
 
     pass
 
 
 class ReflectionNotFoundError(ReflectionDomainError):
-    """Reflectionが見つからない"""
+    """振り返りが見つからない"""
 
     def __init__(self, reflection_id: str):
         """ReflectionNotFoundErrorを初期化する
@@ -21,6 +21,6 @@ class ReflectionNotFoundError(ReflectionDomainError):
 
 
 class InvalidReflectionError(ReflectionDomainError):
-    """Reflectionのバリデーションエラー"""
+    """振り返りのバリデーションエラー"""
 
     pass
