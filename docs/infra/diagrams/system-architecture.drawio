@@ -1,0 +1,110 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" version="29.3.3">
+  <diagram name="GCP Architecture" id="gcp-architecture">
+    <mxGraphModel dx="331" dy="226" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="users" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" value="Users&#xa;(Web Browser)" vertex="1">
+          <mxGeometry height="60" width="80" x="80" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="gcp-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;dashed=1;fontSize=16;fontStyle=1;verticalAlign=top;" value="Google Cloud Platform" vertex="1">
+          <mxGeometry height="760" width="900" x="200" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="frontend-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1;verticalAlign=top;" value="Frontend Layer" vertex="1">
+          <mxGeometry height="120" width="260" x="220" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="firebase-hosting" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Firebase Hosting&#xa;(Next.js)" vertex="1">
+          <mxGeometry height="60" width="80" x="250" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cdn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Cloud CDN" vertex="1">
+          <mxGeometry height="60" width="80" x="380" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="backend-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1;verticalAlign=top;" value="Backend Layer" vertex="1">
+          <mxGeometry height="180" width="260" x="520" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="load-balancer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Load Balancer" vertex="1">
+          <mxGeometry height="60" width="80" x="550" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-run" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Cloud Run&#xa;(FastAPI)" vertex="1">
+          <mxGeometry height="60" width="80" x="680" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-build" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Cloud Build" vertex="1">
+          <mxGeometry height="60" width="80" x="550" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="AVfHVMgh1mspcjvuXA3F-1" edge="1" parent="1" source="artifact-registry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="cloud-run" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="artifact-registry" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Artifact Registry" vertex="1">
+          <mxGeometry height="60" width="80" x="680" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="ai-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1;verticalAlign=top;" value="AI/ML Layer" vertex="1">
+          <mxGeometry height="180" width="260" x="820" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="vertex-ai" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Vertex AI&#xa;(Gemini)" vertex="1">
+          <mxGeometry height="60" width="80" x="850" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="vertex-search" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Vertex AI&#xa;Search" vertex="1">
+          <mxGeometry height="60" width="80" x="980" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gemini-tools" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Gemini Built-in Tools" vertex="1">
+          <mxGeometry height="40" width="190" x="850" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="data-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;verticalAlign=top;" value="Data Layer" vertex="1">
+          <mxGeometry height="180" width="860" x="220" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-sql" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Cloud SQL&#xa;(PostgreSQL)" vertex="1">
+          <mxGeometry height="60" width="80" x="300" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="memorystore" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Memorystore&#xa;(Redis)" vertex="1">
+          <mxGeometry height="60" width="80" x="450" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-storage" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Cloud Storage" vertex="1">
+          <mxGeometry height="60" width="80" x="610" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="security-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;fontStyle=1;verticalAlign=top;" value="Security Layer" vertex="1">
+          <mxGeometry height="120" width="860" x="220" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="iam" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="IAM" vertex="1">
+          <mxGeometry height="60" width="80" x="280" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="secret-manager" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Secret Manager" vertex="1">
+          <mxGeometry height="60" width="80" x="420" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="monitoring-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1;verticalAlign=top;" value="Monitoring Layer" vertex="1">
+          <mxGeometry height="100" width="860" x="220" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-monitoring" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Cloud Monitoring" vertex="1">
+          <mxGeometry height="60" width="80" x="280" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="cloud-logging" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9900;strokeColor=#000000;" value="Cloud Logging" vertex="1">
+          <mxGeometry height="60" width="80" x="420" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="conn1" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#82b366;" target="firebase-hosting">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#d6b656;" target="load-balancer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn3" edge="1" parent="1" source="load-balancer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#d6b656;" target="cloud-run">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn4" edge="1" parent="1" source="cloud-run" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#b85450;" target="vertex-ai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn5" edge="1" parent="1" source="cloud-run" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#6c8ebf;" target="cloud-sql">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn6" edge="1" parent="1" source="cloud-run" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#9673a6;" target="memorystore">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn7" edge="1" parent="1" source="cloud-run" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#d79b00;" target="cloud-storage">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
