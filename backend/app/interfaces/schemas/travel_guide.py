@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.interfaces.schemas.travel_plan import LocationSchema
+from app.interfaces.schemas.location import LocationSchema
 
 
 class HistoricalEventSchema(BaseModel):

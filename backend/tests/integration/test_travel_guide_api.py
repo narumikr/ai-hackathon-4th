@@ -1,5 +1,8 @@
 """TravelGuide API統合テスト"""
 
+import time
+
+from sqlalchemy.orm import sessionmaker
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -114,7 +117,12 @@ def api_client(db_session: Session):
     """テスト用DBセッションとAIサービスを注入したTestClientを返す"""
 
     def override_get_db():
-        yield db_session
+        session_factory = sessionmaker(bind=db_session.get_bind())
+        session = session_factory()
+        try:
+            yield session
+        finally:
+            session.close()
 
     async def override_get_ai_service():
         return StubAIService()
@@ -126,44 +134,6 @@ def api_client(db_session: Session):
     yield client
 
     app.dependency_overrides.clear()
-
-
-def test_get_travel_guide(
-    api_client: TestClient, sample_travel_guide: TravelGuideModel
-):
-    """前提条件: テスト用DBセッションとサンプルガイド
-    実行: GET /api/v1/travel-guides/{id}
-    検証: ステータスコード200、レスポンスデータ
-    """
-    # 前提条件: テスト用DBセッションとサンプルガイド
-
-    # 実行: GET /api/v1/travel-guides/{id}
-    response = api_client.get(f"/api/v1/travel-guides/{sample_travel_guide.id}")
-
-    # 検証: ステータスコード200、レスポンスデータ
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == sample_travel_guide.id
-    assert data["planId"] == sample_travel_guide.plan_id
-    assert data["overview"] == sample_travel_guide.overview
-    assert len(data["timeline"]) == len(sample_travel_guide.timeline)
-    assert len(data["spotDetails"]) == len(sample_travel_guide.spot_details)
-    assert len(data["checkpoints"]) == len(sample_travel_guide.checkpoints)
-    assert data["mapData"]["zoom"] == sample_travel_guide.map_data["zoom"]
-
-
-def test_get_travel_guide_not_found(api_client: TestClient):
-    """前提条件: 存在しないID
-    実行: GET /api/v1/travel-guides/{non_existent_id}
-    検証: ステータスコード404
-    """
-    # 前提条件: 存在しないID
-
-    # 実行: GET /api/v1/travel-guides/{non_existent_id}
-    response = api_client.get("/api/v1/travel-guides/non-existent-id")
-
-    # 検証: ステータスコード404
-    assert response.status_code == 404
 
 
 def test_generate_travel_guide(
@@ -181,15 +151,34 @@ def test_generate_travel_guide(
     # 実行: POST /api/v1/travel-guides
     response = api_client.post("/api/v1/travel-guides", json=request_data)
 
-    # 検証: ステータスコード201、ガイド生成とステータス更新
-    assert response.status_code == 201
+    # 検証: ステータスコード202、生成中ステータスが返る
+    assert response.status_code == 202
     data = response.json()
-    assert data["planId"] == sample_travel_plan.id
-    assert data["overview"] == "京都の歴史を学ぶ旅行ガイド"
-    assert len(data["timeline"]) == 2
-    assert len(data["spotDetails"]) == 2
-    assert len(data["checkpoints"]) == 2
+    assert data["id"] == sample_travel_plan.id
+    assert data["guideGenerationStatus"] == "processing"
 
+    # 実行: GET /api/v1/travel-plans/{id}
+    status_response = api_client.get(
+        f"/api/v1/travel-plans/{sample_travel_plan.id}"
+    )
+
+    # 検証: ジョブ完了後にガイドが作成される
+    assert status_response.status_code == 200
+    status_data = status_response.json()
+    assert status_data["id"] == sample_travel_plan.id
+
+    # 検証: ポーリングで生成完了を確認する
+    for _ in range(20):
+        if status_data["guideGenerationStatus"] == "succeeded":
+            break
+        time.sleep(0.01)
+        status_data = api_client.get(
+            f"/api/v1/travel-plans/{sample_travel_plan.id}"
+        ).json()
+
+    assert status_data["guideGenerationStatus"] == "succeeded"
+
+    db_session.expire_all()
     saved_plan = db_session.get(TravelPlanModel, sample_travel_plan.id)
     assert saved_plan is not None
     assert saved_plan.guide_generation_status == "succeeded"

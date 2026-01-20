@@ -221,56 +221,13 @@
         }
       }
     },
-    "/api/v1/travel-guides/{guide_id}": {
-      "get": {
-        "tags": [
-          "travel-guides"
-        ],
-        "summary": "旅行ガイドを取得",
-        "description": "旅行ガイドを取得する\n\nArgs:\n    guide_id: 旅行ガイドID\n    repository: TravelGuideRepository\n\nReturns:\n    TravelGuideResponse: 旅行ガイド\n\nRaises:\n    HTTPException: 旅行ガイドが見つからない（404）",
-        "operationId": "get_travel_guide_api_v1_travel_guides__guide_id__get",
-        "parameters": [
-          {
-            "name": "guide_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Guide Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TravelGuideResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/travel-guides": {
       "post": {
         "tags": [
           "travel-guides"
         ],
-        "summary": "旅行ガイドを生成",
-        "description": "旅行ガイドを生成する\n\nArgs:\n    request: 旅行ガイド生成リクエスト\n    db: SQLAlchemyセッション\n    ai_service: AIサービス\n\nReturns:\n    TravelGuideResponse: 生成された旅行ガイド\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）など",
+        "summary": "旅行ガイド生成を開始",
+        "description": "旅行ガイド生成を開始する\n\nArgs:\n    request: 旅行ガイド生成リクエスト\n    background_tasks: バックグラウンドタスク\n    db: SQLAlchemyセッション\n    ai_service: AIサービス\n\nReturns:\n    TravelPlanResponse: 旅行計画（生成中ステータス）\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）など",
         "operationId": "generate_travel_guide_api_v1_travel_guides_post",
         "requestBody": {
           "content": {
@@ -283,12 +240,12 @@
           "required": true
         },
         "responses": {
-          "201": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TravelGuideResponse"
+                  "$ref": "#/components/schemas/TravelPlanResponse"
                 }
               }
             }
@@ -761,6 +718,16 @@
             "type": "string",
             "format": "date-time",
             "title": "Updatedat"
+          },
+          "guide": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TravelGuideResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

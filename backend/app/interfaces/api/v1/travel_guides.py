@@ -1,26 +1,23 @@
 """旅行ガイドAPIエンドポイント"""
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+import logging
 
-from app.application.dto.travel_guide_dto import TravelGuideDTO
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.ports.ai_service import IAIService
 from app.application.use_cases.generate_travel_guide import GenerateTravelGuideUseCase
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.value_objects import GenerationStatus
-from app.infrastructure.ai.exceptions import (
-    AIServiceConnectionError,
-    AIServiceInvalidRequestError,
-    AIServiceQuotaExceededError,
-)
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.interfaces.api.dependencies import get_ai_service_dependency
-from app.interfaces.schemas.travel_guide import (
-    GenerateTravelGuideRequest,
-    TravelGuideResponse,
-)
+from app.interfaces.schemas.travel_guide import GenerateTravelGuideRequest
+from app.interfaces.schemas.travel_plan import TravelPlanResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/travel-guides", tags=["travel-guides"])
 
@@ -86,58 +83,28 @@ def _update_guide_status_or_raise(
         ) from exc
 
 
-@router.get(
-    "/{guide_id}",
-    response_model=TravelGuideResponse,
-    summary="旅行ガイドを取得",
-)
-def get_travel_guide(
-    guide_id: str,
-    repository: TravelGuideRepository = Depends(get_guide_repository),  # noqa: B008
-) -> TravelGuideResponse:
-    """旅行ガイドを取得する
-
-    Args:
-        guide_id: 旅行ガイドID
-        repository: TravelGuideRepository
-
-    Returns:
-        TravelGuideResponse: 旅行ガイド
-
-    Raises:
-        HTTPException: 旅行ガイドが見つからない（404）
-    """
-    guide = repository.find_by_id(guide_id)
-    if guide is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Travel guide not found: {guide_id}",
-        )
-
-    dto = TravelGuideDTO.from_entity(guide)
-    return TravelGuideResponse(**dto.__dict__)
-
-
 @router.post(
     "",
-    response_model=TravelGuideResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="旅行ガイドを生成",
+    response_model=TravelPlanResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="旅行ガイド生成を開始",
 )
 async def generate_travel_guide(
     request: GenerateTravelGuideRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),  # noqa: B008
     ai_service: IAIService = Depends(get_ai_service_dependency),  # noqa: B008
-) -> TravelGuideResponse:
-    """旅行ガイドを生成する
+) -> TravelPlanResponse:
+    """旅行ガイド生成を開始する
 
     Args:
         request: 旅行ガイド生成リクエスト
+        background_tasks: バックグラウンドタスク
         db: SQLAlchemyセッション
         ai_service: AIサービス
 
     Returns:
-        TravelGuideResponse: 生成された旅行ガイド
+        TravelPlanResponse: 旅行計画（生成中ステータス）
 
     Raises:
         HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）など
@@ -145,75 +112,45 @@ async def generate_travel_guide(
     plan_id = request.plan_id
 
     plan_repository = TravelPlanRepository(db)
-    guide_repository = TravelGuideRepository(db)
-    if plan_repository.find_by_id(plan_id) is None:
+    travel_plan = plan_repository.find_by_id(plan_id)
+    if travel_plan is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Travel plan not found: {plan_id}",
         )
 
-    use_case = GenerateTravelGuideUseCase(
-        plan_repository=plan_repository,
-        guide_repository=guide_repository,
-        ai_service=ai_service,
+    if travel_plan.guide_generation_status == GenerationStatus.PROCESSING:
+        dto = TravelPlanDTO.from_entity(travel_plan)
+        return TravelPlanResponse(**dto.__dict__)
+
+    _update_guide_status_or_raise(
+        plan_repository,
+        plan_id,
+        GenerationStatus.PROCESSING,
     )
 
+    background_tasks.add_task(_run_travel_guide_generation, plan_id, ai_service, db.get_bind())
+
+    updated_plan = plan_repository.find_by_id(plan_id)
+    dto = TravelPlanDTO.from_entity(updated_plan or travel_plan)
+    return TravelPlanResponse(**dto.__dict__)
+
+
+async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bind) -> None:
+    """旅行ガイド生成をバックグラウンドで実行する"""
+    SessionMaker = sessionmaker(autocommit=False, autoflush=False, bind=bind)
+    db = SessionMaker()
     try:
-        dto = await use_case.execute(plan_id=plan_id, commit=False)
-        db.commit()
-        return TravelGuideResponse(**dto.__dict__)
-    except TravelPlanNotFoundError as exc:
-        db.rollback()
-        _update_guide_status_or_raise(
-            plan_repository,
-            plan_id,
-            GenerationStatus.FAILED,
+        plan_repository = TravelPlanRepository(db)
+        guide_repository = TravelGuideRepository(db)
+        use_case = GenerateTravelGuideUseCase(
+            plan_repository=plan_repository,
+            guide_repository=guide_repository,
+            ai_service=ai_service,
         )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Travel plan not found: {plan_id}",
-        ) from exc
-    except AIServiceInvalidRequestError as exc:
-        db.rollback()
-        _update_guide_status_or_raise(
-            plan_repository,
-            plan_id,
-            GenerationStatus.FAILED,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-    except AIServiceQuotaExceededError as exc:
-        db.rollback()
-        _update_guide_status_or_raise(
-            plan_repository,
-            plan_id,
-            GenerationStatus.FAILED,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=str(exc),
-        ) from exc
-    except AIServiceConnectionError as exc:
-        db.rollback()
-        _update_guide_status_or_raise(
-            plan_repository,
-            plan_id,
-            GenerationStatus.FAILED,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        ) from exc
-    except ValueError as exc:
-        db.rollback()
-        _update_guide_status_or_raise(
-            plan_repository,
-            plan_id,
-            GenerationStatus.FAILED,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+        await use_case.execute(plan_id=plan_id)
+    except Exception:
+        logger.exception("Failed to generate travel guide", extra={"plan_id": plan_id})
+        raise
+    finally:
+        db.close()

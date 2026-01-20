@@ -1,21 +1,16 @@
-"""TravelPlan API スキーマ."""
+"""TravelPlan API スキーマ"""
 
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.domain.travel_plan.value_objects import PlanStatus
-
-
-class LocationSchema(BaseModel):
-    """地理的位置スキーマ."""
-
-    lat: float = Field(..., ge=-90, le=90, description="緯度")
-    lng: float = Field(..., ge=-180, le=180, description="経度")
+from app.interfaces.schemas.location import LocationSchema
+from app.interfaces.schemas.travel_guide import TravelGuideResponse
 
 
 class TouristSpotSchema(BaseModel):
-    """観光スポットスキーマ."""
+    """観光スポットスキーマ"""
 
     id: str | None = Field(None, description="スポットID")
     name: str = Field(..., min_length=1, description="スポット名")
@@ -27,7 +22,7 @@ class TouristSpotSchema(BaseModel):
 
 
 class CreateTravelPlanRequest(BaseModel):
-    """旅行計画作成リクエスト."""
+    """旅行計画作成リクエスト"""
 
     user_id: str = Field(..., min_length=1, alias="userId", description="ユーザーID")
     title: str = Field(..., min_length=1, description="旅行タイトル")
@@ -39,14 +34,14 @@ class CreateTravelPlanRequest(BaseModel):
     @field_validator("user_id", "title", "destination")
     @classmethod
     def validate_not_empty(cls, value: str) -> str:
-        """空文字列でないことを検証する."""
+        """空文字列でないことを検証する"""
         if not value.strip():
             raise ValueError("must not be empty")
         return value
 
 
 class UpdateTravelPlanRequest(BaseModel):
-    """旅行計画更新リクエスト."""
+    """旅行計画更新リクエスト"""
 
     title: str | None = Field(None, min_length=1, description="旅行タイトル")
     destination: str | None = Field(None, min_length=1, description="目的地")
@@ -56,7 +51,7 @@ class UpdateTravelPlanRequest(BaseModel):
     @field_validator("title", "destination")
     @classmethod
     def validate_not_empty(cls, value: str | None) -> str | None:
-        """空文字列でないことを検証する."""
+        """空文字列でないことを検証する"""
         if value is not None and not value.strip():
             raise ValueError("must not be empty")
         return value
@@ -64,7 +59,7 @@ class UpdateTravelPlanRequest(BaseModel):
     @field_validator("status")
     @classmethod
     def validate_status(cls, value: str | None) -> str | None:
-        """旅行状態の妥当性を検証する."""
+        """旅行状態の妥当性を検証する"""
         if value is None:
             return None
         if not value.strip():
@@ -77,7 +72,7 @@ class UpdateTravelPlanRequest(BaseModel):
 
 
 class TravelPlanResponse(BaseModel):
-    """旅行計画レスポンス."""
+    """旅行計画レスポンス"""
 
     id: str
     user_id: str = Field(..., alias="userId")
@@ -89,5 +84,6 @@ class TravelPlanResponse(BaseModel):
     reflection_generation_status: str = Field(..., alias="reflectionGenerationStatus")
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
+    guide: TravelGuideResponse | None = None
 
     model_config = {"populate_by_name": True}

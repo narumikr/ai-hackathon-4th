@@ -511,7 +511,7 @@ GET  /api/v1/travel-plans           # 旅行一覧取得
 POST /api/v1/travel-plans          # 旅行計画作成
 GET  /api/v1/travel-plans/{id}     # 旅行計画取得
 PUT  /api/v1/travel-plans/{id}     # 旅行計画更新
-GET  /api/v1/travel-guides/{id}    # 旅行ガイド取得
+POST /api/v1/travel-guides         # 旅行ガイド生成開始（202 Accepted）
 POST /api/v1/reflections           # 振り返り作成
 POST /api/v1/upload-images         # 画像アップロード
 ```
@@ -580,6 +580,7 @@ interface TouristSpot {
 - 生成開始/成功/失敗は生成系APIで更新する
 - 実装方針: `TravelPlan.update_generation_statuses()` を呼び出し、`TravelPlanRepository.save()` で永続化する
 - `PUT /api/v1/travel-plans/{id}` は計画ステータスのみ更新し、生成ステータスは更新しない
+- ガイド生成の進捗は `GET /api/v1/travel-plans/{id}` の `guideGenerationStatus` で確認する
 
 ### TravelGuide
 ```typescript

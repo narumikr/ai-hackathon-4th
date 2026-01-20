@@ -1,4 +1,4 @@
-"""旅行計画APIエンドポイント."""
+"""旅行計画APIエンドポイント"""
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
@@ -12,6 +12,7 @@ from app.application.use_cases.get_travel_plan import (
 from app.application.use_cases.update_travel_plan import UpdateTravelPlanUseCase
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.infrastructure.persistence.database import get_db
+from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.interfaces.schemas.travel_plan import (
     CreateTravelPlanRequest,
@@ -23,7 +24,7 @@ router = APIRouter(prefix="/travel-plans", tags=["travel-plans"])
 
 
 def get_repository(db: Session = Depends(get_db)) -> TravelPlanRepository:  # noqa: B008
-    """TravelPlanRepositoryの依存性注入.
+    """TravelPlanRepositoryの依存性注入
 
     Args:
         db: SQLAlchemyセッション
@@ -32,6 +33,18 @@ def get_repository(db: Session = Depends(get_db)) -> TravelPlanRepository:  # no
         TravelPlanRepository: リポジトリインスタンス
     """
     return TravelPlanRepository(db)
+
+
+def get_guide_repository(db: Session = Depends(get_db)) -> TravelGuideRepository:  # noqa: B008
+    """TravelGuideRepositoryの依存性注入
+
+    Args:
+        db: SQLAlchemyセッション
+
+    Returns:
+        TravelGuideRepository: リポジトリインスタンス
+    """
+    return TravelGuideRepository(db)
 
 
 @router.post(
@@ -44,7 +57,7 @@ def create_travel_plan(
     request: CreateTravelPlanRequest,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
 ) -> TravelPlanResponse:
-    """旅行計画を作成する.
+    """旅行計画を作成する
 
     Args:
         request: 旅行計画作成リクエスト
@@ -85,7 +98,7 @@ def list_travel_plans(
     user_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
 ) -> list[TravelPlanResponse]:
-    """ユーザーの旅行計画一覧を取得する.
+    """ユーザーの旅行計画一覧を取得する
 
     Args:
         user_id: ユーザーID
@@ -113,8 +126,9 @@ def list_travel_plans(
 def get_travel_plan(
     plan_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    guide_repository: TravelGuideRepository = Depends(get_guide_repository),  # noqa: B008
 ) -> TravelPlanResponse:
-    """旅行計画を取得する.
+    """旅行計画を取得する
 
     Args:
         plan_id: 旅行計画ID
@@ -126,7 +140,7 @@ def get_travel_plan(
     Raises:
         HTTPException: 旅行計画が見つからない（404）
     """
-    use_case = GetTravelPlanUseCase(repository)
+    use_case = GetTravelPlanUseCase(repository, guide_repository)
 
     try:
         dto = use_case.execute(plan_id=plan_id)
@@ -153,7 +167,7 @@ def update_travel_plan(
     request: UpdateTravelPlanRequest,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
 ) -> TravelPlanResponse:
-    """旅行計画を更新する.
+    """旅行計画を更新する
 
     Args:
         plan_id: 旅行計画ID
@@ -203,7 +217,7 @@ def delete_travel_plan(
     plan_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
 ) -> Response:
-    """旅行計画を削除する.
+    """旅行計画を削除する
 
     Args:
         plan_id: 旅行計画ID
