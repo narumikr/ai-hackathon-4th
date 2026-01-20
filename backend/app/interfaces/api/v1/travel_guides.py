@@ -138,8 +138,8 @@ async def generate_travel_guide(
 
 async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bind) -> None:
     """旅行ガイド生成をバックグラウンドで実行する"""
-    SessionMaker = sessionmaker(autocommit=False, autoflush=False, bind=bind)
-    db = SessionMaker()
+    session_maker = sessionmaker(autocommit=False, autoflush=False, bind=bind)
+    db = session_maker()
     try:
         plan_repository = TravelPlanRepository(db)
         guide_repository = TravelGuideRepository(db)
@@ -151,6 +151,17 @@ async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bin
         await use_case.execute(plan_id=plan_id)
     except Exception:
         logger.exception("Failed to generate travel guide", extra={"plan_id": plan_id})
+        try:
+            failure_db = session_maker()
+            try:
+                plan_repository = TravelPlanRepository(failure_db)
+                _update_guide_status(plan_repository, plan_id, GenerationStatus.FAILED)
+            finally:
+                failure_db.close()
+        except Exception:
+            logger.exception(
+                "Failed to update travel guide status to failed", extra={"plan_id": plan_id}
+            )
         raise
     finally:
         db.close()
