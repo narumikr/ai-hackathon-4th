@@ -2,21 +2,22 @@
 
 import { Emoji } from '@/components/ui';
 import { ERROR_MESSAGES, HELP_TEXTS, LABELS, PLACEHOLDERS } from '@/constants';
+import type { PhotoData } from '@/types/reflection';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 interface ImageUploaderProps {
-  images: string[]; // プレビュー用のURL
-  onImagesChange: (files: File[], previews: string[]) => void;
-  onRemoveImage?: (index: number) => void;
+  photos: PhotoData[]; // 写真データ配列
+  onPhotosChange: (newPhotos: PhotoData[]) => void;
+  onRemovePhoto?: (index: number) => void;
   maxImages?: number;
   maxSizeMB?: number;
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
-  images,
-  onImagesChange,
-  onRemoveImage,
+  photos,
+  onPhotosChange,
+  onRemovePhoto,
   maxImages = 5,
   maxSizeMB = 10,
 }) => {
@@ -26,13 +27,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   // メモリリーク防止: コンポーネントアンマウント時にオブジェクトURLを解放
   useEffect(() => {
     return () => {
-      images.forEach(url => {
-        if (url.startsWith('blob:')) {
-          URL.revokeObjectURL(url);
+      photos.forEach(photo => {
+        if (photo.url.startsWith('blob:')) {
+          URL.revokeObjectURL(photo.url);
         }
       });
     };
-  }, [images]);
+  }, [photos]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -73,7 +74,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
 
     // 現在の枚数チェック
-    if (images.length + imageFiles.length > maxImages) {
+    if (photos.length + imageFiles.length > maxImages) {
       alert(ERROR_MESSAGES.MAX_IMAGES_EXCEEDED(maxImages));
       return;
     }
@@ -88,20 +89,23 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       return;
     }
 
-    // プレビュー生成
-    const newPreviews = imageFiles.map(file => URL.createObjectURL(file));
+    // PhotoDataオブジェクトを生成
+    const newPhotos: PhotoData[] = imageFiles.map(file => ({
+      url: URL.createObjectURL(file),
+      file,
+    }));
 
-    // 親コンポーネントに新しく追加されたファイルとそのプレビューのみを通知
-    onImagesChange(imageFiles, newPreviews);
+    // 親コンポーネントに新しく追加された写真データを通知
+    onPhotosChange(newPhotos);
   };
 
   const handleRemove = (index: number) => {
     // オブジェクトURLを解放
-    const urlToRevoke = images[index];
-    if (urlToRevoke.startsWith('blob:')) {
-      URL.revokeObjectURL(urlToRevoke);
+    const photo = photos[index];
+    if (photo.url.startsWith('blob:')) {
+      URL.revokeObjectURL(photo.url);
     }
-    onRemoveImage?.(index);
+    onRemovePhoto?.(index);
   };
 
   return (
@@ -144,16 +148,20 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       </button>
 
       {/* プレビューエリア */}
-      {images.length > 0 && (
+      {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-          {images.map((src, index) => (
+          {photos.map((photo, index) => (
             <div
-              key={src}
+              key={photo.id || photo.url}
               className="group relative aspect-square overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt={`Uploaded ${index + 1}`} className="h-full w-full object-cover" />
-              {onRemoveImage && (
+              <img
+                src={photo.url}
+                alt={`Uploaded ${index + 1}`}
+                className="h-full w-full object-cover"
+              />
+              {onRemovePhoto && (
                 <button
                   type="button"
                   onClick={() => handleRemove(index)}

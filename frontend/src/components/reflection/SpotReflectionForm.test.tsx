@@ -12,7 +12,6 @@ describe('SpotReflectionForm', () => {
     id: 'spot-1',
     name: '浅草寺',
     photos: [],
-    photoPreviews: [],
     comment: '',
     isAdded: false,
     ...overrides,
@@ -151,16 +150,14 @@ describe('SpotReflectionForm', () => {
       fireEvent.change(input);
 
       expect(mockOnUpdate).toHaveBeenCalledWith(spot.id, {
-        photos: [file],
-        photoPreviews: ['blob:mock-url'],
+        photos: [{ url: 'blob:mock-url', file }],
       });
     });
 
     it('appends new images to existing ones', () => {
       const existingFile = new File(['existing'], 'existing.png', { type: 'image/png' });
       const spot = createMockSpot({
-        photos: [existingFile],
-        photoPreviews: ['blob:existing-url'],
+        photos: [{ url: 'blob:existing-url', file: existingFile }],
       });
 
       const { container } = render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
@@ -176,14 +173,19 @@ describe('SpotReflectionForm', () => {
       fireEvent.change(input);
 
       expect(mockOnUpdate).toHaveBeenCalledWith(spot.id, {
-        photos: [existingFile, newFile],
-        photoPreviews: ['blob:existing-url', 'blob:mock-url'],
+        photos: [
+          { url: 'blob:existing-url', file: existingFile },
+          { url: 'blob:mock-url', file: newFile },
+        ],
       });
     });
 
     it('displays image previews', () => {
       const spot = createMockSpot({
-        photoPreviews: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+        photos: [
+          { url: 'https://example.com/image1.jpg', id: '1' },
+          { url: 'https://example.com/image2.jpg', id: '2' },
+        ],
       });
 
       render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
@@ -316,7 +318,13 @@ describe('SpotReflectionForm', () => {
 
     it('handles multiple image previews', () => {
       const spot = createMockSpot({
-        photoPreviews: ['url1', 'url2', 'url3', 'url4', 'url5'],
+        photos: [
+          { url: 'url1', id: '1' },
+          { url: 'url2', id: '2' },
+          { url: 'url3', id: '3' },
+          { url: 'url4', id: '4' },
+          { url: 'url5', id: '5' },
+        ],
       });
 
       render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
