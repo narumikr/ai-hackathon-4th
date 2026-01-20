@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.application.ports.ai_service import IAIService
 from app.application.use_cases.generate_travel_guide import GenerateTravelGuideUseCase
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
+from app.domain.travel_plan.value_objects import GenerationStatus
 from app.infrastructure.persistence.models import TravelPlanModel
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
@@ -157,6 +158,10 @@ async def test_generate_travel_guide_use_case_creates_guide(
     assert saved is not None
     assert saved.overview == dto.overview
 
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
+
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_updates_existing_guide(
@@ -287,3 +292,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
     )
     with pytest.raises(ValueError):
         await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED

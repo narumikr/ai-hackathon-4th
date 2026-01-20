@@ -1,4 +1,4 @@
-"""Reflection Aggregateのプロパティテスト"""
+"""振り返り集約のプロパティテスト"""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
 
     Hypothesis Strategy: テストデータ生成の設計図
 
-    Reflection集約のバリデーション要件に適合:
+    振り返り集約のバリデーション要件に適合:
     - 空文字列は拒否される (`not value or not value.strip()`)
     - 空白のみの文字列も拒否される
 
@@ -238,7 +238,7 @@ def test_reflection_property_information_integration(
     - すべての入力データ（plan_id, user_id, photos, user_notes）が一致して格納される
     - photosの防御的コピーが機能する（外部からの変更を防止）
     """
-    # 実行: Reflection作成
+    # 実行: 振り返り作成
     reflection = Reflection(
         plan_id=plan_id,
         user_id=user_id,

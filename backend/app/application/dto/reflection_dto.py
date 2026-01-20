@@ -1,4 +1,4 @@
-"""Reflection関連のDTO"""
+"""振り返り関連のDTO"""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -9,7 +9,7 @@ from app.domain.reflection.value_objects import ReflectionPamphlet
 
 @dataclass
 class ReflectionDTO:
-    """Reflectionのデータ転送オブジェクト"""
+    """振り返りのデータ転送オブジェクト"""
 
     id: str
     plan_id: str
@@ -23,7 +23,7 @@ class ReflectionDTO:
         """ドメインエンティティからDTOを生成する
 
         Args:
-            entity: Reflectionエンティティ
+            entity: 振り返りエンティティ
 
         Returns:
             ReflectionDTO: 生成されたDTO

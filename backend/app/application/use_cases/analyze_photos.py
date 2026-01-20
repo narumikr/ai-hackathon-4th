@@ -146,7 +146,7 @@ def _build_image_analysis_prompt(
 class AnalyzePhotosUseCase:
     """写真分析ユースケース
 
-    旅行計画に紐づく写真をAIで分析しReflectionとして保存する
+    旅行計画に紐づく写真をAIで分析し振り返りとして保存する
     """
 
     def __init__(
@@ -159,7 +159,7 @@ class AnalyzePhotosUseCase:
 
         Args:
             plan_repository: TravelPlanリポジトリ
-            reflection_repository: Reflectionリポジトリ
+            reflection_repository: 振り返りリポジトリ
             ai_service: AIサービス
         """
         self._plan_repository = plan_repository
@@ -172,7 +172,7 @@ class AnalyzePhotosUseCase:
         user_id: str,
         photos: list[dict],
     ) -> ReflectionDTO:
-        """写真を分析しReflectionを保存する
+        """写真を分析し振り返りを保存する
 
         Args:
             plan_id: 旅行計画ID
@@ -180,7 +180,7 @@ class AnalyzePhotosUseCase:
             photos: 写真リスト（辞書形式）
 
         Returns:
-            ReflectionDTO: 保存されたReflection
+            ReflectionDTO: 保存された振り返り
 
         Raises:
             TravelPlanNotFoundError: 旅行計画が見つからない場合

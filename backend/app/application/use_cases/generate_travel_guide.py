@@ -19,6 +19,7 @@ from app.domain.travel_guide.value_objects import (
 from app.domain.travel_plan.entity import TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
+from app.domain.travel_plan.value_objects import GenerationStatus
 
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -322,59 +323,70 @@ class GenerateTravelGuideUseCase:
         if duplicate_spots:
             raise ValueError(f"duplicate spot names are not allowed: {sorted(duplicate_spots)}")
 
-        historical_prompt = _build_historical_info_prompt(travel_plan)
-        historical_info = await self._ai_service.generate_with_search(
-            prompt=historical_prompt,
-            system_instruction="検索結果を使用して、簡潔な歴史情報を収集してください。",
-        )
-        if not historical_info or not historical_info.strip():
-            raise ValueError("historical_info must be a non-empty string.")
+        travel_plan.update_generation_statuses(guide_status=GenerationStatus.PROCESSING)
+        self._plan_repository.save(travel_plan)
 
-        guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
-        structured = await self._ai_service.generate_structured_data(
-            prompt=guide_prompt,
-            response_schema=_TRAVEL_GUIDE_SCHEMA,
-            system_instruction=(
-                "レスポンススキーマに正確に一致するJSONを返してください。"
-                "説明文のフィールドは日本語で記述してください。"
-            ),
-        )
-        if not isinstance(structured, dict):
-            raise ValueError("structured response must be a dict.")
-
-        overview = _require_str(structured.get("overview"), "overview")
-        timeline_items = _require_list(structured.get("timeline"), "timeline")
-        spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
-        checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
-        map_data_raw = _require_dict(structured.get("mapData"), "mapData")
-
-        plan_spot_name_set = set(plan_spot_names)
-        spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
-        checkpoints = _build_checkpoints(checkpoint_items, plan_spot_name_set)
-        timeline = _build_timeline(timeline_items, plan_spot_name_set)
-        map_data = _build_map_data(map_data_raw)
-
-        generated_guide = self._composer.compose(
-            plan_id=travel_plan.id,
-            overview=overview,
-            timeline=timeline,
-            spot_details=spot_details,
-            checkpoints=checkpoints,
-            map_data=map_data,
-        )
-
-        existing = self._guide_repository.find_by_plan_id(travel_plan.id)
-        if existing is None:
-            saved_guide = self._guide_repository.save(generated_guide)
-        else:
-            existing.update_guide(
-                overview=generated_guide.overview,
-                timeline=generated_guide.timeline,
-                spot_details=generated_guide.spot_details,
-                checkpoints=generated_guide.checkpoints,
-                map_data=generated_guide.map_data,
+        try:
+            historical_prompt = _build_historical_info_prompt(travel_plan)
+            historical_info = await self._ai_service.generate_with_search(
+                prompt=historical_prompt,
+                system_instruction="検索結果を使用して、簡潔な歴史情報を収集してください。",
             )
-            saved_guide = self._guide_repository.save(existing)
+            if not historical_info or not historical_info.strip():
+                raise ValueError("historical_info must be a non-empty string.")
+
+            guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
+            structured = await self._ai_service.generate_structured_data(
+                prompt=guide_prompt,
+                response_schema=_TRAVEL_GUIDE_SCHEMA,
+                system_instruction=(
+                    "レスポンススキーマに正確に一致するJSONを返してください。"
+                    "説明文のフィールドは日本語で記述してください。"
+                ),
+            )
+            if not isinstance(structured, dict):
+                raise ValueError("structured response must be a dict.")
+
+            overview = _require_str(structured.get("overview"), "overview")
+            timeline_items = _require_list(structured.get("timeline"), "timeline")
+            spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
+            checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
+            map_data_raw = _require_dict(structured.get("mapData"), "mapData")
+
+            plan_spot_name_set = set(plan_spot_names)
+            spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
+            checkpoints = _build_checkpoints(checkpoint_items, plan_spot_name_set)
+            timeline = _build_timeline(timeline_items, plan_spot_name_set)
+            map_data = _build_map_data(map_data_raw)
+
+            generated_guide = self._composer.compose(
+                plan_id=travel_plan.id,
+                overview=overview,
+                timeline=timeline,
+                spot_details=spot_details,
+                checkpoints=checkpoints,
+                map_data=map_data,
+            )
+
+            existing = self._guide_repository.find_by_plan_id(travel_plan.id)
+            if existing is None:
+                saved_guide = self._guide_repository.save(generated_guide)
+            else:
+                existing.update_guide(
+                    overview=generated_guide.overview,
+                    timeline=generated_guide.timeline,
+                    spot_details=generated_guide.spot_details,
+                    checkpoints=generated_guide.checkpoints,
+                    map_data=generated_guide.map_data,
+                )
+                saved_guide = self._guide_repository.save(existing)
+        except Exception:
+            travel_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
+            self._plan_repository.save(travel_plan)
+            raise
+
+        travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
+        self._plan_repository.save(travel_plan)
 
         return TravelGuideDTO.from_entity(saved_guide)
 

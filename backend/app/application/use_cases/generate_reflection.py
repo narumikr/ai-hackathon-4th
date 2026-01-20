@@ -15,6 +15,7 @@ from app.domain.travel_guide.exceptions import TravelGuideNotFoundError
 from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
+from app.domain.travel_plan.value_objects import GenerationStatus
 
 _REFLECTION_PAMPHLET_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -187,7 +188,7 @@ class GenerateReflectionPamphletUseCase:
         Args:
             plan_repository: TravelPlanリポジトリ
             guide_repository: TravelGuideリポジトリ
-            reflection_repository: Reflectionリポジトリ
+            reflection_repository: 振り返りリポジトリ
             ai_service: AIサービス
             analyzer: ReflectionAnalyzer（省略時はデフォルトを使用）
         """
@@ -249,70 +250,83 @@ class GenerateReflectionPamphletUseCase:
 
         reflection_dto = ReflectionDTO.from_entity(reflection)
 
-        prompt = _build_reflection_prompt(
-            destination=travel_plan.destination,
-            travel_title=travel_plan.title,
-            spot_names=[spot.name for spot in travel_plan.spots],
-            guide_overview=travel_guide.overview,
-            guide_timeline=[
-                {
-                    "year": event.year,
-                    "event": event.event,
-                    "significance": event.significance,
-                }
-                for event in travel_guide.timeline
-            ],
-            guide_spot_details=[
-                {
-                    "spotName": detail.spot_name,
-                    "historicalBackground": detail.historical_background,
-                    "highlights": list(detail.highlights),
-                    "historicalSignificance": detail.historical_significance,
-                }
-                for detail in travel_guide.spot_details
-            ],
-            guide_checkpoints=[
-                {
-                    "spotName": checkpoint.spot_name,
-                    "checkpoints": list(checkpoint.checkpoints),
-                    "historicalContext": checkpoint.historical_context,
-                }
-                for checkpoint in travel_guide.checkpoints
-            ],
-            photos=reflection_dto.photos,
-            user_notes=user_notes,
-        )
+        travel_plan.update_generation_statuses(reflection_status=GenerationStatus.PROCESSING)
+        self._plan_repository.save(travel_plan)
 
-        structured = await self._ai_service.generate_structured_data(
-            prompt=prompt,
-            response_schema=_REFLECTION_PAMPHLET_SCHEMA,
-            system_instruction=(
-                "レスポンスはJSONのみで、スキーマに厳密に一致させてください。"
-                "説明文などの文章は日本語で出力してください。"
-            ),
-        )
-        if not isinstance(structured, dict):
-            raise ValueError("structured response must be a dict.")
+        try:
+            prompt = _build_reflection_prompt(
+                destination=travel_plan.destination,
+                travel_title=travel_plan.title,
+                spot_names=[spot.name for spot in travel_plan.spots],
+                guide_overview=travel_guide.overview,
+                guide_timeline=[
+                    {
+                        "year": event.year,
+                        "event": event.event,
+                        "significance": event.significance,
+                    }
+                    for event in travel_guide.timeline
+                ],
+                guide_spot_details=[
+                    {
+                        "spotName": detail.spot_name,
+                        "historicalBackground": detail.historical_background,
+                        "highlights": list(detail.highlights),
+                        "historicalSignificance": detail.historical_significance,
+                    }
+                    for detail in travel_guide.spot_details
+                ],
+                guide_checkpoints=[
+                    {
+                        "spotName": checkpoint.spot_name,
+                        "checkpoints": list(checkpoint.checkpoints),
+                        "historicalContext": checkpoint.historical_context,
+                    }
+                    for checkpoint in travel_guide.checkpoints
+                ],
+                photos=reflection_dto.photos,
+                user_notes=user_notes,
+            )
 
-        travel_summary = _require_str(structured.get("travelSummary"), "travelSummary")
-        spot_reflection_items = _require_list(structured.get("spotReflections"), "spotReflections")
-        next_trip_items = _require_list(
-            structured.get("nextTripSuggestions"), "nextTripSuggestions"
-        )
+            structured = await self._ai_service.generate_structured_data(
+                prompt=prompt,
+                response_schema=_REFLECTION_PAMPHLET_SCHEMA,
+                system_instruction=(
+                    "レスポンスはJSONのみで、スキーマに厳密に一致させてください。"
+                    "説明文などの文章は日本語で出力してください。"
+                ),
+            )
+            if not isinstance(structured, dict):
+                raise ValueError("structured response must be a dict.")
 
-        plan_spot_names = {spot.name for spot in travel_plan.spots}
-        spot_reflections = _build_spot_reflections(spot_reflection_items, plan_spot_names)
-        next_trip_suggestions = _build_next_trip_suggestions(next_trip_items)
+            travel_summary = _require_str(structured.get("travelSummary"), "travelSummary")
+            spot_reflection_items = _require_list(
+                structured.get("spotReflections"), "spotReflections"
+            )
+            next_trip_items = _require_list(
+                structured.get("nextTripSuggestions"), "nextTripSuggestions"
+            )
 
-        pamphlet = self._analyzer.build_pamphlet(
-            photos=reflection.photos,
-            travel_summary=travel_summary,
-            spot_reflections=spot_reflections,
-            next_trip_suggestions=next_trip_suggestions,
-        )
+            plan_spot_names = {spot.name for spot in travel_plan.spots}
+            spot_reflections = _build_spot_reflections(spot_reflection_items, plan_spot_names)
+            next_trip_suggestions = _build_next_trip_suggestions(next_trip_items)
 
-        reflection.update_notes(user_notes)
-        saved_reflection = self._reflection_repository.save(reflection)
+            pamphlet = self._analyzer.build_pamphlet(
+                photos=reflection.photos,
+                travel_summary=travel_summary,
+                spot_reflections=spot_reflections,
+                next_trip_suggestions=next_trip_suggestions,
+            )
+
+            reflection.update_notes(user_notes)
+            saved_reflection = self._reflection_repository.save(reflection)
+        except Exception:
+            travel_plan.update_generation_statuses(reflection_status=GenerationStatus.FAILED)
+            self._plan_repository.save(travel_plan)
+            raise
+
+        travel_plan.update_generation_statuses(reflection_status=GenerationStatus.SUCCEEDED)
+        self._plan_repository.save(travel_plan)
 
         return ReflectionPamphletDTO.from_pamphlet(
             pamphlet,

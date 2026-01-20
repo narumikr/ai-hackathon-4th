@@ -167,7 +167,7 @@ backend/                    # Python/FastAPI バックエンド (DDD構造)
 │   │   │   ├── repository.py       # ITravelGuideRepository インターフェース
 │   │   │   ├── services.py         # TravelGuideComposer ドメインサービス
 │   │   │   └── exceptions.py
-│   │   ├── reflection/     # Reflection集約
+│   │   ├── reflection/     # 振り返り集約
 │   │   │   ├── entity.py           # Reflection, Photo エンティティ
 │   │   │   ├── value_objects.py    # ImageAnalysis, ReflectionPamphlet
 │   │   │   ├── repository.py       # IReflectionRepository インターフェース
@@ -274,7 +274,7 @@ POST /api/v1/upload-images          # 画像アップロード
 ### 主要な集約
 - **TravelPlan集約**: 旅行計画の管理
 - **TravelGuide集約**: 歴史情報を含む旅行ガイドの生成
-- **Reflection集約**: 旅行後の写真分析と振り返り生成
+- **振り返り集約**: 旅行後の写真分析と振り返り生成
 
 ### 依存性逆転の原則
 ドメイン層がインターフェースを定義し、インフラ層が実装することで、ビジネスロジックを外部依存から分離しています。

@@ -107,8 +107,8 @@ def test_create_travel_guide(db_session: Session, sample_travel_plan: TravelPlan
 
 
 def test_create_reflection(db_session: Session, sample_travel_plan: TravelPlanModel):
-    """Reflectionの作成とリレーションをテストする."""
-    # Reflectionを作成
+    """振り返りの作成とリレーションをテストする."""
+    # 振り返りを作成
     reflection = ReflectionModel(
         plan_id=sample_travel_plan.id,
         user_id="user123",
@@ -184,7 +184,7 @@ def test_json_fields(db_session: Session):
 
 def test_cascade_delete(db_session: Session, sample_travel_plan: TravelPlanModel):
     """カスケード削除の動作を確認する."""
-    # TravelGuideとReflectionを作成
+    # TravelGuideと振り返りを作成
     travel_guide = TravelGuideModel(
         plan_id=sample_travel_plan.id,
         overview="テストガイド",
@@ -210,7 +210,7 @@ def test_cascade_delete(db_session: Session, sample_travel_plan: TravelPlanModel
     db_session.delete(sample_travel_plan)
     db_session.commit()
 
-    # TravelGuideとReflectionも削除されていることを確認
+    # TravelGuideと振り返りも削除されていることを確認
     assert db_session.get(TravelGuideModel, guide_id) is None
     assert db_session.get(ReflectionModel, reflection_id) is None
 
