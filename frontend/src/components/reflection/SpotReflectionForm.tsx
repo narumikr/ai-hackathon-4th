@@ -2,7 +2,7 @@
 
 import { TextArea } from '@/components/ui';
 import { BUTTON_LABELS, FORM_LABELS, HELP_TEXTS, PLACEHOLDERS, STATUS_LABELS } from '@/constants';
-import type { ReflectionSpot } from '@/types/reflection';
+import type { PhotoData, ReflectionSpot } from '@/types/reflection';
 import type React from 'react';
 import { ImageUploader } from '../ui/ImageUploader';
 
@@ -17,17 +17,15 @@ export const SpotReflectionForm: React.FC<SpotReflectionFormProps> = ({
   onUpdate,
   onRemove,
 }) => {
-  const handleImagesChange = (files: File[], previews: string[]) => {
-    // 新しい画像を追加
-    const newPhotos = [...spot.photos, ...files];
-    const newPreviews = [...spot.photoPreviews, ...previews];
-    onUpdate(spot.id, { photos: newPhotos, photoPreviews: newPreviews });
+  const handlePhotosChange = (newPhotos: PhotoData[]) => {
+    // 新しい写真を追加
+    const updatedPhotos = [...spot.photos, ...newPhotos];
+    onUpdate(spot.id, { photos: updatedPhotos });
   };
 
-  const handleRemoveImage = (index: number) => {
-    const newPhotos = spot.photos.filter((_, i) => i !== index);
-    const newPreviews = spot.photoPreviews.filter((_, i) => i !== index);
-    onUpdate(spot.id, { photos: newPhotos, photoPreviews: newPreviews });
+  const handleRemovePhoto = (index: number) => {
+    const updatedPhotos = spot.photos.filter((_, i) => i !== index);
+    onUpdate(spot.id, { photos: updatedPhotos });
   };
 
   const handleCommentChange = (value: string) => {
@@ -64,9 +62,9 @@ export const SpotReflectionForm: React.FC<SpotReflectionFormProps> = ({
           {FORM_LABELS.PHOTOS}
         </div>
         <ImageUploader
-          images={spot.photoPreviews}
-          onImagesChange={handleImagesChange}
-          onRemoveImage={handleRemoveImage}
+          photos={spot.photos}
+          onPhotosChange={handlePhotosChange}
+          onRemovePhoto={handleRemovePhoto}
         />
       </div>
 
