@@ -110,6 +110,7 @@ def _build_reflection_prompt(
     guide_checkpoints: list[dict],
     photos: list[dict],
     user_notes_text: str,
+    spot_notes_text: str,
 ) -> str:
     """振り返りパンフレット生成のプロンプトを構築する"""
     spots_text = "\n".join([f"- {spot}" for spot in spot_names])
@@ -167,8 +168,11 @@ def _build_reflection_prompt(
         "旅行後情報:\n"
         "写真分析:\n"
         f"{photo_text}\n\n"
-        "ユーザーの感想:\n"
+        "ユーザーの総合感想:\n"
         f"{user_notes_text}\n"
+        "\n"
+        "スポットごとの感想:\n"
+        f"{spot_notes_text}\n"
     )
 
 
@@ -255,8 +259,8 @@ class GenerateReflectionPamphletUseCase:
         self._plan_repository.save(travel_plan)
 
         try:
-            user_notes_text = self._build_user_notes_text(
-                user_notes,
+            user_notes_text = user_notes or ""
+            spot_notes_text = self._build_spot_notes_text(
                 reflection.spot_notes,
                 travel_plan.spots,
             )
@@ -293,6 +297,7 @@ class GenerateReflectionPamphletUseCase:
                 ],
                 photos=reflection_dto.photos,
                 user_notes_text=user_notes_text,
+                spot_notes_text=spot_notes_text,
             )
 
             structured = await self._ai_service.generate_structured_data(
@@ -343,15 +348,11 @@ class GenerateReflectionPamphletUseCase:
         )
 
     @staticmethod
-    def _build_user_notes_text(
-        user_notes: str | None,
+    def _build_spot_notes_text(
         spot_notes: dict[str, str | None],
         spots: list,
     ) -> str:
-        """スポット単位の感想を含めたユーザー感想を組み立てる"""
-        if user_notes is not None:
-            return user_notes
-
+        """スポットごとの感想を組み立てる"""
         spot_notes = spot_notes or {}
         plan_spot_ids = {spot.id for spot in spots}
         unknown_spots = set(spot_notes.keys()) - plan_spot_ids

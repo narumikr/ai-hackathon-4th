@@ -2,10 +2,9 @@
 
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.ports.ai_service import IAIService
 from app.application.use_cases.generate_reflection import GenerateReflectionPamphletUseCase
 from app.domain.reflection.exceptions import ReflectionNotFoundError
@@ -18,7 +17,6 @@ from app.infrastructure.repositories.travel_guide_repository import TravelGuideR
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.interfaces.api.dependencies import get_ai_service_dependency
 from app.interfaces.schemas.reflection import CreateReflectionRequest
-from app.interfaces.schemas.travel_plan import TravelPlanResponse
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +62,7 @@ def _update_reflection_status_or_raise(
 
 @router.post(
     "",
-    response_model=TravelPlanResponse,
-    status_code=status.HTTP_202_ACCEPTED,
+    status_code=status.HTTP_204_NO_CONTENT,
     summary="振り返り生成を開始",
 )
 async def create_reflection(
@@ -73,7 +70,7 @@ async def create_reflection(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),  # noqa: B008
     ai_service: IAIService = Depends(get_ai_service_dependency),  # noqa: B008
-) -> TravelPlanResponse:
+) -> Response:
     """振り返り生成を開始する"""
     plan_repository = TravelPlanRepository(db)
     travel_plan = plan_repository.find_by_id(request.plan_id)
@@ -98,8 +95,7 @@ async def create_reflection(
         )
 
     if travel_plan.reflection_generation_status == GenerationStatus.PROCESSING:
-        dto = TravelPlanDTO.from_entity(travel_plan)
-        return TravelPlanResponse(**dto.__dict__)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     reflection_repository = ReflectionRepository(db)
     existing_reflection = reflection_repository.find_by_plan_id(request.plan_id)
@@ -124,9 +120,7 @@ async def create_reflection(
         db.get_bind(),
     )
 
-    updated_plan = plan_repository.find_by_id(request.plan_id)
-    dto = TravelPlanDTO.from_entity(updated_plan or travel_plan)
-    return TravelPlanResponse(**dto.__dict__)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 async def _run_reflection_generation(

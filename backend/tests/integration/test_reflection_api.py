@@ -158,7 +158,7 @@ def test_create_reflection(
 ):
     """前提条件: サンプル旅行計画と旅行ガイド
     実行: POST /api/v1/reflections
-    検証: ステータスコード202、振り返り生成が完了する
+    検証: ステータスコード204、振り返り生成が完了する
     """
     upload_data = {
         "planId": sample_travel_plan.id,
@@ -181,10 +181,7 @@ def test_create_reflection(
         },
     )
 
-    assert response.status_code == 202
-    data = response.json()
-    assert data["id"] == sample_travel_plan.id
-    assert data["reflectionGenerationStatus"] == "processing"
+    assert response.status_code == 204
 
     status_data = api_client.get(
         f"/api/v1/travel-plans/{sample_travel_plan.id}"
