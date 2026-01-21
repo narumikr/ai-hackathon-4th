@@ -32,7 +32,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
       });
     };
-  }, [images]);
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -63,9 +63,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
+  const isImageFile = (file: File): boolean => {
+    if (file.type.startsWith('image/')) return true;
+    // HEIC/HEIF はブラウザによってMIMEタイプが空になる場合があるため拡張子でもチェック
+    const extension = file.name.toLowerCase().split('.').pop();
+    return extension === 'heic' || extension === 'heif';
+  };
+
   const processFiles = (newFiles: File[]) => {
     // 画像のみフィルタリング
-    const imageFiles = newFiles.filter(file => file.type.startsWith('image/'));
+    const imageFiles = newFiles.filter(isImageFile);
 
     if (imageFiles.length === 0) {
       alert(ERROR_MESSAGES.INVALID_FILE_TYPE);
@@ -111,7 +118,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         multiple
       />
 
@@ -157,7 +164,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 <button
                   type="button"
                   onClick={() => handleRemove(index)}
-                  className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                  className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white text-xs transition-colors hover:bg-danger"
                   aria-label={LABELS.REMOVE_IMAGE}
                 >
                   ✕

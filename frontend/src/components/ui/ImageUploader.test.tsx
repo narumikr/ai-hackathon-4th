@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { ERROR_MESSAGES, HELP_TEXTS, LABELS, PLACEHOLDERS } from '@/constants';
-import { ImageUploader } from './ImageUploader';
+import { ImageUploader } from '../ui/ImageUploader';
 
 const createFile = (name: string, size: number, type: string): File => {
   const file = new File(['x'.repeat(size)], name, { type });
@@ -66,7 +66,7 @@ describe('ImageUploader', () => {
       );
 
       const input = container.querySelector('input[type="file"]');
-      expect(input).toHaveAttribute('accept', 'image/*');
+      expect(input).toHaveAttribute('accept', 'image/*,.heic,.heif');
     });
   });
 

@@ -232,7 +232,7 @@ export const PLACEHOLDERS = {
 export const HELP_TEXTS = {
   DESTINATION: '訪問する都道府県や地域を入力してください',
   SPOTS: '訪問予定の観光スポットを入力してください（複数可）',
-  UPLOAD_FORMAT: 'JPG, PNG形式に対応（最大10MB）',
+  UPLOAD_FORMAT: 'JPG, PNG, HEIC形式に対応（最大10MB）',
   ADDED_SPOT: '振り返りで追加したスポットです',
   ADD_SPOT_INSTRUCTION:
     '計画になかった立ち寄り場所や、特に印象に残った場所を追加して記録に残しましょう。',

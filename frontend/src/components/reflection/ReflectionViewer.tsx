@@ -40,7 +40,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, refl
               className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
             >
               <div className="flex flex-col gap-6 md:flex-row">
-                <div className="w-full flex-shrink-0 md:w-1/3">
+                <div className="w-full shrink-0 md:w-1/3">
                   <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-neutral-200 text-neutral-400">
                     <div className="text-center">
                       <span className="mb-2 block text-4xl">
