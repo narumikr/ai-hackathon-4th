@@ -25,6 +25,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // メモリリーク防止: コンポーネントアンマウント時にオブジェクトURLを解放
+  // biome-ignore lint/correctness/useExhaustiveDependencies: photos should not be in dependency array to prevent cleanup on every update
   useEffect(() => {
     return () => {
       photos.forEach(photo => {
@@ -33,7 +34,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
       });
     };
-  }, [photos]);
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

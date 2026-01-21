@@ -188,7 +188,7 @@ describe('ImageUploader', () => {
       }
     });
 
-    it('calls onImagesChange when files are selected', () => {
+    it('calls onPhotosChange when files are selected', () => {
       const { container } = render(
         <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
@@ -222,7 +222,7 @@ describe('ImageUploader', () => {
       expect(imageElements[1]).toHaveAttribute('src', photos[1].url);
     });
 
-    it('displays remove button for each image when onRemoveImage is provided', () => {
+    it('displays remove button for each image when onRemovePhoto is provided', () => {
       const photos: PhotoData[] = [{ url: 'https://example.com/image1.jpg', id: '1' }];
       render(
         <ImageUploader
@@ -236,7 +236,7 @@ describe('ImageUploader', () => {
       expect(removeButton).toBeInTheDocument();
     });
 
-    it('does not display remove button when onRemoveImage is not provided', () => {
+    it('does not display remove button when onRemovePhoto is not provided', () => {
       const photos: PhotoData[] = [{ url: 'https://example.com/image1.jpg', id: '1' }];
       render(<ImageUploader photos={photos} onPhotosChange={mockOnPhotosChange} />);
 
@@ -244,7 +244,7 @@ describe('ImageUploader', () => {
       expect(removeButton).not.toBeInTheDocument();
     });
 
-    it('calls onRemoveImage when remove button is clicked', () => {
+    it('calls onRemovePhoto when remove button is clicked', () => {
       const photos: PhotoData[] = [
         { url: 'https://example.com/image1.jpg', id: '1' },
         { url: 'https://example.com/image2.jpg', id: '2' },
