@@ -53,7 +53,6 @@ export default function ReflectionDetailPage() {
       id: s.id,
       name: s.name,
       photos: [],
-      photoPreviews: [],
       comment: '',
       isAdded: false,
     }));
@@ -78,7 +77,6 @@ export default function ReflectionDetailPage() {
       id: `added-${Date.now()}`,
       name,
       photos: [],
-      photoPreviews: [],
       comment: '',
       isAdded: true,
     };

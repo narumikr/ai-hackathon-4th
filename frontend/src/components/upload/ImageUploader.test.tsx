@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { ERROR_MESSAGES, HELP_TEXTS, LABELS, PLACEHOLDERS } from '@/constants';
+import type { PhotoData } from '@/types/reflection';
 import { ImageUploader } from './ImageUploader';
 
 const createFile = (name: string, size: number, type: string): File => {
@@ -10,8 +11,8 @@ const createFile = (name: string, size: number, type: string): File => {
 };
 
 describe('ImageUploader', () => {
-  const mockOnImagesChange = vi.fn();
-  const mockOnRemoveImage = vi.fn();
+  const mockOnPhotosChange = vi.fn();
+  const mockOnRemovePhoto = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -22,20 +23,20 @@ describe('ImageUploader', () => {
 
   describe('rendering', () => {
     it('renders upload zone with instruction text', () => {
-      render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      render(<ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />);
 
       expect(screen.getByText(PLACEHOLDERS.UPLOAD_INSTRUCTION)).toBeInTheDocument();
     });
 
     it('renders help text about file format', () => {
-      render(<ImageUploader images={[]} onImagesChange={mockOnImagesChange} />);
+      render(<ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />);
 
       expect(screen.getByText(HELP_TEXTS.UPLOAD_FORMAT)).toBeInTheDocument();
     });
 
     it('renders upload icon', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       expect(container.querySelector('[role="img"]')).toBeInTheDocument();
@@ -43,7 +44,7 @@ describe('ImageUploader', () => {
 
     it('has hidden file input', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const input = container.querySelector('input[type="file"]');
@@ -53,7 +54,7 @@ describe('ImageUploader', () => {
 
     it('accepts multiple files', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const input = container.querySelector('input[type="file"]');
@@ -62,7 +63,7 @@ describe('ImageUploader', () => {
 
     it('accepts only images', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const input = container.querySelector('input[type="file"]');
@@ -73,7 +74,7 @@ describe('ImageUploader', () => {
   describe('drag and drop interaction', () => {
     it('updates styles on drag over', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
@@ -85,7 +86,7 @@ describe('ImageUploader', () => {
 
     it('reverts styles on drag leave', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
@@ -96,9 +97,9 @@ describe('ImageUploader', () => {
       }
     });
 
-    it('calls onImagesChange when valid images are dropped', () => {
+    it('calls onPhotosChange when valid images are dropped', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
@@ -111,13 +112,13 @@ describe('ImageUploader', () => {
           },
         });
 
-        expect(mockOnImagesChange).toHaveBeenCalledWith([file], ['blob:mock-url']);
+        expect(mockOnPhotosChange).toHaveBeenCalledWith([{ url: 'blob:mock-url', file }]);
       }
     });
 
     it('filters out non-image files', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
@@ -133,7 +134,7 @@ describe('ImageUploader', () => {
           },
         });
 
-        expect(mockOnImagesChange).not.toHaveBeenCalled();
+        expect(mockOnPhotosChange).not.toHaveBeenCalled();
         expect(alertSpy).toHaveBeenCalledWith(ERROR_MESSAGES.INVALID_FILE_TYPE);
       }
 
@@ -144,7 +145,7 @@ describe('ImageUploader', () => {
   describe('file selection via click', () => {
     it('triggers file input when dropzone is clicked', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
@@ -159,7 +160,7 @@ describe('ImageUploader', () => {
 
     it('triggers file input on Enter key', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
@@ -174,7 +175,7 @@ describe('ImageUploader', () => {
 
     it('triggers file input on Space key', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
@@ -187,9 +188,9 @@ describe('ImageUploader', () => {
       }
     });
 
-    it('calls onImagesChange when files are selected', () => {
+    it('calls onPhotosChange when files are selected', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const input = container.querySelector('input[type="file"]') as HTMLInputElement;
@@ -202,29 +203,32 @@ describe('ImageUploader', () => {
 
       fireEvent.change(input);
 
-      expect(mockOnImagesChange).toHaveBeenCalledWith([file], ['blob:mock-url']);
+      expect(mockOnPhotosChange).toHaveBeenCalledWith([{ url: 'blob:mock-url', file }]);
     });
   });
 
   describe('image preview', () => {
     it('displays preview images', () => {
-      const images = ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'];
-      render(<ImageUploader images={images} onImagesChange={mockOnImagesChange} />);
+      const photos: PhotoData[] = [
+        { url: 'https://example.com/image1.jpg', id: '1' },
+        { url: 'https://example.com/image2.jpg', id: '2' },
+      ];
+      render(<ImageUploader photos={photos} onPhotosChange={mockOnPhotosChange} />);
 
       // Query specifically for img tags (not emoji spans with role="img")
       const imageElements = screen.getAllByAltText(/Uploaded \d+/);
       expect(imageElements).toHaveLength(2);
-      expect(imageElements[0]).toHaveAttribute('src', images[0]);
-      expect(imageElements[1]).toHaveAttribute('src', images[1]);
+      expect(imageElements[0]).toHaveAttribute('src', photos[0].url);
+      expect(imageElements[1]).toHaveAttribute('src', photos[1].url);
     });
 
-    it('displays remove button for each image when onRemoveImage is provided', () => {
-      const images = ['https://example.com/image1.jpg'];
+    it('displays remove button for each image when onRemovePhoto is provided', () => {
+      const photos: PhotoData[] = [{ url: 'https://example.com/image1.jpg', id: '1' }];
       render(
         <ImageUploader
-          images={images}
-          onImagesChange={mockOnImagesChange}
-          onRemoveImage={mockOnRemoveImage}
+          photos={photos}
+          onPhotosChange={mockOnPhotosChange}
+          onRemovePhoto={mockOnRemovePhoto}
         />
       );
 
@@ -232,33 +236,36 @@ describe('ImageUploader', () => {
       expect(removeButton).toBeInTheDocument();
     });
 
-    it('does not display remove button when onRemoveImage is not provided', () => {
-      const images = ['https://example.com/image1.jpg'];
-      render(<ImageUploader images={images} onImagesChange={mockOnImagesChange} />);
+    it('does not display remove button when onRemovePhoto is not provided', () => {
+      const photos: PhotoData[] = [{ url: 'https://example.com/image1.jpg', id: '1' }];
+      render(<ImageUploader photos={photos} onPhotosChange={mockOnPhotosChange} />);
 
       const removeButton = screen.queryByLabelText(LABELS.REMOVE_IMAGE);
       expect(removeButton).not.toBeInTheDocument();
     });
 
-    it('calls onRemoveImage when remove button is clicked', () => {
-      const images = ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'];
+    it('calls onRemovePhoto when remove button is clicked', () => {
+      const photos: PhotoData[] = [
+        { url: 'https://example.com/image1.jpg', id: '1' },
+        { url: 'https://example.com/image2.jpg', id: '2' },
+      ];
       render(
         <ImageUploader
-          images={images}
-          onImagesChange={mockOnImagesChange}
-          onRemoveImage={mockOnRemoveImage}
+          photos={photos}
+          onPhotosChange={mockOnPhotosChange}
+          onRemovePhoto={mockOnRemovePhoto}
         />
       );
 
       const removeButtons = screen.getAllByLabelText(LABELS.REMOVE_IMAGE);
       fireEvent.click(removeButtons[0]);
 
-      expect(mockOnRemoveImage).toHaveBeenCalledWith(0);
+      expect(mockOnRemovePhoto).toHaveBeenCalledWith(0);
     });
 
     it('does not display preview area when no images', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const previewArea = container.querySelector('.grid');
@@ -268,10 +275,16 @@ describe('ImageUploader', () => {
 
   describe('validation', () => {
     it('shows alert when exceeding max images', () => {
-      const images = ['url1', 'url2', 'url3', 'url4', 'url5'];
+      const photos: PhotoData[] = [
+        { url: 'url1', id: '1' },
+        { url: 'url2', id: '2' },
+        { url: 'url3', id: '3' },
+        { url: 'url4', id: '4' },
+        { url: 'url5', id: '5' },
+      ];
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
       const { container } = render(
-        <ImageUploader images={images} onImagesChange={mockOnImagesChange} maxImages={5} />
+        <ImageUploader photos={photos} onPhotosChange={mockOnPhotosChange} maxImages={5} />
       );
 
       const dropzone = container.querySelector('button');
@@ -284,7 +297,7 @@ describe('ImageUploader', () => {
           },
         });
 
-        expect(mockOnImagesChange).not.toHaveBeenCalled();
+        expect(mockOnPhotosChange).not.toHaveBeenCalled();
         expect(alertSpy).toHaveBeenCalledWith(ERROR_MESSAGES.MAX_IMAGES_EXCEEDED(5));
       }
 
@@ -294,7 +307,7 @@ describe('ImageUploader', () => {
     it('shows alert when file size exceeds limit', () => {
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} maxSizeMB={5} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} maxSizeMB={5} />
       );
 
       const dropzone = container.querySelector('button');
@@ -307,7 +320,7 @@ describe('ImageUploader', () => {
           },
         });
 
-        expect(mockOnImagesChange).not.toHaveBeenCalled();
+        expect(mockOnPhotosChange).not.toHaveBeenCalled();
         expect(alertSpy).toHaveBeenCalledWith(ERROR_MESSAGES.FILE_SIZE_EXCEEDED('large.png', 5));
       }
 
@@ -316,7 +329,7 @@ describe('ImageUploader', () => {
 
     it('accepts files within size limit', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} maxSizeMB={10} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} maxSizeMB={10} />
       );
 
       const dropzone = container.querySelector('button');
@@ -329,17 +342,23 @@ describe('ImageUploader', () => {
           },
         });
 
-        expect(mockOnImagesChange).toHaveBeenCalledWith([file], ['blob:mock-url']);
+        expect(mockOnPhotosChange).toHaveBeenCalledWith([{ url: 'blob:mock-url', file }]);
       }
     });
   });
 
   describe('props', () => {
     it('uses default maxImages of 5', () => {
-      const images = ['url1', 'url2', 'url3', 'url4', 'url5'];
+      const photos: PhotoData[] = [
+        { url: 'url1', id: '1' },
+        { url: 'url2', id: '2' },
+        { url: 'url3', id: '3' },
+        { url: 'url4', id: '4' },
+        { url: 'url5', id: '5' },
+      ];
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
       const { container } = render(
-        <ImageUploader images={images} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={photos} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
@@ -361,7 +380,7 @@ describe('ImageUploader', () => {
     it('uses default maxSizeMB of 10', () => {
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
@@ -384,11 +403,12 @@ describe('ImageUploader', () => {
   describe('memory management', () => {
     it('revokes object URL when removing image', () => {
       const blobUrl = 'blob:mock-blob-url';
+      const photos: PhotoData[] = [{ url: blobUrl, id: '1' }];
       render(
         <ImageUploader
-          images={[blobUrl]}
-          onImagesChange={mockOnImagesChange}
-          onRemoveImage={mockOnRemoveImage}
+          photos={photos}
+          onPhotosChange={mockOnPhotosChange}
+          onRemovePhoto={mockOnRemovePhoto}
         />
       );
 
@@ -396,16 +416,17 @@ describe('ImageUploader', () => {
       fireEvent.click(removeButton);
 
       expect(global.URL.revokeObjectURL).toHaveBeenCalledWith(blobUrl);
-      expect(mockOnRemoveImage).toHaveBeenCalledWith(0);
+      expect(mockOnRemovePhoto).toHaveBeenCalledWith(0);
     });
 
     it('does not revoke non-blob URLs', () => {
       const httpUrl = 'https://example.com/image.jpg';
+      const photos: PhotoData[] = [{ url: httpUrl, id: '1' }];
       render(
         <ImageUploader
-          images={[httpUrl]}
-          onImagesChange={mockOnImagesChange}
-          onRemoveImage={mockOnRemoveImage}
+          photos={photos}
+          onPhotosChange={mockOnPhotosChange}
+          onRemovePhoto={mockOnRemovePhoto}
         />
       );
 
@@ -413,14 +434,14 @@ describe('ImageUploader', () => {
       fireEvent.click(removeButton);
 
       expect(global.URL.revokeObjectURL).not.toHaveBeenCalled();
-      expect(mockOnRemoveImage).toHaveBeenCalledWith(0);
+      expect(mockOnRemovePhoto).toHaveBeenCalledWith(0);
     });
   });
 
   describe('base styles', () => {
     it('has proper dropzone base styles', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
@@ -429,7 +450,7 @@ describe('ImageUploader', () => {
 
     it('has neutral colors by default', () => {
       const { container } = render(
-        <ImageUploader images={[]} onImagesChange={mockOnImagesChange} />
+        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
       );
 
       const dropzone = container.querySelector('button');
