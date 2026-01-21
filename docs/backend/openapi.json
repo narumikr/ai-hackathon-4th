@@ -305,34 +305,27 @@
         }
       }
     },
-    "/api/v1/upload-images": {
+    "/api/v1/spot-reflections": {
       "post": {
         "tags": [
-          "uploads"
+          "spot-reflections"
         ],
-        "summary": "画像をアップロード",
-        "description": "画像をアップロードする",
-        "operationId": "upload_images_api_v1_upload_images_post",
+        "summary": "スポットの写真と感想を登録",
+        "description": "スポットごとの写真と感想を登録する",
+        "operationId": "upload_images_api_v1_spot_reflections_post",
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_images_api_v1_upload_images_post"
+                "$ref": "#/components/schemas/Body_upload_images_api_v1_spot_reflections_post"
               }
             }
           },
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UploadImagesResponse"
-                }
-              }
-            }
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -396,7 +389,7 @@
   },
   "components": {
     "schemas": {
-      "Body_upload_images_api_v1_upload_images_post": {
+      "Body_upload_images_api_v1_spot_reflections_post": {
         "properties": {
           "planId": {
             "type": "string",
@@ -405,6 +398,21 @@
           "userId": {
             "type": "string",
             "title": "Userid"
+          },
+          "spotId": {
+            "type": "string",
+            "title": "Spotid"
+          },
+          "spotNote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spotnote"
           },
           "files": {
             "items": {
@@ -419,9 +427,10 @@
         "required": [
           "planId",
           "userId",
+          "spotId",
           "files"
         ],
-        "title": "Body_upload_images_api_v1_upload_images_post"
+        "title": "Body_upload_images_api_v1_spot_reflections_post"
       },
       "CheckpointSchema": {
         "properties": {
@@ -462,26 +471,23 @@
             "minLength": 1,
             "title": "Userid"
           },
-          "photos": {
-            "items": {
-              "$ref": "#/components/schemas/ReflectionPhotoRequest"
-            },
-            "type": "array",
-            "minItems": 1,
-            "title": "Photos"
-          },
           "userNotes": {
-            "type": "string",
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Usernotes"
           }
         },
         "type": "object",
         "required": [
           "planId",
-          "userId",
-          "photos",
-          "userNotes"
+          "userId"
         ],
         "title": "CreateReflectionRequest",
         "description": "振り返り作成リクエスト"
@@ -698,41 +704,15 @@
         "title": "MapMarkerSchema",
         "description": "地図マーカースキーマ"
       },
-      "ReflectionPhotoRequest": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "url": {
-            "type": "string",
-            "title": "Url"
-          },
-          "userDescription": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Userdescription"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "url"
-        ],
-        "title": "ReflectionPhotoRequest",
-        "description": "振り返り作成用の写真入力"
-      },
       "ReflectionPhotoResponse": {
         "properties": {
           "id": {
             "type": "string",
             "title": "Id"
+          },
+          "spotId": {
+            "type": "string",
+            "title": "Spotid"
           },
           "url": {
             "type": "string",
@@ -756,6 +736,7 @@
         "type": "object",
         "required": [
           "id",
+          "spotId",
           "url",
           "analysis"
         ],
@@ -793,6 +774,20 @@
               }
             ],
             "title": "Usernotes"
+          },
+          "spotNotes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Spotnotes"
           },
           "createdAt": {
             "type": "string",
@@ -1113,52 +1108,6 @@
         "type": "object",
         "title": "UpdateTravelPlanRequest",
         "description": "旅行計画更新リクエスト"
-      },
-      "UploadImagesResponse": {
-        "properties": {
-          "images": {
-            "items": {
-              "$ref": "#/components/schemas/UploadedImageResponse"
-            },
-            "type": "array",
-            "title": "Images"
-          }
-        },
-        "type": "object",
-        "required": [
-          "images"
-        ],
-        "title": "UploadImagesResponse",
-        "description": "画像アップロードレスポンス"
-      },
-      "UploadedImageResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "url": {
-            "type": "string",
-            "title": "Url"
-          },
-          "fileName": {
-            "type": "string",
-            "title": "Filename"
-          },
-          "contentType": {
-            "type": "string",
-            "title": "Contenttype"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "url",
-          "fileName",
-          "contentType"
-        ],
-        "title": "UploadedImageResponse",
-        "description": "画像アップロードレスポンス（単体）"
       },
       "ValidationError": {
         "properties": {

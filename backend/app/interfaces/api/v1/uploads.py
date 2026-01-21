@@ -3,21 +3,26 @@
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.application.ports.ai_service import IAIService
 from app.application.ports.storage_service import IStorageService
+from app.application.use_cases.analyze_photos import AnalyzePhotosUseCase
 from app.infrastructure.persistence.database import get_db
+from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.infrastructure.storage.exceptions import (
     FileSizeExceededError,
     StorageOperationError,
     UnsupportedImageFormatError,
 )
-from app.interfaces.api.dependencies import get_storage_service_dependency
-from app.interfaces.schemas.reflection import UploadedImageResponse, UploadImagesResponse
+from app.interfaces.api.dependencies import (
+    get_ai_service_dependency,
+    get_storage_service_dependency,
+)
 
-router = APIRouter(prefix="/upload-images", tags=["uploads"])
+router = APIRouter(prefix="/spot-reflections", tags=["spot-reflections"])
 
 
 def _resolve_extension(filename: str | None, content_type: str | None) -> str:
@@ -67,20 +72,25 @@ def _ensure_non_empty(value: str, field_name: str) -> str:
 
 @router.post(
     "",
-    response_model=UploadImagesResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="画像をアップロード",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="スポットの写真と感想を登録",
 )
 async def upload_images(
     plan_id: str = Form(..., alias="planId"),  # noqa: B008
     user_id: str = Form(..., alias="userId"),  # noqa: B008
+    spot_id: str = Form(..., alias="spotId"),  # noqa: B008
+    spot_note: str | None = Form(None, alias="spotNote"),  # noqa: B008
     files: list[UploadFile] = File(...),  # noqa: B008
     db: Session = Depends(get_db),  # noqa: B008
+    ai_service: IAIService = Depends(get_ai_service_dependency),  # noqa: B008
     storage_service: IStorageService = Depends(get_storage_service_dependency),  # noqa: B008
-) -> UploadImagesResponse:
-    """画像をアップロードする"""
+) -> Response:
+    """スポットごとの写真と感想を登録する"""
     plan_id = _ensure_non_empty(plan_id, "plan_id")
     user_id = _ensure_non_empty(user_id, "user_id")
+    spot_id = _ensure_non_empty(spot_id, "spot_id")
+    if spot_note is not None:
+        spot_note = _ensure_non_empty(spot_note, "spot_note")
 
     if not files:
         raise HTTPException(
@@ -101,7 +111,14 @@ async def upload_images(
             detail="user_id does not match the travel plan owner.",
         )
 
-    uploaded: list[UploadedImageResponse] = []
+    plan_spot_ids = {spot.id for spot in travel_plan.spots}
+    if spot_id not in plan_spot_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"spot_id is not found in travel plan: {spot_id}",
+        )
+
+    photos: list[dict] = []
 
     for file in files:
         content_type = file.content_type
@@ -138,13 +155,25 @@ async def upload_images(
                 detail=str(exc),
             ) from exc
 
-        uploaded.append(
-            UploadedImageResponse(
-                id=photo_id,
-                url=url,
-                fileName=file.filename or destination,
-                contentType=content_type,
-            )
+        photos.append(
+            {
+                "id": photo_id,
+                "spotId": spot_id,
+                "url": url,
+            }
         )
 
-    return UploadImagesResponse(images=uploaded)
+    reflection_repository = ReflectionRepository(db)
+    analyze_use_case = AnalyzePhotosUseCase(
+        plan_repository=plan_repository,
+        reflection_repository=reflection_repository,
+        ai_service=ai_service,
+    )
+    await analyze_use_case.execute(
+        plan_id=plan_id,
+        user_id=user_id,
+        photos=photos,
+        spot_note=spot_note,
+    )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

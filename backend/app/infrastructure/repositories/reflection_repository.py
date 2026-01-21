@@ -45,6 +45,7 @@ class ReflectionRepository(IReflectionRepository):
                 user_id=reflection.user_id,
                 photos=self._photos_to_dict(reflection.photos),
                 user_notes=reflection.user_notes,
+                spot_notes=reflection.spot_notes,
             )
             self._session.add(model)
         else:
@@ -55,6 +56,7 @@ class ReflectionRepository(IReflectionRepository):
 
             model.photos = self._photos_to_dict(reflection.photos)
             model.user_notes = reflection.user_notes
+            model.spot_notes = reflection.spot_notes
 
         self._session.commit()
         self._session.refresh(model)
@@ -124,6 +126,7 @@ class ReflectionRepository(IReflectionRepository):
             )
             photo = Photo(
                 id=photo_data["id"],
+                spot_id=photo_data["spotId"],
                 url=photo_data["url"],
                 analysis=analysis,
                 user_description=photo_data.get("userDescription"),
@@ -136,6 +139,7 @@ class ReflectionRepository(IReflectionRepository):
             user_id=model.user_id,
             photos=photos,
             user_notes=model.user_notes,
+            spot_notes=model.spot_notes or {},
             created_at=model.created_at,
         )
 
@@ -151,6 +155,7 @@ class ReflectionRepository(IReflectionRepository):
         return [
             {
                 "id": photo.id,
+                "spotId": photo.spot_id,
                 "url": photo.url,
                 "analysis": {
                     "detectedSpots": list(photo.analysis.detected_spots),

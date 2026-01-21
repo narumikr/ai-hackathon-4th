@@ -115,6 +115,7 @@ def _photo_list(draw: st.DrawFn) -> list[Photo]:
         photos.append(
             Photo(
                 id=photo_id,
+                spot_id=draw(_non_empty_printable_text(max_size=40)),
                 url=draw(_non_empty_printable_text(max_size=120)),
                 analysis=analysis,
                 # user_descriptionはオプショナル（Noneまたは非空文字列）
@@ -197,7 +198,7 @@ def test_reflection_property_image_analysis_execution(
         confidence=confidence,
     )
     # 実行: Photo作成
-    photo = Photo(id=photo_id, url=url, analysis=analysis)
+    photo = Photo(id=photo_id, spot_id="spot-001", url=url, analysis=analysis)
 
     # 検証1: ImageAnalysisが正しく格納される
     assert photo.analysis == analysis

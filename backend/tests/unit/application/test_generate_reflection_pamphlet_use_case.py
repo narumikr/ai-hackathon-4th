@@ -100,7 +100,6 @@ async def test_generate_reflection_pamphlet_use_case_updates_status_succeeded(
     dto = await use_case.execute(
         plan_id=sample_travel_plan.id,
         user_id=sample_travel_plan.user_id,
-        user_notes="旅の思い出をまとめた感想です。",
     )
 
     assert dto.plan_id == sample_travel_plan.id
@@ -137,7 +136,6 @@ async def test_generate_reflection_pamphlet_use_case_sets_failed_status_on_struc
         await use_case.execute(
             plan_id=sample_travel_plan.id,
             user_id=sample_travel_plan.user_id,
-            user_notes="失敗ケースの感想。",
         )
 
     plan = plan_repository.find_by_id(sample_travel_plan.id)

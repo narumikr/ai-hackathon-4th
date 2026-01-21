@@ -26,12 +26,13 @@ class ReflectionPhotoRequest(BaseModel):
     """振り返り作成用の写真入力"""
 
     id: str
+    spot_id: str = Field(..., alias="spotId")
     url: str
     user_description: str | None = Field(None, alias="userDescription")
 
     model_config = {"populate_by_name": True}
 
-    @field_validator("id", "url")
+    @field_validator("id", "spot_id", "url")
     @classmethod
     def validate_not_empty(cls, value: str) -> str:
         """空文字列でないことを検証する"""
@@ -53,16 +54,23 @@ class CreateReflectionRequest(BaseModel):
 
     plan_id: str = Field(..., min_length=1, alias="planId")
     user_id: str = Field(..., min_length=1, alias="userId")
-    photos: list[ReflectionPhotoRequest] = Field(..., min_length=1)
-    user_notes: str = Field(..., min_length=1, alias="userNotes")
+    user_notes: str | None = Field(None, min_length=1, alias="userNotes")
 
     model_config = {"populate_by_name": True}
 
-    @field_validator("plan_id", "user_id", "user_notes")
+    @field_validator("plan_id", "user_id")
     @classmethod
     def validate_not_empty(cls, value: str) -> str:
         """空文字列でないことを検証する"""
         if not value.strip():
+            raise ValueError("must not be empty")
+        return value
+
+    @field_validator("user_notes")
+    @classmethod
+    def validate_user_notes(cls, value: str | None) -> str | None:
+        """ユーザー感想の空文字列を拒否する"""
+        if value is not None and not value.strip():
             raise ValueError("must not be empty")
         return value
 
@@ -82,6 +90,7 @@ class ReflectionPhotoResponse(BaseModel):
     """振り返り写真レスポンス"""
 
     id: str
+    spot_id: str = Field(..., alias="spotId")
     url: str
     analysis: ImageAnalysisResponse
     user_description: str | None = Field(None, alias="userDescription")
@@ -97,6 +106,7 @@ class ReflectionResponse(BaseModel):
     user_id: str = Field(..., alias="userId")
     photos: list[ReflectionPhotoResponse]
     user_notes: str | None = Field(None, alias="userNotes")
+    spot_notes: dict[str, str | None] = Field(default_factory=dict, alias="spotNotes")
     created_at: datetime = Field(..., alias="createdAt")
 
     model_config = {"populate_by_name": True}

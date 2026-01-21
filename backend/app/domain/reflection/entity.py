@@ -12,6 +12,7 @@ class Photo(Entity):
     def __init__(
         self,
         id: str,
+        spot_id: str,
         url: str,
         analysis: ImageAnalysis,
         user_description: str | None = None,
@@ -20,6 +21,7 @@ class Photo(Entity):
 
         Args:
             id: 写真ID
+            spot_id: スポットID
             url: 画像URL
             analysis: 画像分析結果
             user_description: ユーザー説明
@@ -32,6 +34,9 @@ class Photo(Entity):
         if not id or not id.strip():
             raise ValueError("id is required and must not be empty.")
 
+        if not spot_id or not spot_id.strip():
+            raise ValueError("spot_id is required and must not be empty.")
+
         if not url or not url.strip():
             raise ValueError("url is required and must not be empty.")
 
@@ -41,6 +46,7 @@ class Photo(Entity):
         if user_description is not None and not user_description.strip():
             raise ValueError("user_description cannot be empty.")
 
+        self._spot_id = spot_id
         self._url = url
         self._analysis = analysis
         self._user_description = user_description
@@ -49,6 +55,11 @@ class Photo(Entity):
     def url(self) -> str:
         """画像URL"""
         return self._url
+
+    @property
+    def spot_id(self) -> str:
+        """スポットID"""
+        return self._spot_id
 
     @property
     def analysis(self) -> ImageAnalysis:
@@ -73,6 +84,7 @@ class Reflection(Entity):
         user_id: str,
         photos: list[Photo],
         user_notes: str | None = None,
+        spot_notes: dict[str, str | None] | None = None,
         id: str | None = None,
         created_at: datetime | None = None,
     ):
@@ -83,6 +95,7 @@ class Reflection(Entity):
             user_id: ユーザーID
             photos: 写真リスト
             user_notes: ユーザーメモ
+            spot_notes: スポットごとのメモ
             id: 振り返りID（Noneの場合は新規）
             created_at: 作成日時（Noneの場合は現在時刻）
 
@@ -110,10 +123,24 @@ class Reflection(Entity):
         if len(set(photo_ids)) != len(photo_ids):
             raise ValueError("photos contains duplicate photo id.")
 
+        notes = spot_notes or {}
+        if not isinstance(notes, dict):
+            raise ValueError("spot_notes must be a dict.")
+        normalized_notes: dict[str, str | None] = {}
+        for spot_id, note in notes.items():
+            if not isinstance(spot_id, str) or not spot_id.strip():
+                raise ValueError("spot_notes key must be a non-empty string.")
+            if note is not None and not isinstance(note, str):
+                raise ValueError("spot_notes value must be a string or None.")
+            if isinstance(note, str) and not note.strip():
+                raise ValueError("spot_notes value cannot be empty.")
+            normalized_notes[spot_id] = note.strip() if isinstance(note, str) else None
+
         self._plan_id = plan_id
         self._user_id = user_id
         self._photos = photos
         self._user_notes = user_notes
+        self._spot_notes = normalized_notes
         self._created_at = created_at or datetime.now(UTC)
 
     @property
@@ -135,6 +162,11 @@ class Reflection(Entity):
     def user_notes(self) -> str | None:
         """ユーザーメモ"""
         return self._user_notes
+
+    @property
+    def spot_notes(self) -> dict[str, str | None]:
+        """スポットごとのメモ"""
+        return dict(self._spot_notes)
 
     @property
     def created_at(self) -> datetime:
@@ -171,3 +203,22 @@ class Reflection(Entity):
             raise ValueError("user_notes cannot be empty.")
 
         self._user_notes = user_notes
+
+    def update_spot_note(self, spot_id: str, note: str | None) -> None:
+        """スポットメモを更新する
+
+        Args:
+            spot_id: スポットID
+            note: メモ内容
+
+        Raises:
+            ValueError: 入力が不正な場合
+        """
+        if not spot_id or not spot_id.strip():
+            raise ValueError("spot_id is required and must not be empty.")
+        if note is not None and not isinstance(note, str):
+            raise ValueError("spot_note must be a string or None.")
+        if isinstance(note, str) and not note.strip():
+            raise ValueError("spot_note cannot be empty.")
+
+        self._spot_notes[spot_id] = note.strip() if isinstance(note, str) else None

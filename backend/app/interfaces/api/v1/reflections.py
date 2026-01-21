@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.ports.ai_service import IAIService
-from app.application.use_cases.analyze_photos import AnalyzePhotosUseCase
 from app.application.use_cases.generate_reflection import GenerateReflectionPamphletUseCase
 from app.domain.reflection.exceptions import ReflectionNotFoundError
 from app.domain.travel_guide.exceptions import TravelGuideNotFoundError
@@ -102,20 +101,25 @@ async def create_reflection(
         dto = TravelPlanDTO.from_entity(travel_plan)
         return TravelPlanResponse(**dto.__dict__)
 
+    reflection_repository = ReflectionRepository(db)
+    existing_reflection = reflection_repository.find_by_plan_id(request.plan_id)
+    if existing_reflection is None or not existing_reflection.photos:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Reflection photos have not been registered for this plan.",
+        )
+
     _update_reflection_status_or_raise(
         plan_repository,
         request.plan_id,
         GenerationStatus.PROCESSING,
     )
 
-    photo_inputs = [photo.model_dump(by_alias=True) for photo in request.photos]
-
     background_tasks.add_task(
         _run_reflection_generation,
         request.plan_id,
         request.user_id,
         request.user_notes,
-        photo_inputs,
         ai_service,
         db.get_bind(),
     )
@@ -128,8 +132,7 @@ async def create_reflection(
 async def _run_reflection_generation(
     plan_id: str,
     user_id: str,
-    user_notes: str,
-    photos: list[dict],
+    user_notes: str | None,
     ai_service: IAIService,
     bind,
 ) -> None:
@@ -140,17 +143,6 @@ async def _run_reflection_generation(
         plan_repository = TravelPlanRepository(db)
         guide_repository = TravelGuideRepository(db)
         reflection_repository = ReflectionRepository(db)
-
-        analyze_use_case = AnalyzePhotosUseCase(
-            plan_repository=plan_repository,
-            reflection_repository=reflection_repository,
-            ai_service=ai_service,
-        )
-        await analyze_use_case.execute(
-            plan_id=plan_id,
-            user_id=user_id,
-            photos=photos,
-        )
 
         generate_use_case = GenerateReflectionPamphletUseCase(
             plan_repository=plan_repository,

@@ -64,6 +64,8 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
             raise ValueError(f"photos[{index}].id is duplicated: {photo_id}")
         seen_ids.add(photo_id)
 
+        spot_id = _require_str(photo.get("spotId"), f"photos[{index}].spotId")
+
         url = _require_str(photo.get("url"), f"photos[{index}].url")
 
         user_description = photo.get("userDescription")
@@ -75,6 +77,7 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
         normalized.append(
             {
                 "id": photo_id,
+                "spotId": spot_id,
                 "url": url,
                 "userDescription": user_description,
             }
@@ -123,11 +126,10 @@ def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
 
 def _build_image_analysis_prompt(
     destination: str,
-    spot_names: list[str],
+    spot_name: str,
     user_description: str | None,
 ) -> str:
     """画像分析のプロンプトを生成する"""
-    spots_text = "\n".join([f"- {spot_name}" for spot_name in spot_names])
     description_text = ""
     if user_description:
         description_text = f"ユーザーの補足説明: {user_description}\n"
@@ -135,7 +137,7 @@ def _build_image_analysis_prompt(
         "次の旅行先と観光スポット情報を参考に、画像に写っている観光スポットや歴史的要素を特定してください。\n"
         f"旅行先: {destination}\n"
         "観光スポット:\n"
-        f"{spots_text}\n"
+        f"- {spot_name}\n"
         f"{description_text}"
         "出力はJSONのみで返してください。\n"
         "必須キー: detectedSpots, historicalElements, landmarks, confidence\n"
@@ -171,6 +173,7 @@ class AnalyzePhotosUseCase:
         plan_id: str,
         user_id: str,
         photos: list[dict],
+        spot_note: str | None = None,
     ) -> ReflectionDTO:
         """写真を分析し振り返りを保存する
 
@@ -188,8 +191,14 @@ class AnalyzePhotosUseCase:
         """
         validate_required_str(plan_id, "plan_id")
         validate_required_str(user_id, "user_id")
+        if spot_note is not None and not spot_note.strip():
+            raise ValueError("spot_note must be a non-empty string.")
 
         normalized_photos = _normalize_photo_inputs(photos)
+        spot_ids = {photo["spotId"] for photo in normalized_photos}
+        if len(spot_ids) != 1:
+            raise ValueError("photos must belong to a single spot.")
+        spot_id = next(iter(spot_ids))
 
         travel_plan = self._plan_repository.find_by_id(plan_id)
         if travel_plan is None:
@@ -208,15 +217,21 @@ class AnalyzePhotosUseCase:
                     raise ValueError("photo id is required.")
                 existing_photo_ids.add(photo.id)
 
+        plan_spots_by_id = {spot.id: spot for spot in travel_plan.spots}
         new_photos: list[Photo] = []
         for index, photo in enumerate(normalized_photos):
             photo_id = photo["id"]
             if photo_id in existing_photo_ids:
                 raise ValueError(f"photo id already exists: {photo_id}")
 
+            spot_id = photo["spotId"]
+            spot = plan_spots_by_id.get(spot_id)
+            if spot is None:
+                raise ValueError(f"spotId is not found in travel plan: {spot_id}")
+
             prompt = _build_image_analysis_prompt(
                 travel_plan.destination,
-                [spot.name for spot in travel_plan.spots],
+                spot.name,
                 photo.get("userDescription"),
             )
             analysis_text = await self._ai_service.analyze_image(
@@ -233,6 +248,7 @@ class AnalyzePhotosUseCase:
             new_photos.append(
                 Photo(
                     id=photo_id,
+                    spot_id=spot_id,
                     url=photo["url"],
                     analysis=analysis,
                     user_description=photo.get("userDescription"),
@@ -245,10 +261,14 @@ class AnalyzePhotosUseCase:
                 user_id=user_id,
                 photos=new_photos,
             )
+            if spot_note is not None:
+                reflection.update_spot_note(spot_id, spot_note)
             saved_reflection = self._reflection_repository.save(reflection)
         else:
             for photo in new_photos:
                 existing_reflection.add_photo(photo)
+            if spot_note is not None:
+                existing_reflection.update_spot_note(spot_id, spot_note)
             saved_reflection = self._reflection_repository.save(existing_reflection)
 
         return ReflectionDTO.from_entity(saved_reflection)

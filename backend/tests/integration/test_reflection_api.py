@@ -132,24 +132,22 @@ def test_upload_images(
     sample_travel_plan: TravelPlanModel,
 ):
     """前提条件: サンプル旅行計画
-    実行: POST /api/v1/upload-images
-    検証: ステータスコード201、アップロードURLが返る
+    実行: POST /api/v1/spot-reflections
+    検証: ステータスコード204
     """
     data = {
         "planId": sample_travel_plan.id,
         "userId": sample_travel_plan.user_id,
+        "spotId": "spot-001",
+        "spotNote": "清水寺の舞台が印象的だった",
     }
     files = [
         ("files", ("kyoto.jpg", b"dummy-bytes", "image/jpeg")),
     ]
 
-    response = api_client.post("/api/v1/upload-images", data=data, files=files)
+    response = api_client.post("/api/v1/spot-reflections", data=data, files=files)
 
-    assert response.status_code == 201
-    payload = response.json()
-    assert len(payload["images"]) == 1
-    assert payload["images"][0]["fileName"] == "kyoto.jpg"
-    assert sample_travel_plan.id in payload["images"][0]["url"]
+    assert response.status_code == 204
 
 
 def test_create_reflection(
@@ -162,20 +160,26 @@ def test_create_reflection(
     実行: POST /api/v1/reflections
     検証: ステータスコード202、振り返り生成が完了する
     """
-    request_data = {
+    upload_data = {
         "planId": sample_travel_plan.id,
         "userId": sample_travel_plan.user_id,
-        "userNotes": "歴史の重みを感じられた。",
-        "photos": [
-            {
-                "id": "photo-001",
-                "url": "https://example.com/photos/kiyomizu.jpg",
-                "userDescription": "清水寺の舞台からの眺め",
-            }
-        ],
+        "spotId": "spot-001",
+        "spotNote": "清水寺の舞台からの眺めが最高だった",
     }
 
-    response = api_client.post("/api/v1/reflections", json=request_data)
+    files = [("files", ("kiyomizu.jpg", b"dummy-bytes", "image/jpeg"))]
+    upload_response = api_client.post(
+        "/api/v1/spot-reflections", data=upload_data, files=files
+    )
+    assert upload_response.status_code == 204
+
+    response = api_client.post(
+        "/api/v1/reflections",
+        json={
+            "planId": sample_travel_plan.id,
+            "userId": sample_travel_plan.user_id,
+        },
+    )
 
     assert response.status_code == 202
     data = response.json()
@@ -207,7 +211,7 @@ def test_create_reflection(
         .first()
     )
     assert saved_reflection is not None
-    assert saved_reflection.user_notes == "歴史の重みを感じられた。"
+    assert saved_reflection.spot_notes == {"spot-001": "清水寺の舞台からの眺めが最高だった"}
 
 
 def test_create_reflection_without_travel_guide(
@@ -221,8 +225,6 @@ def test_create_reflection_without_travel_guide(
     request_data = {
         "planId": sample_travel_plan.id,
         "userId": sample_travel_plan.user_id,
-        "userNotes": "感想",
-        "photos": [{"id": "photo-001", "url": "https://example.com/photo.jpg"}],
     }
 
     response = api_client.post("/api/v1/reflections", json=request_data)
@@ -238,8 +240,6 @@ def test_create_reflection_plan_not_found(api_client: TestClient):
     request_data = {
         "planId": "non-existent-plan-id",
         "userId": "test-user",
-        "userNotes": "感想",
-        "photos": [{"id": "photo-001", "url": "https://example.com/photo.jpg"}],
     }
 
     response = api_client.post("/api/v1/reflections", json=request_data)
