@@ -90,6 +90,14 @@ async def create_reflection(
             detail="user_id does not match the travel plan owner.",
         )
 
+    guide_repository = TravelGuideRepository(db)
+    travel_guide = guide_repository.find_by_plan_id(request.plan_id)
+    if travel_guide is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Travel guide has not been generated for this plan.",
+        )
+
     if travel_plan.reflection_generation_status == GenerationStatus.PROCESSING:
         dto = TravelPlanDTO.from_entity(travel_plan)
         return TravelPlanResponse(**dto.__dict__)

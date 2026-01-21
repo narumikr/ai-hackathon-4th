@@ -210,6 +210,26 @@ def test_create_reflection(
     assert saved_reflection.user_notes == "歴史の重みを感じられた。"
 
 
+def test_create_reflection_without_travel_guide(
+    api_client: TestClient,
+    sample_travel_plan: TravelPlanModel,
+):
+    """前提条件: 旅行ガイドが未生成の旅行計画
+    実行: POST /api/v1/reflections
+    検証: ステータスコード409
+    """
+    request_data = {
+        "planId": sample_travel_plan.id,
+        "userId": sample_travel_plan.user_id,
+        "userNotes": "感想",
+        "photos": [{"id": "photo-001", "url": "https://example.com/photo.jpg"}],
+    }
+
+    response = api_client.post("/api/v1/reflections", json=request_data)
+
+    assert response.status_code == 409
+
+
 def test_create_reflection_plan_not_found(api_client: TestClient):
     """前提条件: 存在しない旅行計画ID
     実行: POST /api/v1/reflections

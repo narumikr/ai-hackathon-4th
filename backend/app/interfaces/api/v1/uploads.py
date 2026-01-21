@@ -22,26 +22,37 @@ router = APIRouter(prefix="/upload-images", tags=["uploads"])
 
 def _resolve_extension(filename: str | None, content_type: str | None) -> str:
     """ファイル拡張子を決定する"""
+    if not content_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="content_type is required for uploaded files.",
+        )
+
+    content_type_map = {
+        "image/jpeg": ("jpg", "jpeg"),
+        "image/jpg": ("jpg", "jpeg"),
+        "image/png": ("png",),
+        "image/webp": ("webp",),
+    }
+    normalized_content_type = content_type.lower()
+    extensions = content_type_map.get(normalized_content_type)
+    if not extensions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"unsupported content_type: {content_type}.",
+        )
+
     if filename:
         suffix = Path(filename).suffix.lower().lstrip(".")
         if suffix:
+            if suffix not in extensions:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="file extension does not match content_type.",
+                )
             return suffix
 
-    content_type_map = {
-        "image/jpeg": "jpg",
-        "image/jpg": "jpg",
-        "image/png": "png",
-        "image/webp": "webp",
-    }
-    if content_type:
-        ext = content_type_map.get(content_type.lower())
-        if ext:
-            return ext
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="file extension could not be determined.",
-    )
+    return extensions[0]
 
 
 def _ensure_non_empty(value: str, field_name: str) -> str:
