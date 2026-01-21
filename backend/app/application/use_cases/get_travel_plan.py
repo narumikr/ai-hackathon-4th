@@ -1,8 +1,10 @@
 """旅行計画取得ユースケース"""
 
+from app.application.dto.reflection_dto import ReflectionDTO
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.use_cases.travel_plan_helpers import validate_required_str
+from app.domain.reflection.repository import IReflectionRepository
 from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
@@ -18,6 +20,7 @@ class GetTravelPlanUseCase:
         self,
         repository: ITravelPlanRepository,
         guide_repository: ITravelGuideRepository | None = None,
+        reflection_repository: IReflectionRepository | None = None,
     ):
         """ユースケースを初期化する
 
@@ -27,6 +30,7 @@ class GetTravelPlanUseCase:
         """
         self._repository = repository
         self._guide_repository = guide_repository
+        self._reflection_repository = reflection_repository
 
     def execute(self, plan_id: str) -> TravelPlanDTO:
         """旅行計画を取得する
@@ -52,7 +56,17 @@ class GetTravelPlanUseCase:
             if guide is not None:
                 guide_data = TravelGuideDTO.from_entity(guide).__dict__
 
-        return TravelPlanDTO.from_entity(travel_plan, guide=guide_data)
+        reflection_data: dict | None = None
+        if self._reflection_repository is not None:
+            reflection = self._reflection_repository.find_by_plan_id(plan_id)
+            if reflection is not None:
+                reflection_data = ReflectionDTO.from_entity(reflection).__dict__
+
+        return TravelPlanDTO.from_entity(
+            travel_plan,
+            guide=guide_data,
+            reflection=reflection_data,
+        )
 
 
 class ListTravelPlansUseCase:

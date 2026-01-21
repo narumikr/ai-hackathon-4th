@@ -12,7 +12,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を作成",
-        "description": "旅行計画を作成する.\n\nArgs:\n    request: 旅行計画作成リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 作成された旅行計画\n\nRaises:\n    HTTPException: バリデーションエラー（400）",
+        "description": "旅行計画を作成する\n\nArgs:\n    request: 旅行計画作成リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 作成された旅行計画\n\nRaises:\n    HTTPException: バリデーションエラー（400）",
         "operationId": "create_travel_plan_api_v1_travel_plans_post",
         "requestBody": {
           "required": true,
@@ -52,7 +52,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画一覧を取得",
-        "description": "ユーザーの旅行計画一覧を取得する.\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanResponse]: 旅行計画リスト",
+        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanResponse]: 旅行計画リスト",
         "operationId": "list_travel_plans_api_v1_travel_plans_get",
         "parameters": [
           {
@@ -99,7 +99,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を取得",
-        "description": "旅行計画を取得する.\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
+        "description": "旅行計画を取得する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
         "operationId": "get_travel_plan_api_v1_travel_plans__plan_id__get",
         "parameters": [
           {
@@ -140,7 +140,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を更新",
-        "description": "旅行計画を更新する.\n\nArgs:\n    plan_id: 旅行計画ID\n    request: 旅行計画更新リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 更新された旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）",
+        "description": "旅行計画を更新する\n\nArgs:\n    plan_id: 旅行計画ID\n    request: 旅行計画更新リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 更新された旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）",
         "operationId": "update_travel_plan_api_v1_travel_plans__plan_id__put",
         "parameters": [
           {
@@ -191,7 +191,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を削除",
-        "description": "旅行計画を削除する.\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    Response: 204 No Content\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
+        "description": "旅行計画を削除する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    Response: 204 No Content\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
         "operationId": "delete_travel_plan_api_v1_travel_plans__plan_id__delete",
         "parameters": [
           {
@@ -263,6 +263,90 @@
         }
       }
     },
+    "/api/v1/reflections": {
+      "post": {
+        "tags": [
+          "reflections"
+        ],
+        "summary": "振り返り生成を開始",
+        "description": "振り返り生成を開始する",
+        "operationId": "create_reflection_api_v1_reflections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReflectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TravelPlanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/upload-images": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "画像をアップロード",
+        "description": "画像をアップロードする",
+        "operationId": "upload_images_api_v1_upload_images_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_images_api_v1_upload_images_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadImagesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -312,6 +396,33 @@
   },
   "components": {
     "schemas": {
+      "Body_upload_images_api_v1_upload_images_post": {
+        "properties": {
+          "planId": {
+            "type": "string",
+            "title": "Planid"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid"
+          },
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planId",
+          "userId",
+          "files"
+        ],
+        "title": "Body_upload_images_api_v1_upload_images_post"
+      },
       "CheckpointSchema": {
         "properties": {
           "spotName": {
@@ -338,6 +449,42 @@
         ],
         "title": "CheckpointSchema",
         "description": "チェックポイントスキーマ"
+      },
+      "CreateReflectionRequest": {
+        "properties": {
+          "planId": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Planid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Userid"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/ReflectionPhotoRequest"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Photos"
+          },
+          "userNotes": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Usernotes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planId",
+          "userId",
+          "photos",
+          "userNotes"
+        ],
+        "title": "CreateReflectionRequest",
+        "description": "振り返り作成リクエスト"
       },
       "CreateTravelPlanRequest": {
         "properties": {
@@ -375,7 +522,7 @@
           "destination"
         ],
         "title": "CreateTravelPlanRequest",
-        "description": "旅行計画作成リクエスト."
+        "description": "旅行計画作成リクエスト"
       },
       "GenerateTravelGuideRequest": {
         "properties": {
@@ -438,6 +585,44 @@
         "title": "HistoricalEventSchema",
         "description": "歴史イベントスキーマ"
       },
+      "ImageAnalysisResponse": {
+        "properties": {
+          "detectedSpots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detectedspots"
+          },
+          "historicalElements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Historicalelements"
+          },
+          "landmarks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Landmarks"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detectedSpots",
+          "historicalElements",
+          "landmarks",
+          "confidence"
+        ],
+        "title": "ImageAnalysisResponse",
+        "description": "画像分析レスポンス"
+      },
       "LocationSchema": {
         "properties": {
           "lat": {
@@ -461,7 +646,7 @@
           "lng"
         ],
         "title": "LocationSchema",
-        "description": "地理的位置スキーマ."
+        "description": "地理的位置スキーマ"
       },
       "MapDataSchema": {
         "properties": {
@@ -512,6 +697,119 @@
         ],
         "title": "MapMarkerSchema",
         "description": "地図マーカースキーマ"
+      },
+      "ReflectionPhotoRequest": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "userDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userdescription"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url"
+        ],
+        "title": "ReflectionPhotoRequest",
+        "description": "振り返り作成用の写真入力"
+      },
+      "ReflectionPhotoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/ImageAnalysisResponse"
+          },
+          "userDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userdescription"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "analysis"
+        ],
+        "title": "ReflectionPhotoResponse",
+        "description": "振り返り写真レスポンス"
+      },
+      "ReflectionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "planId": {
+            "type": "string",
+            "title": "Planid"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/ReflectionPhotoResponse"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "userNotes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usernotes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "planId",
+          "userId",
+          "photos",
+          "createdAt"
+        ],
+        "title": "ReflectionResponse",
+        "description": "振り返りレスポンス"
       },
       "SpotDetailSchema": {
         "properties": {
@@ -605,7 +903,7 @@
           "location"
         ],
         "title": "TouristSpotSchema",
-        "description": "観光スポットスキーマ."
+        "description": "観光スポットスキーマ"
       },
       "TravelGuideResponse": {
         "properties": {
@@ -728,6 +1026,16 @@
                 "type": "null"
               }
             ]
+          },
+          "reflection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReflectionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -744,7 +1052,7 @@
           "updatedAt"
         ],
         "title": "TravelPlanResponse",
-        "description": "旅行計画レスポンス."
+        "description": "旅行計画レスポンス"
       },
       "UpdateTravelPlanRequest": {
         "properties": {
@@ -804,7 +1112,53 @@
         },
         "type": "object",
         "title": "UpdateTravelPlanRequest",
-        "description": "旅行計画更新リクエスト."
+        "description": "旅行計画更新リクエスト"
+      },
+      "UploadImagesResponse": {
+        "properties": {
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/UploadedImageResponse"
+            },
+            "type": "array",
+            "title": "Images"
+          }
+        },
+        "type": "object",
+        "required": [
+          "images"
+        ],
+        "title": "UploadImagesResponse",
+        "description": "画像アップロードレスポンス"
+      },
+      "UploadedImageResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "contentType": {
+            "type": "string",
+            "title": "Contenttype"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "fileName",
+          "contentType"
+        ],
+        "title": "UploadedImageResponse",
+        "description": "画像アップロードレスポンス（単体）"
       },
       "ValidationError": {
         "properties": {

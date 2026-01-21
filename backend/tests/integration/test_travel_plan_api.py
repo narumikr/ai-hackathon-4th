@@ -166,6 +166,7 @@ def test_get_travel_plan(
     assert data["guideGenerationStatus"] == sample_travel_plan.guide_generation_status
     assert data["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
     assert data["guide"] is None
+    assert data["reflection"] is None
 
 
 def test_get_travel_plan_not_found(api_client: TestClient):

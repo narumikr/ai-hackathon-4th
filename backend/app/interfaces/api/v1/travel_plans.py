@@ -12,6 +12,7 @@ from app.application.use_cases.get_travel_plan import (
 from app.application.use_cases.update_travel_plan import UpdateTravelPlanUseCase
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.infrastructure.persistence.database import get_db
+from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.interfaces.schemas.travel_plan import (
@@ -45,6 +46,20 @@ def get_guide_repository(db: Session = Depends(get_db)) -> TravelGuideRepository
         TravelGuideRepository: リポジトリインスタンス
     """
     return TravelGuideRepository(db)
+
+
+def get_reflection_repository(
+    db: Session = Depends(get_db),  # noqa: B008
+) -> ReflectionRepository:  # noqa: B008
+    """ReflectionRepositoryの依存性注入
+
+    Args:
+        db: SQLAlchemyセッション
+
+    Returns:
+        ReflectionRepository: リポジトリインスタンス
+    """
+    return ReflectionRepository(db)
 
 
 @router.post(
@@ -127,6 +142,7 @@ def get_travel_plan(
     plan_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
     guide_repository: TravelGuideRepository = Depends(get_guide_repository),  # noqa: B008
+    reflection_repository: ReflectionRepository = Depends(get_reflection_repository),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行計画を取得する
 
@@ -140,7 +156,11 @@ def get_travel_plan(
     Raises:
         HTTPException: 旅行計画が見つからない（404）
     """
-    use_case = GetTravelPlanUseCase(repository, guide_repository)
+    use_case = GetTravelPlanUseCase(
+        repository,
+        guide_repository=guide_repository,
+        reflection_repository=reflection_repository,
+    )
 
     try:
         dto = use_case.execute(plan_id=plan_id)
