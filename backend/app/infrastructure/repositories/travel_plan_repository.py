@@ -24,11 +24,12 @@ class TravelPlanRepository(ITravelPlanRepository):
         """
         self._session = session
 
-    def save(self, travel_plan: TravelPlan) -> TravelPlan:
+    def save(self, travel_plan: TravelPlan, *, commit: bool = True) -> TravelPlan:
         """TravelPlanを保存する.
 
         Args:
             travel_plan: 保存するTravelPlanエンティティ
+            commit: Trueの場合はトランザクションをコミットする
 
         Returns:
             TravelPlan: 保存されたTravelPlan（IDが割り当てられている）
@@ -63,8 +64,12 @@ class TravelPlanRepository(ITravelPlanRepository):
             model.guide_generation_status = travel_plan.guide_generation_status.value
             model.reflection_generation_status = travel_plan.reflection_generation_status.value
 
-        self._session.commit()
-        self._session.refresh(model)
+        if commit:
+            self._session.commit()
+            self._session.refresh(model)
+        else:
+            self._session.flush()
+            self._session.refresh(model)
 
         # SQLAlchemyモデル → ドメインエンティティ変換
         return self._to_entity(model)

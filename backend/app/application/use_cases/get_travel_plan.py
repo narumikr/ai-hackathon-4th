@@ -1,7 +1,9 @@
 """旅行計画取得ユースケース"""
 
+from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.use_cases.travel_plan_helpers import validate_required_str
+from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 
@@ -12,13 +14,19 @@ class GetTravelPlanUseCase:
     IDを指定して単一の旅行計画を取得する
     """
 
-    def __init__(self, repository: ITravelPlanRepository):
+    def __init__(
+        self,
+        repository: ITravelPlanRepository,
+        guide_repository: ITravelGuideRepository | None = None,
+    ):
         """ユースケースを初期化する
 
         Args:
             repository: TravelPlanリポジトリ
+            guide_repository: TravelGuideリポジトリ
         """
         self._repository = repository
+        self._guide_repository = guide_repository
 
     def execute(self, plan_id: str) -> TravelPlanDTO:
         """旅行計画を取得する
@@ -38,7 +46,13 @@ class GetTravelPlanUseCase:
         if travel_plan is None:
             raise TravelPlanNotFoundError(plan_id)
 
-        return TravelPlanDTO.from_entity(travel_plan)
+        guide_data: dict | None = None
+        if self._guide_repository is not None:
+            guide = self._guide_repository.find_by_plan_id(plan_id)
+            if guide is not None:
+                guide_data = TravelGuideDTO.from_entity(guide).__dict__
+
+        return TravelPlanDTO.from_entity(travel_plan, guide=guide_data)
 
 
 class ListTravelPlansUseCase:

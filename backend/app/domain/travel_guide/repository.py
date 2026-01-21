@@ -13,11 +13,12 @@ class ITravelGuideRepository(ABC):
     """
 
     @abstractmethod
-    def save(self, travel_guide: TravelGuide) -> TravelGuide:
+    def save(self, travel_guide: TravelGuide, *, commit: bool = True) -> TravelGuide:
         """TravelGuideを保存する
 
         Args:
             travel_guide: 保存するTravelGuideエンティティ
+            commit: Trueの場合はトランザクションをコミットする
 
         Returns:
             TravelGuide: 保存されたTravelGuide（IDが割り当てられている）

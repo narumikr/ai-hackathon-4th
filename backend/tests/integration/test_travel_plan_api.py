@@ -1,4 +1,4 @@
-"""TravelPlan API統合テスト."""
+"""TravelPlan API統合テスト"""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,7 +11,7 @@ from main import app
 
 @pytest.fixture
 def api_client(db_session: Session):
-    """テスト用DBセッションを注入したTestClientを返す."""
+    """テスト用DBセッションを注入したTestClientを返す"""
 
     def override_get_db():
         yield db_session
@@ -165,6 +165,7 @@ def test_get_travel_plan(
     assert len(data["spots"]) == len(sample_travel_plan.spots)
     assert data["guideGenerationStatus"] == sample_travel_plan.guide_generation_status
     assert data["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
+    assert data["guide"] is None
 
 
 def test_get_travel_plan_not_found(api_client: TestClient):

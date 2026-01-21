@@ -291,11 +291,12 @@ class GenerateTravelGuideUseCase:
         self._ai_service = ai_service
         self._composer = composer or TravelGuideComposer()
 
-    async def execute(self, plan_id: str) -> TravelGuideDTO:
+    async def execute(self, plan_id: str, *, commit: bool = True) -> TravelGuideDTO:
         """旅行ガイドを生成する
 
         Args:
             plan_id: 旅行計画ID
+            commit: Trueの場合はトランザクションをコミットする
 
         Returns:
             TravelGuideDTO: 生成された旅行ガイド
@@ -324,7 +325,7 @@ class GenerateTravelGuideUseCase:
             raise ValueError(f"duplicate spot names are not allowed: {sorted(duplicate_spots)}")
 
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.PROCESSING)
-        self._plan_repository.save(travel_plan)
+        self._plan_repository.save(travel_plan, commit=commit)
 
         try:
             historical_prompt = _build_historical_info_prompt(travel_plan)
@@ -370,7 +371,7 @@ class GenerateTravelGuideUseCase:
 
             existing = self._guide_repository.find_by_plan_id(travel_plan.id)
             if existing is None:
-                saved_guide = self._guide_repository.save(generated_guide)
+                saved_guide = self._guide_repository.save(generated_guide, commit=commit)
             else:
                 existing.update_guide(
                     overview=generated_guide.overview,
@@ -379,14 +380,14 @@ class GenerateTravelGuideUseCase:
                     checkpoints=generated_guide.checkpoints,
                     map_data=generated_guide.map_data,
                 )
-                saved_guide = self._guide_repository.save(existing)
+                saved_guide = self._guide_repository.save(existing, commit=commit)
         except Exception:
             travel_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
-            self._plan_repository.save(travel_plan)
+            self._plan_repository.save(travel_plan, commit=commit)
             raise
 
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
-        self._plan_repository.save(travel_plan)
+        self._plan_repository.save(travel_plan, commit=commit)
 
         return TravelGuideDTO.from_entity(saved_guide)
 

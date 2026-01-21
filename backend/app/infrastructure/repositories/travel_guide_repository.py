@@ -25,11 +25,12 @@ class TravelGuideRepository(ITravelGuideRepository):
         """
         self._session = session
 
-    def save(self, travel_guide: TravelGuide) -> TravelGuide:
+    def save(self, travel_guide: TravelGuide, *, commit: bool = True) -> TravelGuide:
         """TravelGuideを保存する
 
         Args:
             travel_guide: 保存するTravelGuideエンティティ
+            commit: Trueの場合はトランザクションをコミットする
 
         Returns:
             TravelGuide: 保存されたTravelGuide（IDが割り当てられている）
@@ -62,8 +63,12 @@ class TravelGuideRepository(ITravelGuideRepository):
             model.checkpoints = self._checkpoints_to_dict(travel_guide.checkpoints)
             model.map_data = dict(travel_guide.map_data)
 
-        self._session.commit()
-        self._session.refresh(model)
+        if commit:
+            self._session.commit()
+            self._session.refresh(model)
+        else:
+            self._session.flush()
+            self._session.refresh(model)
 
         # SQLAlchemyモデル → ドメインエンティティ変換
         return self._to_entity(model)

@@ -13,11 +13,12 @@ class ITravelPlanRepository(ABC):
     """
 
     @abstractmethod
-    def save(self, travel_plan: TravelPlan) -> TravelPlan:
+    def save(self, travel_plan: TravelPlan, *, commit: bool = True) -> TravelPlan:
         """TravelPlanを保存する
 
         Args:
             travel_plan: 保存するTravelPlanエンティティ
+            commit: Trueの場合はトランザクションをコミットする
 
         Returns:
             TravelPlan: 保存されたTravelPlan（IDが割り当てられている）
