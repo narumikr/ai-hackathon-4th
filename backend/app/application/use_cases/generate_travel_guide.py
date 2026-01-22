@@ -331,7 +331,7 @@ class GenerateTravelGuideUseCase:
             historical_prompt = _build_historical_info_prompt(travel_plan)
             historical_info = await self._ai_service.generate_with_search(
                 prompt=historical_prompt,
-                system_instruction="Collect concise historical information using search results.",
+                system_instruction="検索結果を使用して、簡潔な歴史情報を収集してください。",
             )
             if not historical_info or not historical_info.strip():
                 raise ValueError("historical_info must be a non-empty string.")
@@ -341,8 +341,8 @@ class GenerateTravelGuideUseCase:
                 prompt=guide_prompt,
                 response_schema=_TRAVEL_GUIDE_SCHEMA,
                 system_instruction=(
-                    "Return JSON that exactly matches the response schema. "
-                    "Use Japanese for narrative fields."
+                    "レスポンススキーマに正確に一致するJSONを返してください。"
+                    "説明文のフィールドは日本語で記述してください。"
                 ),
             )
             if not isinstance(structured, dict):
