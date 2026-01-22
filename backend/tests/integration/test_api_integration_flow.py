@@ -168,7 +168,18 @@ def _wait_for_generation(
     timeout_seconds: float = 5.0,
     interval_seconds: float = 0.05,
 ) -> dict:
-    """生成ステータスが完了するまでポーリングする"""
+    """指定した生成ステータスが完了状態になるまでポーリングする。
+
+    Args:
+        api_client: テスト対象APIへのリクエストに使うTestClient。
+        plan_id: 対象となる旅行プランID。
+        field: レスポンスJSON内の生成ステータスフィールド名。
+        timeout_seconds: 最大待機時間（秒）。
+        interval_seconds: ポーリング間隔（秒）。
+
+    Returns:
+        dict: 最後に取得したレスポンスJSON。
+    """
     deadline = time.monotonic() + timeout_seconds
     status_data = api_client.get(f"/api/v1/travel-plans/{plan_id}").json()
     while time.monotonic() < deadline:
@@ -178,6 +189,12 @@ def _wait_for_generation(
             break
         time.sleep(interval_seconds)
         status_data = api_client.get(f"/api/v1/travel-plans/{plan_id}").json()
+    if status_data[field] not in ("succeeded", "failed"):
+        pytest.fail(
+            "タイムアウトしました: "
+            f"plan_id={plan_id}, field={field}, "
+            f"last_status={status_data.get(field)!r}"
+        )
     return status_data
 
 
