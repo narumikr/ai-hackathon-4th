@@ -71,27 +71,49 @@
 #### 振り返り一覧画面 (`/reflection`)
 - **目的**: 完了した旅行の振り返り管理
 - **主要機能**:
-  - 完了済み旅行の一覧表示
+  - 完了ステータス（status='completed'）の旅行一覧表示
   - 振り返り作成状況の表示
-  - 新規振り返り作成への導線
+    - 未作成：新規振り返り作成への導線
+    - 作成済み：振り返りパンフレットの閲覧のみ（編集不可）
   - 既存振り返りパンフレットの閲覧
 - **コンポーネント**:
   - `app/reflection/page.tsx`
   - `components/reflection/ReflectionList.tsx`
 
-#### 写真アップロード・振り返り作成画面 (`/reflection/[id]`)
-- **目的**: 旅行後の写真と感想の収集
+#### 振り返り作成画面 (`/reflection/[id]`)
+- **目的**: 旅行後のスポット別写真と感想の収集
+- **アクセス制御**: 振り返り未作成の旅行のみアクセス可能（作成済みは閲覧専用画面へリダイレクト）
 - **主要機能**:
-  - 画像アップロード（ドラッグ&ドロップ対応）
-  - 複数画像の一括アップロード
-  - 各写真への説明・感想入力
-  - 全体的な旅行感想の入力
-  - 旅行前情報（ガイド）との比較表示
-  - 振り返りパンフレット生成トリガー
+  - **計画スポット表示**: 旅行計画に含まれていたスポットの一覧表示
+  - **スポット別画像アップロード**: 各スポットに対する複数画像のアップロード（ドラッグ&ドロップ対応）
+  - **スポット別感想入力**: 各スポットに対する感想入力（任意）
+  - **スポット追加機能**: 
+    - 計画になかった観光スポットの追加
+    - 観光スポット名の入力（必須）
+    - 追加スポットへの画像アップロード・感想入力
+  - **全体感想入力**: 旅行全体に対する感想入力（任意）
+  - **旅行前情報との比較**: 旅行ガイドとの比較表示
+  - **振り返りパンフレット生成**: AI処理トリガー
+- **データ仕様**:
+  - 追加されたスポットは振り返り専用データとして保存
+  - 元の旅行計画には影響しない
+  - 一度作成完了した振り返りは編集不可
 - **コンポーネント**:
   - `app/reflection/[id]/page.tsx`
+  - `components/reflection/SpotReflectionForm.tsx`
+  - `components/reflection/SpotAdder.tsx`
   - `components/upload/ImageUploader.tsx`
-  - `components/upload/ReflectionForm.tsx`
+
+#### 振り返り閲覧画面 (`/reflection/[id]/view`)
+- **目的**: 作成済み振り返りパンフレットの閲覧
+- **アクセス制御**: 振り返り作成済みの旅行のみアクセス可能
+- **主要機能**:
+  - 生成された振り返りパンフレットの表示
+  - 印刷・PDF出力機能
+  - 編集機能なし（閲覧専用）
+- **コンポーネント**:
+  - `app/reflection/[id]/view/page.tsx`
+  - `components/reflection/ReflectionViewer.tsx`
 
 ### 4. 共通機能画面
 
@@ -128,7 +150,9 @@ frontend/src/
 │   ├── reflection/
 │   │   ├── page.tsx            # 振り返り一覧画面
 │   │   └── [id]/
-│   │       └── page.tsx        # 写真アップロード・振り返り作成画面
+│   │       ├── page.tsx        # 振り返り作成画面
+│   │       └── view/
+│   │           └── page.tsx    # 振り返り閲覧画面
 │   └── api/                     # Next.js API Routes (プロキシ用)
 │       └── proxy/
 ├── components/
@@ -143,14 +167,16 @@ frontend/src/
 │   │   ├── TravelForm.tsx
 │   │   └── SpotSelector.tsx
 │   ├── upload/                  # アップロード関連
-│   │   ├── ImageUploader.tsx
-│   │   └── ReflectionForm.tsx
+│   │   └── ImageUploader.tsx
 │   ├── display/                 # 表示関連
 │   │   ├── TravelGuide.tsx
 │   │   ├── Timeline.tsx
 │   │   └── HistoricalMap.tsx
 │   └── reflection/              # 振り返り関連
-│       └── ReflectionList.tsx
+│       ├── ReflectionList.tsx
+│       ├── SpotReflectionForm.tsx
+│       ├── SpotAdder.tsx
+│       └── ReflectionViewer.tsx
 ├── lib/
 │   ├── api.ts                   # APIクライアント
 │   ├── utils.ts                 # ユーティリティ関数
@@ -176,9 +202,10 @@ frontend/src/
 5. 旅行ガイド表示画面で生成されたガイドを確認・印刷
 
 ### 旅行後フェーズ
-1. 振り返り一覧画面で振り返り対象の旅行を選択
-2. 写真アップロード画面で旅行写真と感想を入力
-3. AI処理による振り返りパンフレット生成（ローディング画面）
+1. 振り返り一覧画面で完了ステータスの旅行から振り返り対象を選択
+2. 振り返り作成状況に応じて画面が分岐：
+   - **未作成の場合**: 振り返り作成画面で写真・感想を入力し、AI処理による振り返りパンフレット生成
+   - **作成済みの場合**: 振り返り閲覧画面で生成済みパンフレットを閲覧（編集不可）
 
 ## 技術仕様
 
