@@ -160,13 +160,23 @@ def api_client(db_session: Session):
     app.dependency_overrides.clear()
 
 
-def _wait_for_generation(api_client: TestClient, plan_id: str, field: str) -> dict:
+def _wait_for_generation(
+    api_client: TestClient,
+    plan_id: str,
+    field: str,
+    *,
+    timeout_seconds: float = 5.0,
+    interval_seconds: float = 0.05,
+) -> dict:
     """生成ステータスが完了するまでポーリングする"""
+    deadline = time.monotonic() + timeout_seconds
     status_data = api_client.get(f"/api/v1/travel-plans/{plan_id}").json()
-    for _ in range(30):
+    while time.monotonic() < deadline:
         if status_data[field] == "succeeded":
             break
-        time.sleep(0.01)
+        if status_data[field] == "failed":
+            break
+        time.sleep(interval_seconds)
         status_data = api_client.get(f"/api/v1/travel-plans/{plan_id}").json()
     return status_data
 
@@ -215,6 +225,10 @@ def test_api_end_to_end_flow(api_client: TestClient):
     )
     assert guide_status["guideGenerationStatus"] == "succeeded"
     assert guide_status["guide"] is not None
+    assert guide_status["guide"]["overview"]
+    assert guide_status["guide"]["timeline"]
+    assert guide_status["guide"]["spotDetails"]
+    assert guide_status["guide"]["mapData"]
 
     # 実行: 画像アップロード
     upload_response = api_client.post(
@@ -246,6 +260,12 @@ def test_api_end_to_end_flow(api_client: TestClient):
     )
     assert reflection_status["reflectionGenerationStatus"] == "succeeded"
     assert reflection_status["reflection"] is not None
+    assert reflection_status["reflection"]["photos"]
+    assert reflection_status["reflection"]["spotNotes"]["spot-010"]
+    first_photo = reflection_status["reflection"]["photos"][0]
+    assert first_photo["analysis"]["detectedSpots"]
+    assert first_photo["analysis"]["historicalElements"]
+    assert first_photo["analysis"]["landmarks"]
 
 
 def test_api_error_handling_flow(api_client: TestClient):
