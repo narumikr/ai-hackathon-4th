@@ -248,6 +248,14 @@ export const ERROR_MESSAGES = {
 } as const;
 
 /**
+ * Tooltipメッセージ
+ */
+export const TOOLTIP_MESSAGES = {
+  TITLE_REQUIRED: 'タイトルを入力してください',
+  DESTINATION_REQUIRED: '目的地を入力してください',
+} as const;
+
+/**
  * セクション見出し
  */
 export const SECTION_TITLES = {

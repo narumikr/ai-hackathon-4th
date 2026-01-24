@@ -42,23 +42,26 @@ export function Tooltip({
 }: TooltipProps) {
   const [isHovered, setIsHovered] = useState(false);
   // If isOpen is provided (controlled), use it. Otherwise use internal hover state.
-  const isVisible = isOpen !== undefined ? isOpen : isHovered;
+  const isControlled = isOpen !== undefined;
+  const isVisible = isControlled ? isOpen : isHovered;
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tooltipId = useId();
 
   const showTooltip = useCallback(() => {
+    if (isControlled) return; // Skip internal state update in controlled mode
     timeoutRef.current = setTimeout(() => {
       setIsHovered(true);
     }, delay);
-  }, [delay]);
+  }, [delay, isControlled]);
 
   const hideTooltip = useCallback(() => {
+    if (isControlled) return; // Skip internal state update in controlled mode
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     setIsHovered(false);
-  }, []);
+  }, [isControlled]);
 
   useEffect(() => {
     return () => {

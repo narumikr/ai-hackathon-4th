@@ -10,6 +10,7 @@ import {
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   PLACEHOLDERS,
+  TOOLTIP_MESSAGES,
 } from '@/constants';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -68,7 +69,7 @@ export default function TravelNewPage() {
               {/* 旅行タイトル */}
               <div>
                 <Tooltip
-                  content="タイトルを入力してください"
+                  content={TOOLTIP_MESSAGES.TITLE_REQUIRED}
                   isOpen={showTitleError}
                   position="top"
                 >
@@ -89,7 +90,7 @@ export default function TravelNewPage() {
               {/* 目的地 */}
               <div>
                 <Tooltip
-                  content="目的地を入力してください"
+                  content={TOOLTIP_MESSAGES.DESTINATION_REQUIRED}
                   isOpen={showDestinationError}
                   position="top"
                 >

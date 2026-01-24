@@ -21,7 +21,11 @@ export default function TravelGuidePage() {
   const handleCompleteTravel = () => {
     // TODO: 旅行を完了状態に更新するAPI呼び出し
     // URLから取得した旅行IDを使用して、対応する振り返り閲覧ページへ遷移
-    router.push(`/reflection/${id}/view`);
+    if (travel?.hasReflection) {
+      router.push(`/reflection/${id}/view`);
+    } else {
+      router.push(`/reflection/${id}`);
+    }
   };
 
   return (
@@ -116,7 +120,9 @@ export default function TravelGuidePage() {
           </Button>
           {isCompleted ? (
             <Button variant="primary" size="lg" onClick={handleCompleteTravel}>
-              {BUTTON_LABELS.CREATE_REFLECTION}
+              {travel?.hasReflection
+                ? BUTTON_LABELS.VIEW_REFLECTION
+                : BUTTON_LABELS.CREATE_REFLECTION}
             </Button>
           ) : (
             <Link href={`/travel/${id}/edit`}>
