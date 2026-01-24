@@ -181,6 +181,7 @@ export const STATUS_LABELS = {
   PLANNING: '計画中',
   COMPLETED: '完了',
   REFLECTION_CREATED: '作成済み',
+  REFLECTION_PROCESSING: '生成中',
   ADDED_SPOT: '追加スポット',
 } as const;
 
