@@ -138,14 +138,12 @@ def main():
             # multipart/form-dataの場合のバリデーション
             if selected_endpoint.body_type == "multipart":
                 if form_data:
-                    if not form_data.get("plan_id"):
-                        validation_errors.append(
-                            "フォームフィールド 'plan_id' は必須です"
-                        )
-                    if not form_data.get("spot_name"):
-                        validation_errors.append(
-                            "フォームフィールド 'spot_name' は必須です"
-                        )
+                    if not form_data.get("planId"):
+                        validation_errors.append("フォームフィールド 'planId' は必須です")
+                    if not form_data.get("userId"):
+                        validation_errors.append("フォームフィールド 'userId' は必須です")
+                    if not form_data.get("spotId"):
+                        validation_errors.append("フォームフィールド 'spotId' は必須です")
                 if not files:
                     validation_errors.append(
                         "少なくとも1つの画像ファイルをアップロードしてください"
