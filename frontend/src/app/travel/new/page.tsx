@@ -48,7 +48,6 @@ export default function TravelNewPage() {
               <div>
                 <div className="mb-2 block font-medium text-neutral-700 text-sm">
                   {FORM_LABELS.SPOTS}
-                  <span className="ml-1 text-danger">*</span>
                 </div>
                 <div className="space-y-3">
                   <TextField placeholder={PLACEHOLDERS.SPOT_1} fullWidth />
