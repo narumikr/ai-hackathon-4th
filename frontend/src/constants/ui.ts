@@ -199,7 +199,6 @@ export const FORM_LABELS = {
   TRAVEL_TITLE: '旅行タイトル',
   DESTINATION: '目的地',
   SPOTS: '観光スポット',
-  SELECT_FROM_MAP: '地図から選択',
   PHOTO_UPLOAD: '📸 写真をアップロード',
   PHOTO_COMMENTS: '✍️ 写真ごとの感想',
   OVERALL_IMPRESSION: '📝 旅行全体の感想',
@@ -256,7 +255,6 @@ export const SECTION_TITLES = {
   HOW_TO_USE: '使い方',
   CTA: 'さあ、歴史を学ぶ旅を始めましょう',
   TIMELINE: '📅 歴史年表',
-  MAP: '🗺️ 観光マップ',
   SPOT_DETAILS: '📍 観光スポット詳細',
   HISTORICAL_CONTEXT: '🏛️ 歴史的背景',
   CHECKPOINTS: '✅ チェックポイント',
@@ -286,10 +284,10 @@ export const HOME_CONTENT = {
         '訪問予定の観光スポットの歴史的背景や見どころを、AIが分かりやすくまとめた旅行ガイドを自動生成。',
     },
     {
-      emoji: '🗺️',
-      title: '歴史年表と地図',
+      emoji: '📅',
+      title: '歴史年表',
       description:
-        '時系列で整理された歴史年表と、歴史的コンテキスト付きの地図で、訪問地の理解を深めます。',
+        '時系列で整理された歴史年表で、訪問地の歴史的背景を深く理解できます。',
     },
     {
       emoji: '📸',
@@ -345,10 +343,7 @@ export const HINTS = {
 /**
  * プレースホルダーメッセージ
  */
-export const PLACEHOLDER_MESSAGES = {
-  MAP_COMING_SOON: '地図機能は今後実装予定',
-  MAP_DESCRIPTION: '各スポットの位置と歴史的コンテキストを表示',
-} as const;
+export const PLACEHOLDER_MESSAGES = {} as const;
 
 /**
  * その他の表示文言
@@ -371,7 +366,6 @@ export const EMOJI_LABELS = {
   HISTORIC_BUILDING: '歴史的建造物',
   USER: 'ユーザー',
   BOOK: '本',
-  MAP: '地図',
   CAMERA: 'カメラ',
   PENCIL: '鉛筆',
   NOTEBOOK: 'ノート',

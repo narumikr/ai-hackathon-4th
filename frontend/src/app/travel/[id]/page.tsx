@@ -4,7 +4,6 @@ import {
   BUTTON_LABELS,
   EMOJI_LABELS,
   LABELS,
-  PLACEHOLDER_MESSAGES,
   SECTION_TITLES,
 } from '@/constants';
 import { sampleGuide } from '@/data';
@@ -45,22 +44,6 @@ export default function TravelGuidePage() {
                 </div>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* 地図エリア（プレースホルダー） */}
-        <section className="mb-12 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-6 font-bold text-2xl text-neutral-900">
-            <Emoji symbol="🗺️" label={EMOJI_LABELS.MAP} /> {SECTION_TITLES.MAP}
-          </h2>
-          <div className="flex h-96 items-center justify-center rounded-lg border-2 border-neutral-300 border-dashed bg-neutral-100">
-            <div className="text-center">
-              <div className="mb-2 text-6xl">
-                <Emoji symbol="🗺️" label={EMOJI_LABELS.MAP} />
-              </div>
-              <p className="text-neutral-500">{PLACEHOLDER_MESSAGES.MAP_COMING_SOON}</p>
-              <p className="text-neutral-400 text-sm">{PLACEHOLDER_MESSAGES.MAP_DESCRIPTION}</p>
-            </div>
           </div>
         </section>
 

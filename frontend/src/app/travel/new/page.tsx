@@ -9,7 +9,6 @@ import {
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   PLACEHOLDERS,
-  PLACEHOLDER_MESSAGES,
 } from '@/constants';
 
 export default function TravelNewPage() {
@@ -64,19 +63,6 @@ export default function TravelNewPage() {
                 <Button variant="ghost" fullWidth>
                   {BUTTON_LABELS.ADD_SPOT}
                 </Button>
-              </div>
-
-              {/* 地図選択エリア（プレースホルダー） */}
-              <div>
-                <div className="mb-2 block font-medium text-neutral-700 text-sm">
-                  {FORM_LABELS.SELECT_FROM_MAP}
-                </div>
-                <div className="flex h-64 items-center justify-center rounded-lg border-2 border-neutral-300 border-dashed bg-neutral-100">
-                  <div className="text-center">
-                    <div className="mb-2 text-4xl">🗺️</div>
-                    <p className="text-neutral-500">{PLACEHOLDER_MESSAGES.MAP_COMING_SOON}</p>
-                  </div>
-                </div>
               </div>
 
               {/* アクションボタン */}
