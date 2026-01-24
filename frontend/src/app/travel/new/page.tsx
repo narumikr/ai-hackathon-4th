@@ -1,6 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { Container } from '@/components/layout';
 import { Button, TextField, Tooltip } from '@/components/ui';
 import {
@@ -13,6 +11,8 @@ import {
   PAGE_TITLES,
   PLACEHOLDERS,
 } from '@/constants';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function TravelNewPage() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function TravelNewPage() {
 
   const handleCreate = () => {
     let isValid = true;
-    
+
     if (!title.trim()) {
       setShowTitleError(true);
       isValid = false;
@@ -46,16 +46,13 @@ export default function TravelNewPage() {
     }
 
     if (!destination.trim()) {
-       setShowDestinationError(true);
-       isValid = false;
+      setShowDestinationError(true);
+      isValid = false;
     } else {
-       setShowDestinationError(false);
+      setShowDestinationError(false);
     }
 
     if (!isValid) return;
-
-    // API calls are not required yet.
-    console.log('Create travel:', { title, destination, spots });
     alert('作成ボタンが押されました（API未実装）');
   };
 
@@ -69,7 +66,7 @@ export default function TravelNewPage() {
           </div>
 
           <div className="rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-6" onSubmit={e => e.preventDefault()}>
               {/* 旅行タイトル */}
               <div>
                 <Tooltip
@@ -83,7 +80,7 @@ export default function TravelNewPage() {
                     fullWidth
                     required
                     value={title}
-                    onChange={(value) => {
+                    onChange={value => {
                       setTitle(value);
                       if (showTitleError) setShowTitleError(false);
                     }}
@@ -105,7 +102,7 @@ export default function TravelNewPage() {
                     fullWidth
                     required
                     value={destination}
-                    onChange={(value) => {
+                    onChange={value => {
                       setDestination(value);
                       if (showDestinationError) setShowDestinationError(false);
                     }}
@@ -119,23 +116,23 @@ export default function TravelNewPage() {
                   {FORM_LABELS.SPOTS}
                 </div>
                 <div className="space-y-3">
-                  <TextField 
-                    placeholder={PLACEHOLDERS.SPOT_1} 
-                    fullWidth 
+                  <TextField
+                    placeholder={PLACEHOLDERS.SPOT_1}
+                    fullWidth
                     value={spots[0]}
-                    onChange={(value) => handleSpotChange(0, value)}
+                    onChange={value => handleSpotChange(0, value)}
                   />
-                  <TextField 
-                    placeholder={PLACEHOLDERS.SPOT_2} 
-                    fullWidth 
+                  <TextField
+                    placeholder={PLACEHOLDERS.SPOT_2}
+                    fullWidth
                     value={spots[1]}
-                    onChange={(value) => handleSpotChange(1, value)}
+                    onChange={value => handleSpotChange(1, value)}
                   />
-                  <TextField 
-                    placeholder={PLACEHOLDERS.SPOT_3} 
-                    fullWidth 
+                  <TextField
+                    placeholder={PLACEHOLDERS.SPOT_3}
+                    fullWidth
                     value={spots[2]}
-                    onChange={(value) => handleSpotChange(2, value)}
+                    onChange={value => handleSpotChange(2, value)}
                   />
                 </div>
                 <p className="mt-2 text-neutral-500 text-sm">{HELP_TEXTS.SPOTS}</p>

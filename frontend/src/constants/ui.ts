@@ -286,8 +286,7 @@ export const HOME_CONTENT = {
     {
       emoji: '📅',
       title: '歴史年表',
-      description:
-        '時系列で整理された歴史年表で、訪問地の歴史的背景を深く理解できます。',
+      description: '時系列で整理された歴史年表で、訪問地の歴史的背景を深く理解できます。',
     },
     {
       emoji: '📸',

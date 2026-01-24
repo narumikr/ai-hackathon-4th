@@ -1,16 +1,11 @@
 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
 import { Container } from '@/components/layout';
 import { Button, Emoji } from '@/components/ui';
-import {
-  BUTTON_LABELS,
-  EMOJI_LABELS,
-  LABELS,
-  SECTION_TITLES,
-} from '@/constants';
+import { BUTTON_LABELS, EMOJI_LABELS, LABELS, SECTION_TITLES } from '@/constants';
 import { sampleGuide, sampleTravels } from '@/data';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 
 export default function TravelGuidePage() {
   const router = useRouter();
@@ -116,20 +111,20 @@ export default function TravelGuidePage() {
 
         {/* アクション */}
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
-           <Button variant="ghost" size="lg" onClick={handleBack}>
-             {BUTTON_LABELS.BACK}
-           </Button>
-           {isCompleted ? (
-              <Button variant="primary" size="lg" onClick={handleCompleteTravel}>
-                {BUTTON_LABELS.CREATE_REFLECTION}
+          <Button variant="ghost" size="lg" onClick={handleBack}>
+            {BUTTON_LABELS.BACK}
+          </Button>
+          {isCompleted ? (
+            <Button variant="primary" size="lg" onClick={handleCompleteTravel}>
+              {BUTTON_LABELS.CREATE_REFLECTION}
+            </Button>
+          ) : (
+            <Link href={`/travel/${id}/edit`}>
+              <Button variant="primary" size="lg">
+                {BUTTON_LABELS.EDIT}
               </Button>
-           ) : (
-              <Link href={`/travel/${id}/edit`}>
-                <Button variant="primary" size="lg">
-                  {BUTTON_LABELS.EDIT}
-                </Button>
-              </Link>
-           )}
+            </Link>
+          )}
         </div>
       </Container>
     </div>
