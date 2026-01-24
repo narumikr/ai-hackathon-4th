@@ -1,11 +1,12 @@
 'use client';
 
 import { Container } from '@/components/layout';
-import { Button, Emoji } from '@/components/ui';
+import { Button, Emoji, Modal } from '@/components/ui';
 import { BUTTON_LABELS, EMOJI_LABELS, LABELS, SECTION_TITLES } from '@/constants';
 import { sampleGuide, sampleTravels } from '@/data';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function TravelGuidePage() {
   const router = useRouter();
@@ -14,19 +15,56 @@ export default function TravelGuidePage() {
   const travel = sampleTravels.find(t => t.id === id);
   const isCompleted = travel?.status === 'completed';
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // reflectionGenerationStatus logic
+  const reflectionStatus = travel?.reflectionGenerationStatus;
+
   const handleBack = () => {
     router.push('/travel');
   };
 
-  const handleCompleteTravel = () => {
-    // TODO: 旅行を完了状態に更新するAPI呼び出し
-    // URLから取得した旅行IDを使用して、対応する振り返り閲覧ページへ遷移
-    if (travel?.hasReflection) {
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    setIsDeleteModalOpen(false);
+    alert('削除しました（モック）');
+    router.push('/travel');
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleReflectionAction = () => {
+    if (!reflectionStatus) {
+      // Fallback or "Planning" state -> Create Reflection (as original "Travel Complete" logic)
+      router.push(`/reflection/${id}`);
+      return;
+    }
+
+    if (reflectionStatus === 'completed') {
       router.push(`/reflection/${id}/view`);
-    } else {
+    } else if (reflectionStatus === 'not_started') {
       router.push(`/reflection/${id}`);
     }
+    // 'processing' is disabled, so no action needed here strictly, but good to handle.
   };
+
+  // Determine button props based on status
+  let actionButtonLabel: string = BUTTON_LABELS.TRAVEL_COMPLETE;
+  let isActionDisabled = false;
+
+  if (reflectionStatus === 'completed') {
+    actionButtonLabel = BUTTON_LABELS.VIEW_REFLECTION;
+  } else if (reflectionStatus === 'processing') {
+    actionButtonLabel = '生成中...';
+    isActionDisabled = true;
+  } else if (reflectionStatus === 'not_started') {
+    actionButtonLabel = BUTTON_LABELS.CREATE_REFLECTION;
+  }
 
   return (
     <div className="py-8">
@@ -118,20 +156,45 @@ export default function TravelGuidePage() {
           <Button variant="ghost" size="lg" onClick={handleBack}>
             {BUTTON_LABELS.BACK}
           </Button>
-          {isCompleted ? (
-            <Button variant="primary" size="lg" onClick={handleCompleteTravel}>
-              {travel?.hasReflection
-                ? BUTTON_LABELS.VIEW_REFLECTION
-                : BUTTON_LABELS.CREATE_REFLECTION}
-            </Button>
-          ) : (
+          {!isCompleted ? (
+            // Case: In progress (Planning, etc) - Show original Edit button
             <Link href={`/travel/${id}/edit`}>
               <Button variant="primary" size="lg">
                 {BUTTON_LABELS.EDIT}
               </Button>
             </Link>
+          ) : (
+            // Case: Completed travel - Show Reflection Logic Button
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleReflectionAction}
+              disabled={isActionDisabled}
+            >
+              {actionButtonLabel}
+            </Button>
           )}
+
+          {/* Delete Button (Always shown or only when editing? Plan said "next to edit/generate". Assuming always accessible for detail view) */}
+          <Button variant="error" size="lg" onClick={handleDeleteClick}>
+            {BUTTON_LABELS.DELETE}
+          </Button>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <Modal isOpen={isDeleteModalOpen} onClose={handleDeleteCancel} title="確認" size="sm">
+          <div className="space-y-6">
+            <p className="text-neutral-600">この旅行計画を削除してもよろしいですか？</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={handleDeleteCancel}>
+                {BUTTON_LABELS.CANCEL}
+              </Button>
+              <Button variant="error" onClick={handleDeleteConfirm}>
+                {BUTTON_LABELS.DELETE}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </Container>
     </div>
   );

@@ -12,3 +12,4 @@ export { List } from './List';
 export { TextField } from './TextField';
 export { Tooltip } from './Tooltip';
 export { Emoji } from './Emoji';
+export { Modal } from './Modal';

@@ -11,6 +11,7 @@ export interface SampleTravel {
   title: string;
   destination: string;
   status: TravelStatus;
+  reflectionGenerationStatus?: 'not_started' | 'processing' | 'completed';
   spotsCount: number;
   createdAt: string;
   // 以下、完了時の情報（オプショナル）
@@ -49,6 +50,7 @@ export const sampleTravels: SampleTravel[] = [
     completedAt: '2025-12-25',
     hasReflection: true,
     photosCount: 8,
+    reflectionGenerationStatus: 'completed',
   },
   {
     id: '4',
@@ -60,6 +62,7 @@ export const sampleTravels: SampleTravel[] = [
     completedAt: '2025-11-15',
     hasReflection: false,
     photosCount: 0,
+    reflectionGenerationStatus: 'not_started',
   },
   {
     id: '5',
@@ -71,5 +74,6 @@ export const sampleTravels: SampleTravel[] = [
     completedAt: '2025-10-12',
     hasReflection: true,
     photosCount: 12,
+    reflectionGenerationStatus: 'processing',
   },
 ];
