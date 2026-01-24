@@ -39,7 +39,6 @@ def test_create_travel_plan(api_client: TestClient):
         "spots": [
             {
                 "name": "清水寺",
-                "location": {"lat": 34.9949, "lng": 135.785},
                 "description": "京都を代表する寺院",
                 "userNotes": "早朝訪問予定",
             }

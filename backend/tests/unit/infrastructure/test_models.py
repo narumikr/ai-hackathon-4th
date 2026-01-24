@@ -23,7 +23,6 @@ def test_create_travel_plan(db_session: Session):
         spots=[
             {
                 "name": "東大寺",
-                "location": {"lat": 34.689, "lng": 135.84},
                 "description": "大仏殿",
                 "userNotes": "午前中に訪問",
             }
@@ -152,13 +151,11 @@ def test_json_fields(db_session: Session):
     complex_spots = [
         {
             "name": "スポット1",
-            "location": {"lat": 35.0, "lng": 135.0},
             "description": "詳細な説明",
             "userNotes": "メモ",
         },
         {
             "name": "スポット2",
-            "location": {"lat": 35.1, "lng": 135.1},
         },
     ]
 
@@ -176,7 +173,6 @@ def test_json_fields(db_session: Session):
     # JSONデータが正しく保存・取得できることを確認
     assert len(travel_plan.spots) == 2
     assert travel_plan.spots[0]["name"] == "スポット1"
-    assert travel_plan.spots[0]["location"]["lat"] == 35.0
     assert travel_plan.spots[1]["name"] == "スポット2"
     # オプショナルフィールドが存在しない場合でもエラーにならないことを確認
     assert "description" not in travel_plan.spots[1]

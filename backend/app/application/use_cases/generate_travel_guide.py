@@ -394,12 +394,7 @@ class GenerateTravelGuideUseCase:
 
 def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:
     """歴史情報収集用のプロンプトを生成する"""
-    spots_text = "\n".join(
-        [
-            f"- {spot.name} (lat: {spot.location.lat}, lng: {spot.location.lng})"
-            for spot in travel_plan.spots
-        ]
-    )
+    spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return (
         "以下の旅行先と観光スポットについて、信頼できる歴史情報をまとめてください。\n"
         f"旅行先: {travel_plan.destination}\n"
@@ -410,12 +405,7 @@ def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:
 
 def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) -> str:
     """旅行ガイド生成用のプロンプトを生成する"""
-    spots_text = "\n".join(
-        [
-            f"- {spot.name} (lat: {spot.location.lat}, lng: {spot.location.lng})"
-            for spot in travel_plan.spots
-        ]
-    )
+    spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return (
         "以下の旅行計画と歴史情報から旅行ガイドを生成してください。\n"
         "旅行計画:\n"

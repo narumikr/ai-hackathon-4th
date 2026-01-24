@@ -4,8 +4,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.interfaces.schemas.location import LocationSchema
-
 
 class HistoricalEventSchema(BaseModel):
     """歴史イベントスキーマ"""
@@ -48,10 +46,17 @@ class MapMarkerSchema(BaseModel):
     label: str
 
 
+class MapCenterSchema(BaseModel):
+    """地図中心スキーマ"""
+
+    lat: float
+    lng: float
+
+
 class MapDataSchema(BaseModel):
     """地図データスキーマ"""
 
-    center: LocationSchema
+    center: MapCenterSchema
     zoom: int
     markers: list[MapMarkerSchema]
 

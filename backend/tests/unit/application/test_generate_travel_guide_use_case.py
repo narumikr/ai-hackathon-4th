@@ -233,14 +233,12 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
             {
                 "id": "spot-dup-001",
                 "name": "清水寺",
-                "location": {"lat": 34.9949, "lng": 135.785},
                 "description": "重複テスト用",
                 "userNotes": "1回目",
             },
             {
                 "id": "spot-dup-002",
                 "name": "清水寺",
-                "location": {"lat": 34.9949, "lng": 135.785},
                 "description": "重複テスト用",
                 "userNotes": "2回目",
             },

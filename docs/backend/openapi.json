@@ -12,7 +12,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を作成",
-        "description": "旅行計画を作成する.\n\nArgs:\n    request: 旅行計画作成リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 作成された旅行計画\n\nRaises:\n    HTTPException: バリデーションエラー（400）",
+        "description": "旅行計画を作成する\n\nArgs:\n    request: 旅行計画作成リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 作成された旅行計画\n\nRaises:\n    HTTPException: バリデーションエラー（400）",
         "operationId": "create_travel_plan_api_v1_travel_plans_post",
         "requestBody": {
           "required": true,
@@ -52,7 +52,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画一覧を取得",
-        "description": "ユーザーの旅行計画一覧を取得する.\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanResponse]: 旅行計画リスト",
+        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanResponse]: 旅行計画リスト",
         "operationId": "list_travel_plans_api_v1_travel_plans_get",
         "parameters": [
           {
@@ -99,7 +99,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を取得",
-        "description": "旅行計画を取得する.\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
+        "description": "旅行計画を取得する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
         "operationId": "get_travel_plan_api_v1_travel_plans__plan_id__get",
         "parameters": [
           {
@@ -140,7 +140,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を更新",
-        "description": "旅行計画を更新する.\n\nArgs:\n    plan_id: 旅行計画ID\n    request: 旅行計画更新リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 更新された旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）",
+        "description": "旅行計画を更新する\n\nArgs:\n    plan_id: 旅行計画ID\n    request: 旅行計画更新リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 更新された旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）",
         "operationId": "update_travel_plan_api_v1_travel_plans__plan_id__put",
         "parameters": [
           {
@@ -191,7 +191,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を削除",
-        "description": "旅行計画を削除する.\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    Response: 204 No Content\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
+        "description": "旅行計画を削除する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    Response: 204 No Content\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
         "operationId": "delete_travel_plan_api_v1_travel_plans__plan_id__delete",
         "parameters": [
           {
@@ -375,7 +375,7 @@
           "destination"
         ],
         "title": "CreateTravelPlanRequest",
-        "description": "旅行計画作成リクエスト."
+        "description": "旅行計画作成リクエスト"
       },
       "GenerateTravelGuideRequest": {
         "properties": {
@@ -438,21 +438,15 @@
         "title": "HistoricalEventSchema",
         "description": "歴史イベントスキーマ"
       },
-      "LocationSchema": {
+      "MapCenterSchema": {
         "properties": {
           "lat": {
             "type": "number",
-            "maximum": 90.0,
-            "minimum": -90.0,
-            "title": "Lat",
-            "description": "緯度"
+            "title": "Lat"
           },
           "lng": {
             "type": "number",
-            "maximum": 180.0,
-            "minimum": -180.0,
-            "title": "Lng",
-            "description": "経度"
+            "title": "Lng"
           }
         },
         "type": "object",
@@ -460,13 +454,13 @@
           "lat",
           "lng"
         ],
-        "title": "LocationSchema",
-        "description": "地理的位置スキーマ."
+        "title": "MapCenterSchema",
+        "description": "地図中心スキーマ"
       },
       "MapDataSchema": {
         "properties": {
           "center": {
-            "$ref": "#/components/schemas/LocationSchema"
+            "$ref": "#/components/schemas/MapCenterSchema"
           },
           "zoom": {
             "type": "integer",
@@ -570,10 +564,6 @@
             "title": "Name",
             "description": "スポット名"
           },
-          "location": {
-            "$ref": "#/components/schemas/LocationSchema",
-            "description": "位置情報"
-          },
           "description": {
             "anyOf": [
               {
@@ -601,11 +591,10 @@
         },
         "type": "object",
         "required": [
-          "name",
-          "location"
+          "name"
         ],
         "title": "TouristSpotSchema",
-        "description": "観光スポットスキーマ."
+        "description": "観光スポットスキーマ"
       },
       "TravelGuideResponse": {
         "properties": {
@@ -744,7 +733,7 @@
           "updatedAt"
         ],
         "title": "TravelPlanResponse",
-        "description": "旅行計画レスポンス."
+        "description": "旅行計画レスポンス"
       },
       "UpdateTravelPlanRequest": {
         "properties": {
@@ -804,7 +793,7 @@
         },
         "type": "object",
         "title": "UpdateTravelPlanRequest",
-        "description": "旅行計画更新リクエスト."
+        "description": "旅行計画更新リクエスト"
       },
       "ValidationError": {
         "properties": {
