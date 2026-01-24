@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.domain.travel_guide.entity import TravelGuide
-from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, MapData, SpotDetail
+from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
 from app.infrastructure.persistence.models import TravelGuideModel, TravelPlanModel
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 
@@ -43,11 +43,6 @@ def test_save_new_travel_guide(db_session: Session, sample_travel_plan: TravelPl
                 historical_context="聖武天皇の発願により創建",
             ),
         ],
-        map_data={
-            "center": {"lat": 34.6851, "lng": 135.8048},
-            "zoom": 14,
-            "markers": [{"lat": 34.6889, "lng": 135.8398, "label": "東大寺"}],
-        },
     )
 
     # Act
@@ -99,7 +94,6 @@ def test_find_by_id_existing(db_session: Session, sample_travel_guide: TravelGui
     assert all(isinstance(detail, SpotDetail) for detail in result.spot_details)
     assert isinstance(result.checkpoints, list)
     assert all(isinstance(checkpoint, Checkpoint) for checkpoint in result.checkpoints)
-    assert isinstance(result.map_data, dict)
 
 
 def test_find_by_id_not_found(db_session: Session):
@@ -195,11 +189,6 @@ def test_value_object_conversion(db_session: Session, sample_travel_plan: Travel
                 historical_context="徳川時代に再建された現在の石垣",
             ),
         ],
-        map_data={
-            "center": {"lat": 34.6873, "lng": 135.526},
-            "zoom": 15,
-            "markers": [{"lat": 34.6873, "lng": 135.526, "label": "大阪城"}],
-        },
     )
 
     # Act
@@ -266,11 +255,6 @@ def test_save_update_not_found(db_session: Session):
                 historical_context="テスト",
             ),
         ],
-        map_data={
-            "center": {"lat": 0.0, "lng": 0.0},
-            "zoom": 10,
-            "markers": [{"lat": 0.0, "lng": 0.0, "label": "テスト"}],
-        },
     )
 
     # Act & Assert

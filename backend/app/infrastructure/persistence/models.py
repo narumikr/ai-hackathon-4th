@@ -124,10 +124,6 @@ class TravelGuideModel(Base):
     # 形式: List[{"spotName": str, "checkpoints": List[str], "historicalContext": str}]
     checkpoints: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
-    # 地図データ（JSON型）
-    # 形式: {"center": {"lat": float, "lng": float}, "zoom": int, "markers": List[...]}
-    map_data: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-
     # タイムスタンプ
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

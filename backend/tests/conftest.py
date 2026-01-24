@@ -121,14 +121,6 @@ def sample_travel_guide(
                 "historicalContext": "断崖絶壁に建つ懸造りの舞台",
             },
         ],
-        map_data={
-            "center": {"lat": 35.0, "lng": 135.7},
-            "zoom": 12,
-            "markers": [
-                {"lat": 34.9949, "lng": 135.785, "label": "清水寺"},
-                {"lat": 35.0394, "lng": 135.7292, "label": "金閣寺"},
-            ],
-        },
     )
     db_session.add(travel_guide)
     db_session.commit()

@@ -111,14 +111,6 @@ def _structured_guide_payload() -> dict[str, Any]:
                 "historicalContext": "将軍文化が色濃く反映された空間構成。",
             },
         ],
-        "mapData": {
-            "center": {"lat": 35.017, "lng": 135.757},
-            "zoom": 12,
-            "markers": [
-                {"lat": 34.9949, "lng": 135.785, "label": "清水寺"},
-                {"lat": 35.0394, "lng": 135.7292, "label": "金閣寺"},
-            ],
-        },
     }
 
 
@@ -152,7 +144,6 @@ async def test_generate_travel_guide_use_case_creates_guide(
     assert len(dto.timeline) == 2
     assert len(dto.spot_details) == 2
     assert len(dto.checkpoints) == 2
-    assert dto.map_data["markers"]
 
     saved = guide_repository.find_by_plan_id(sample_travel_plan.id)
     assert saved is not None

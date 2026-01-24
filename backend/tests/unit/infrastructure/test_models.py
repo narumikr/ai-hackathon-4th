@@ -79,10 +79,6 @@ def test_create_travel_guide(db_session: Session, sample_travel_plan: TravelPlan
                 "historicalContext": "平安時代から江戸時代までの歴史",
             }
         ],
-        map_data={
-            "center": {"lat": 35.025, "lng": 135.762},
-            "zoom": 14,
-        },
     )
     db_session.add(travel_guide)
     db_session.commit()
@@ -97,8 +93,6 @@ def test_create_travel_guide(db_session: Session, sample_travel_plan: TravelPlan
     assert travel_guide.timeline[0]["year"] == 794
     assert len(travel_guide.spot_details) == 1
     assert len(travel_guide.checkpoints) == 1
-    assert isinstance(travel_guide.map_data, dict)
-    assert travel_guide.map_data["zoom"] == 14
 
     # リレーションシップを確認
     assert travel_guide.plan == sample_travel_plan
@@ -189,7 +183,6 @@ def test_cascade_delete(db_session: Session, sample_travel_plan: TravelPlanModel
         timeline=[],
         spot_details=[],
         checkpoints=[],
-        map_data={},
     )
     reflection = ReflectionModel(
         plan_id=sample_travel_plan.id,
@@ -224,7 +217,6 @@ def test_unique_constraints(
         timeline=[],
         spot_details=[],
         checkpoints=[],
-        map_data={},
     )
     db_session.add(duplicate_guide)
 

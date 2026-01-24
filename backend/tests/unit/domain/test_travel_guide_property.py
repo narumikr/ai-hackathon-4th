@@ -8,7 +8,7 @@ from hypothesis import strategies as st
 
 from app.domain.travel_guide.exceptions import InvalidTravelGuideError
 from app.domain.travel_guide.services import TravelGuideComposer
-from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, MapData, SpotDetail
+from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
 
 # TravelGuide生成用の入力データの型定義
 type TravelGuideInputs = tuple[
@@ -17,7 +17,6 @@ type TravelGuideInputs = tuple[
     list[HistoricalEvent],  # timeline
     list[SpotDetail],  # spot_details
     list[Checkpoint],  # checkpoints
-    MapData,  # map_data
     list[str],  # spot_names
 ]
 
@@ -129,37 +128,6 @@ def _timeline(draw: st.DrawFn, spot_names: list[str]) -> list[HistoricalEvent]:
 
 
 @st.composite
-def _map_data(draw: st.DrawFn, spot_names: list[str]) -> MapData:
-    """スポット名に紐づいたMapDataを生成するStrategy"""
-    markers_count = draw(st.integers(min_value=1, max_value=min(5, len(spot_names))))
-    marker_names = draw(
-        st.lists(
-            st.sampled_from(spot_names),
-            min_size=markers_count,
-            max_size=markers_count,
-            unique=True,
-        )
-    )
-    markers = []
-    for name in marker_names:
-        markers.append(
-            {
-                "lat": draw(st.floats(min_value=-90, max_value=90, allow_nan=False, allow_infinity=False)),
-                "lng": draw(st.floats(min_value=-180, max_value=180, allow_nan=False, allow_infinity=False)),
-                "label": name,
-            }
-        )
-    return {
-        "center": {
-            "lat": draw(st.floats(min_value=-90, max_value=90, allow_nan=False, allow_infinity=False)),
-            "lng": draw(st.floats(min_value=-180, max_value=180, allow_nan=False, allow_infinity=False)),
-        },
-        "zoom": draw(st.integers(min_value=1, max_value=20)),
-        "markers": markers,
-    }
-
-
-@st.composite
 def _travel_guide_inputs(draw: st.DrawFn) -> TravelGuideInputs:
     """TravelGuide生成用の整合データをまとめて生成するStrategy"""
     plan_id = draw(_non_empty_printable_text(max_size=40))
@@ -168,14 +136,13 @@ def _travel_guide_inputs(draw: st.DrawFn) -> TravelGuideInputs:
     spot_names = [detail.spot_name for detail in spot_details]
     timeline = draw(_timeline(spot_names))
     checkpoints = draw(_checkpoints(spot_names))
-    map_data = draw(_map_data(spot_names))
-    return plan_id, overview, timeline, spot_details, checkpoints, map_data, spot_names
+    return plan_id, overview, timeline, spot_details, checkpoints, spot_names
 
 
 @given(data=_travel_guide_inputs())
 def test_travel_guide_property_timeline_generation(data: TravelGuideInputs) -> None:
     """Property 3: Timeline generationを検証する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, _ = data
+    plan_id, overview, timeline, spot_details, checkpoints, _ = data
     composer = TravelGuideComposer()
 
     guide = composer.compose(
@@ -184,7 +151,6 @@ def test_travel_guide_property_timeline_generation(data: TravelGuideInputs) -> N
         timeline=timeline,
         spot_details=spot_details,
         checkpoints=checkpoints,
-        map_data=map_data,
     )
 
     # 検証1: タイムラインが年代順にソートされていること
@@ -203,37 +169,9 @@ def test_travel_guide_property_timeline_generation(data: TravelGuideInputs) -> N
 
 
 @given(data=_travel_guide_inputs())
-def test_travel_guide_property_map_generation_with_historical_context(data: TravelGuideInputs) -> None:
-    """Property 4: Map generation with historical contextを検証する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, spot_names = data
-    composer = TravelGuideComposer()
-
-    guide = composer.compose(
-        plan_id=plan_id,
-        overview=overview,
-        timeline=timeline,
-        spot_details=spot_details,
-        checkpoints=checkpoints,
-        map_data=map_data,
-    )
-
-    stored_map = guide.map_data
-
-    # 検証1: マーカーラベルが存在すること
-    marker_labels = {marker["label"] for marker in stored_map["markers"]}
-    assert marker_labels
-
-    # 検証2: マーカーラベルがspot_namesに含まれること（歴史的コンテキストとの整合性）
-    assert marker_labels.issubset(set(spot_names))
-
-    # 検証3: map_dataが正しく保持されていること
-    assert stored_map == map_data
-
-
-@given(data=_travel_guide_inputs())
 def test_travel_guide_property_travel_guide_completeness(data: TravelGuideInputs) -> None:
     """Property 5: Travel guide completenessを検証する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, spot_names = data
+    plan_id, overview, timeline, spot_details, checkpoints, spot_names = data
     composer = TravelGuideComposer()
 
     guide = composer.compose(
@@ -242,7 +180,6 @@ def test_travel_guide_property_travel_guide_completeness(data: TravelGuideInputs
         timeline=timeline,
         spot_details=spot_details,
         checkpoints=checkpoints,
-        map_data=map_data,
     )
 
     # 検証1: 全フィールドが正しく保持されていること
@@ -251,13 +188,11 @@ def test_travel_guide_property_travel_guide_completeness(data: TravelGuideInputs
     assert guide.timeline == timeline
     assert guide.spot_details == spot_details
     assert guide.checkpoints == checkpoints
-    assert guide.map_data == map_data
 
     # 検証2: 必須フィールドが非空であること（完全性）
     assert guide.timeline
     assert guide.spot_details
     assert guide.checkpoints
-    assert guide.map_data["markers"]
 
     # 検証3: spot_namesの一貫性が保たれていること
     assert {detail.spot_name for detail in guide.spot_details} == set(spot_names)
@@ -266,7 +201,7 @@ def test_travel_guide_property_travel_guide_completeness(data: TravelGuideInputs
 @given(data=_travel_guide_inputs())
 def test_travel_guide_property_checkpoint_list_inclusion(data: TravelGuideInputs) -> None:
     """Property 8: Checkpoint list inclusionを検証する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, spot_names = data
+    plan_id, overview, timeline, spot_details, checkpoints, spot_names = data
     composer = TravelGuideComposer()
     spot_name_set = set(spot_names)
 
@@ -276,7 +211,6 @@ def test_travel_guide_property_checkpoint_list_inclusion(data: TravelGuideInputs
         timeline=timeline,
         spot_details=spot_details,
         checkpoints=checkpoints,
-        map_data=map_data,
     )
 
     # 検証1: チェックポイントリストが存在すること
@@ -301,7 +235,7 @@ def test_travel_guide_property_content_integration_completeness(
     data: TravelGuideInputs,
 ) -> None:
     """Property 9: Content integration completenessを検証する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, spot_names = data
+    plan_id, overview, timeline, spot_details, checkpoints, spot_names = data
     composer = TravelGuideComposer()
     spot_name_set = set(spot_names)
 
@@ -311,7 +245,6 @@ def test_travel_guide_property_content_integration_completeness(
         timeline=timeline,
         spot_details=spot_details,
         checkpoints=checkpoints,
-        map_data=map_data,
     )
 
     # 検証1: タイムラインがガイドに統合されていること
@@ -319,11 +252,7 @@ def test_travel_guide_property_content_integration_completeness(
     for event in guide.timeline:
         assert set(event.related_spots).issubset(spot_name_set)
 
-    # 検証2: 地図データがガイドに統合されていること
-    marker_labels = {marker["label"] for marker in guide.map_data["markers"]}
-    assert marker_labels.issubset(spot_name_set)
-
-    # 検証3: 歴史背景と見どころがガイドに統合されていること
+    # 検証2: 歴史背景と見どころがガイドに統合されていること
     assert guide.spot_details
     for detail in guide.spot_details:
         assert detail.historical_background.strip()
@@ -334,7 +263,7 @@ def test_travel_guide_property_content_integration_completeness(
 @given(data=_travel_guide_inputs())
 def test_travel_guide_property_rejects_duplicate_spot_names(data: TravelGuideInputs) -> None:
     """バリデーションエラーケース: 重複したspot_nameを持つspot_detailsを拒否する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, _ = data
+    plan_id, overview, timeline, spot_details, checkpoints, _ = data
     composer = TravelGuideComposer()
 
     # 前提条件: 最初のspot_detailを複製して重複させる
@@ -348,14 +277,13 @@ def test_travel_guide_property_rejects_duplicate_spot_names(data: TravelGuideInp
             timeline=timeline,
             spot_details=duplicate_spot_details,
             checkpoints=checkpoints,
-            map_data=map_data,
         )
 
 
 @given(data=_travel_guide_inputs())
 def test_travel_guide_property_rejects_invalid_checkpoint_spot_name(data: TravelGuideInputs) -> None:
     """バリデーションエラーケース: 存在しないspot_nameを参照するcheckpointを拒否する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, _ = data
+    plan_id, overview, timeline, spot_details, checkpoints, _ = data
     composer = TravelGuideComposer()
 
     # 前提条件: 存在しないspot_nameを参照するcheckpointを追加
@@ -374,14 +302,13 @@ def test_travel_guide_property_rejects_invalid_checkpoint_spot_name(data: Travel
             timeline=timeline,
             spot_details=spot_details,
             checkpoints=invalid_checkpoints,
-            map_data=map_data,
         )
 
 
 @given(data=_travel_guide_inputs())
 def test_travel_guide_property_rejects_invalid_timeline_related_spots(data: TravelGuideInputs) -> None:
     """バリデーションエラーケース: 存在しないspot_nameを参照するtimeline.related_spotsを拒否する"""
-    plan_id, overview, timeline, spot_details, checkpoints, map_data, _ = data
+    plan_id, overview, timeline, spot_details, checkpoints, _ = data
     composer = TravelGuideComposer()
 
     # 前提条件: 存在しないspot_nameを参照するtimelineイベントを追加
@@ -401,5 +328,4 @@ def test_travel_guide_property_rejects_invalid_timeline_related_spots(data: Trav
             timeline=invalid_timeline,
             spot_details=spot_details,
             checkpoints=checkpoints,
-            map_data=map_data,
         )

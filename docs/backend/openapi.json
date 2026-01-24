@@ -622,75 +622,6 @@
         "title": "ImageAnalysisResponse",
         "description": "画像分析レスポンス"
       },
-      "MapCenterSchema": {
-        "properties": {
-          "lat": {
-            "type": "number",
-            "title": "Lat"
-          },
-          "lng": {
-            "type": "number",
-            "title": "Lng"
-          }
-        },
-        "type": "object",
-        "required": [
-          "lat",
-          "lng"
-        ],
-        "title": "MapCenterSchema",
-        "description": "地図中心スキーマ"
-      },
-      "MapDataSchema": {
-        "properties": {
-          "center": {
-            "$ref": "#/components/schemas/MapCenterSchema"
-          },
-          "zoom": {
-            "type": "integer",
-            "title": "Zoom"
-          },
-          "markers": {
-            "items": {
-              "$ref": "#/components/schemas/MapMarkerSchema"
-            },
-            "type": "array",
-            "title": "Markers"
-          }
-        },
-        "type": "object",
-        "required": [
-          "center",
-          "zoom",
-          "markers"
-        ],
-        "title": "MapDataSchema",
-        "description": "地図データスキーマ"
-      },
-      "MapMarkerSchema": {
-        "properties": {
-          "lat": {
-            "type": "number",
-            "title": "Lat"
-          },
-          "lng": {
-            "type": "number",
-            "title": "Lng"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          }
-        },
-        "type": "object",
-        "required": [
-          "lat",
-          "lng",
-          "label"
-        ],
-        "title": "MapMarkerSchema",
-        "description": "地図マーカースキーマ"
-      },
       "ReflectionPhotoResponse": {
         "properties": {
           "id": {
@@ -917,9 +848,6 @@
             "type": "array",
             "title": "Checkpoints"
           },
-          "mapData": {
-            "$ref": "#/components/schemas/MapDataSchema"
-          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -939,7 +867,6 @@
           "timeline",
           "spotDetails",
           "checkpoints",
-          "mapData",
           "createdAt",
           "updatedAt"
         ],

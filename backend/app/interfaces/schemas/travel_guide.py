@@ -38,29 +38,6 @@ class CheckpointSchema(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class MapMarkerSchema(BaseModel):
-    """地図マーカースキーマ"""
-
-    lat: float
-    lng: float
-    label: str
-
-
-class MapCenterSchema(BaseModel):
-    """地図中心スキーマ"""
-
-    lat: float
-    lng: float
-
-
-class MapDataSchema(BaseModel):
-    """地図データスキーマ"""
-
-    center: MapCenterSchema
-    zoom: int
-    markers: list[MapMarkerSchema]
-
-
 class GenerateTravelGuideRequest(BaseModel):
     """旅行ガイド生成リクエスト"""
 
@@ -86,7 +63,6 @@ class TravelGuideResponse(BaseModel):
     timeline: list[HistoricalEventSchema]
     spot_details: list[SpotDetailSchema] = Field(..., alias="spotDetails")
     checkpoints: list[CheckpointSchema]
-    map_data: MapDataSchema = Field(..., alias="mapData")
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
 

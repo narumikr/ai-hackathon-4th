@@ -4,7 +4,7 @@ from datetime import datetime
 
 from app.domain.travel_guide.entity import TravelGuide
 from app.domain.travel_guide.exceptions import InvalidTravelGuideError
-from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, MapData, SpotDetail
+from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
 
 
 class TravelGuideComposer:
@@ -17,7 +17,6 @@ class TravelGuideComposer:
         timeline: list[HistoricalEvent],
         spot_details: list[SpotDetail],
         checkpoints: list[Checkpoint],
-        map_data: MapData,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> TravelGuide:
@@ -51,7 +50,6 @@ class TravelGuideComposer:
             timeline=timeline,
             spot_details=spot_details,
             checkpoints=checkpoints,
-            map_data=map_data,
             created_at=created_at,
             updated_at=updated_at,
         )
