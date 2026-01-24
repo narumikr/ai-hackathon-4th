@@ -31,7 +31,6 @@ export default function ReflectionViewPage() {
         <div className="mb-6 flex items-center justify-between">
           <h1 className="font-bold text-2xl text-neutral-900">{PAGE_TITLES.REFLECTION_PAMPHLET}</h1>
           <div className="flex gap-2">
-            <Button variant="secondary">{BUTTON_LABELS.PRINT}</Button>
             <Link href="/reflection">
               <Button variant="ghost">{BUTTON_LABELS.BACK}</Button>
             </Link>
