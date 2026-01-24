@@ -27,7 +27,7 @@ class TravelPlanModel(Base):
     destination: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # 観光スポット（JSON型）
-    # 形式: List[{"id": str, "name": str, "location": {"lat": float, "lng": float}, "description": str, "userNotes": str}]
+    # 形式: List[{"id": str, "name": str, "description": str, "userNotes": str}]
     spots: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
     # ステータス
@@ -123,10 +123,6 @@ class TravelGuideModel(Base):
     # チェックポイント（JSON型）
     # 形式: List[{"spotName": str, "checkpoints": List[str], "historicalContext": str}]
     checkpoints: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
-
-    # 地図データ（JSON型）
-    # 形式: {"center": {"lat": float, "lng": float}, "zoom": int, "markers": List[...]}
-    map_data: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
     # タイムスタンプ
     created_at: Mapped[datetime] = mapped_column(

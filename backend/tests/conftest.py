@@ -65,14 +65,12 @@ def sample_travel_plan(db_session: Session) -> TravelPlanModel:
             {
                 "id": "spot-001",
                 "name": "清水寺",
-                "location": {"lat": 34.9949, "lng": 135.785},
                 "description": "京都を代表する寺院",
                 "userNotes": "早朝訪問予定",
             },
             {
                 "id": "spot-002",
                 "name": "金閣寺",
-                "location": {"lat": 35.0394, "lng": 135.7292},
                 "description": "金色に輝く舎利殿",
                 "userNotes": "午後に訪問",
             },
@@ -123,14 +121,6 @@ def sample_travel_guide(
                 "historicalContext": "断崖絶壁に建つ懸造りの舞台",
             },
         ],
-        map_data={
-            "center": {"lat": 35.0, "lng": 135.7},
-            "zoom": 12,
-            "markers": [
-                {"lat": 34.9949, "lng": 135.785, "label": "清水寺"},
-                {"lat": 35.0394, "lng": 135.7292, "label": "金閣寺"},
-            ],
-        },
     )
     db_session.add(travel_guide)
     db_session.commit()

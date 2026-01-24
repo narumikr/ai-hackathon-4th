@@ -3,7 +3,17 @@
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from app.application.ports.ai_service import IAIService
@@ -76,6 +86,7 @@ def _ensure_non_empty(value: str, field_name: str) -> str:
     summary="スポットの写真と感想を登録",
 )
 async def upload_images(
+    request: Request,  # noqa: B008
     plan_id: str = Form(..., alias="planId"),  # noqa: B008
     user_id: str = Form(..., alias="userId"),  # noqa: B008
     spot_id: str = Form(..., alias="spotId"),  # noqa: B008
@@ -89,8 +100,13 @@ async def upload_images(
     plan_id = _ensure_non_empty(plan_id, "plan_id")
     user_id = _ensure_non_empty(user_id, "user_id")
     spot_id = _ensure_non_empty(spot_id, "spot_id")
+    # spotNoteの未送信と空文字送信を区別するためにキーの有無を見る
+    form_data = await request.form()
+    spot_note_provided = "spotNote" in form_data
     if spot_note is not None:
-        spot_note = _ensure_non_empty(spot_note, "spot_note")
+        spot_note = spot_note.strip()
+        if not spot_note:
+            spot_note = None
 
     if not files:
         raise HTTPException(
@@ -174,6 +190,7 @@ async def upload_images(
         user_id=user_id,
         photos=photos,
         spot_note=spot_note,
+        spot_note_provided=spot_note_provided,
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

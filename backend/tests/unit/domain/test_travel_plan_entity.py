@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
-from app.domain.travel_plan.value_objects import GenerationStatus, Location, PlanStatus
+from app.domain.travel_plan.value_objects import GenerationStatus, PlanStatus
 
 
 def test_create_travel_plan():
@@ -20,7 +20,6 @@ def test_create_travel_plan():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
         description="京都を代表する寺院",
         user_notes="早朝訪問予定",
     )
@@ -55,7 +54,6 @@ def test_create_travel_plan_with_empty_user_id():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
 
     # 実行 & 検証: ValueErrorが発生
@@ -77,7 +75,6 @@ def test_create_travel_plan_with_empty_title():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
 
     # 実行 & 検証: ValueErrorが発生
@@ -99,7 +96,6 @@ def test_create_travel_plan_with_empty_destination():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
 
     # 実行 & 検証: ValueErrorが発生
@@ -121,7 +117,6 @@ def test_update_travel_plan():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
     plan = TravelPlan(
         user_id="test_user_001",
@@ -149,7 +144,6 @@ def test_update_travel_plan_with_empty_title():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
     plan = TravelPlan(
         user_id="test_user_001",
@@ -172,7 +166,6 @@ def test_update_travel_plan_spots():
     spot1 = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
     plan = TravelPlan(
         user_id="test_user_001",
@@ -185,7 +178,6 @@ def test_update_travel_plan_spots():
     spot2 = TouristSpot(
         id="spot-002",
         name="金閣寺",
-        location=Location(lat=35.0394, lng=135.7292),
     )
     plan.update_plan(spots=[spot1, spot2])
 
@@ -203,7 +195,6 @@ def test_complete_travel_plan():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
     plan = TravelPlan(
         user_id="test_user_001",
@@ -230,7 +221,6 @@ def test_update_travel_plan_status():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
     plan = TravelPlan(
         user_id="test_user_001",
@@ -255,7 +245,6 @@ def test_update_generation_statuses():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
     plan = TravelPlan(
         user_id="test_user_001",
@@ -284,7 +273,6 @@ def test_travel_plan_spots_defensive_copy():
     spot = TouristSpot(
         id="spot-001",
         name="清水寺",
-        location=Location(lat=34.9949, lng=135.785),
     )
     plan = TravelPlan(
         user_id="test_user_001",
@@ -299,7 +287,6 @@ def test_travel_plan_spots_defensive_copy():
         TouristSpot(
             id="spot-002",
             name="金閣寺",
-            location=Location(lat=35.0394, lng=135.7292),
         )
     )
 

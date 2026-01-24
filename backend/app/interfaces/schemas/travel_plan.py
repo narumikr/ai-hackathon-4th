@@ -5,7 +5,6 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.domain.travel_plan.value_objects import PlanStatus
-from app.interfaces.schemas.location import LocationSchema
 from app.interfaces.schemas.reflection import ReflectionResponse
 from app.interfaces.schemas.travel_guide import TravelGuideResponse
 
@@ -15,7 +14,6 @@ class TouristSpotSchema(BaseModel):
 
     id: str | None = Field(None, description="スポットID")
     name: str = Field(..., min_length=1, description="スポット名")
-    location: LocationSchema = Field(..., description="位置情報")
     description: str | None = Field(None, description="説明")
     user_notes: str | None = Field(None, alias="userNotes", description="ユーザーメモ")
 

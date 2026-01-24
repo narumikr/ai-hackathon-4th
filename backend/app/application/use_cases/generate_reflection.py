@@ -227,7 +227,11 @@ class GenerateReflectionPamphletUseCase:
         validate_required_str(plan_id, "plan_id")
         validate_required_str(user_id, "user_id")
         if user_notes is not None:
-            validate_required_str(user_notes, "user_notes")
+            user_notes = user_notes.strip()
+            if not user_notes:
+                user_notes = None
+            else:
+                validate_required_str(user_notes, "user_notes")
 
         travel_plan = self._plan_repository.find_by_id(plan_id)
         if travel_plan is None:

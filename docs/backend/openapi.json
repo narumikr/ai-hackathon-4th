@@ -467,8 +467,7 @@
           "userNotes": {
             "anyOf": [
               {
-                "type": "string",
-                "minLength": 1
+                "type": "string"
               },
               {
                 "type": "null"
@@ -621,81 +620,6 @@
         ],
         "title": "ImageAnalysisResponse",
         "description": "画像分析レスポンス"
-      },
-      "LocationSchema": {
-        "properties": {
-          "lat": {
-            "type": "number",
-            "maximum": 90.0,
-            "minimum": -90.0,
-            "title": "Lat",
-            "description": "緯度"
-          },
-          "lng": {
-            "type": "number",
-            "maximum": 180.0,
-            "minimum": -180.0,
-            "title": "Lng",
-            "description": "経度"
-          }
-        },
-        "type": "object",
-        "required": [
-          "lat",
-          "lng"
-        ],
-        "title": "LocationSchema",
-        "description": "地理的位置スキーマ"
-      },
-      "MapDataSchema": {
-        "properties": {
-          "center": {
-            "$ref": "#/components/schemas/LocationSchema"
-          },
-          "zoom": {
-            "type": "integer",
-            "title": "Zoom"
-          },
-          "markers": {
-            "items": {
-              "$ref": "#/components/schemas/MapMarkerSchema"
-            },
-            "type": "array",
-            "title": "Markers"
-          }
-        },
-        "type": "object",
-        "required": [
-          "center",
-          "zoom",
-          "markers"
-        ],
-        "title": "MapDataSchema",
-        "description": "地図データスキーマ"
-      },
-      "MapMarkerSchema": {
-        "properties": {
-          "lat": {
-            "type": "number",
-            "title": "Lat"
-          },
-          "lng": {
-            "type": "number",
-            "title": "Lng"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          }
-        },
-        "type": "object",
-        "required": [
-          "lat",
-          "lng",
-          "label"
-        ],
-        "title": "MapMarkerSchema",
-        "description": "地図マーカースキーマ"
       },
       "ReflectionPhotoResponse": {
         "properties": {
@@ -856,10 +780,6 @@
             "title": "Name",
             "description": "スポット名"
           },
-          "location": {
-            "$ref": "#/components/schemas/LocationSchema",
-            "description": "位置情報"
-          },
           "description": {
             "anyOf": [
               {
@@ -887,8 +807,7 @@
         },
         "type": "object",
         "required": [
-          "name",
-          "location"
+          "name"
         ],
         "title": "TouristSpotSchema",
         "description": "観光スポットスキーマ"
@@ -928,9 +847,6 @@
             "type": "array",
             "title": "Checkpoints"
           },
-          "mapData": {
-            "$ref": "#/components/schemas/MapDataSchema"
-          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -950,7 +866,6 @@
           "timeline",
           "spotDetails",
           "checkpoints",
-          "mapData",
           "createdAt",
           "updatedAt"
         ],

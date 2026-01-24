@@ -122,56 +122,69 @@
   - Vertex AI APIの有効化
 
 ### セットアップ手順
+
+以下の手順で、backendとデータベースをローカルで起動してAPIが動作する状態を作成します。
+
+#### 1. リポジトリのクローン
+
 ```bash
-# リポジトリのクローン
 git clone [repository-url]
 cd <repository-directory>
-
-# 依存関係のインストール（バックエンド + フロントエンド）
-just install-all
-
-# Google Cloud認証（Application Default Credentials）
-gcloud auth application-default login
-
-# 環境変数の設定
-# バックエンドの環境変数
-cp backend/.env.example backend/.env
-# backend/.envファイルを編集して必要な環境変数を設定
-
-# フロントエンドの環境変数（必要に応じて）
-cp frontend/.env.local.example frontend/.env.local
-# frontend/.env.localファイルを編集して必要な環境変数を設定
 ```
 
-### データベースセットアップ
+#### 2. 依存関係のインストール
 
-このプロジェクトはPostgreSQLデータベースを使用します。以下の手順でセットアップしてください。
+```bash
+just install-all
+```
 
-#### 1. PostgreSQLコンテナの起動
+#### 3. Google Cloud認証（必要に応じて）
+
+```bash
+gcloud auth application-default login
+```
+
+このコマンドでブラウザが開き、Google Cloudアカウントでログインします。
+
+#### 4. 環境変数の設定
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+**フロントエンドの環境変数**
+```bash
+cp frontend/.env.local.example frontend/.env.local
+```
+
+#### 5. データベース・Redisの起動
 
 ```bash
 cd infrastructure/docker
-docker-compose up -d postgres
+docker-compose up -d
 ```
 
-#### 2. マイグレーションの適用
+#### 6. マイグレーションの適用
 
 ```bash
-# プロジェクトルートに戻る
-cd ../..
-
-# マイグレーションを適用
 just migrate-up
 ```
 
-#### 3. テスト用データベースの作成
+#### 7. テスト用データベースの作成
 
 ```bash
 cd infrastructure/docker
 docker-compose exec postgres psql -U postgres -c "CREATE DATABASE travel_agent_test;"
 ```
 
-#### マイグレーション管理コマンド
+#### 8. 動作確認
+
+バックエンド開発サーバーを起動:
+```bash
+just dev-backend
+```
+
+### マイグレーション管理コマンド
 
 ```bash
 # マイグレーション作成

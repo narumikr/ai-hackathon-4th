@@ -101,13 +101,6 @@ class StubAIService(IAIService):
                     "historicalContext": "断崖の上に建つ懸造り",
                 }
             ],
-            "mapData": {
-                "center": {"lat": 35.0, "lng": 135.7},
-                "zoom": 12,
-                "markers": [
-                    {"lat": 34.9949, "lng": 135.785, "label": "清水寺"}
-                ],
-            },
         }
 
 
@@ -216,7 +209,6 @@ def test_api_end_to_end_flow(api_client: TestClient):
                 {
                     "id": "spot-010",
                     "name": "清水寺",
-                    "location": {"lat": 34.9949, "lng": 135.785},
                     "description": "京都を代表する寺院",
                     "userNotes": "早朝訪問予定",
                 }
@@ -245,7 +237,6 @@ def test_api_end_to_end_flow(api_client: TestClient):
     assert guide_status["guide"]["overview"]
     assert guide_status["guide"]["timeline"]
     assert guide_status["guide"]["spotDetails"]
-    assert guide_status["guide"]["mapData"]
 
     # 実行: 画像アップロード
     upload_response = api_client.post(
@@ -303,7 +294,6 @@ def test_api_error_handling_flow(api_client: TestClient):
                 {
                     "id": "spot-011",
                     "name": "清水寺",
-                    "location": {"lat": 34.9949, "lng": 135.785},
                     "description": "京都を代表する寺院",
                     "userNotes": "午後に訪問",
                 }

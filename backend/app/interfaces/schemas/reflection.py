@@ -54,7 +54,7 @@ class CreateReflectionRequest(BaseModel):
 
     plan_id: str = Field(..., min_length=1, alias="planId")
     user_id: str = Field(..., min_length=1, alias="userId")
-    user_notes: str | None = Field(None, min_length=1, alias="userNotes")
+    user_notes: str | None = Field(None, alias="userNotes")
 
     model_config = {"populate_by_name": True}
 
@@ -69,9 +69,11 @@ class CreateReflectionRequest(BaseModel):
     @field_validator("user_notes")
     @classmethod
     def validate_user_notes(cls, value: str | None) -> str | None:
-        """ユーザー感想の空文字列を拒否する"""
-        if value is not None and not value.strip():
-            raise ValueError("must not be empty")
+        """ユーザー感想の空文字列をNoneとして扱う"""
+        if value is None:
+            return value
+        if not value.strip():
+            return None
         return value
 
 
