@@ -109,17 +109,17 @@ export default function TravelEditPage() {
 
               {/* Add Spot Button */}
               <div>
-                <Button variant="ghost" fullWidth onClick={handleAddSpot}>
+                <Button variant="ghost" fullWidth onClick={handleAddSpot} type="button">
                   {BUTTON_LABELS.ADD_SPOT}
                 </Button>
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-4 pt-4">
-                <Button variant="ghost" className="flex-1" onClick={handleBack}>
+                <Button variant="ghost" className="flex-1" onClick={handleBack} type="button">
                   {BUTTON_LABELS.BACK}
                 </Button>
-                <Button variant="primary" className="flex-1" onClick={handleUpdate}>
+                <Button variant="primary" className="flex-1" onClick={handleUpdate} type="button">
                   {BUTTON_LABELS.UPDATE}
                 </Button>
               </div>
