@@ -174,6 +174,7 @@ class AnalyzePhotosUseCase:
         user_id: str,
         photos: list[dict],
         spot_note: str | None = None,
+        spot_note_provided: bool = False,
     ) -> ReflectionDTO:
         """写真を分析し振り返りを保存する
 
@@ -191,8 +192,10 @@ class AnalyzePhotosUseCase:
         """
         validate_required_str(plan_id, "plan_id")
         validate_required_str(user_id, "user_id")
-        if spot_note is not None and not spot_note.strip():
-            raise ValueError("spot_note must be a non-empty string.")
+        if spot_note is not None:
+            spot_note = spot_note.strip()
+            if not spot_note:
+                spot_note = None
 
         normalized_photos = _normalize_photo_inputs(photos)
         spot_ids = {photo["spotId"] for photo in normalized_photos}
@@ -261,13 +264,13 @@ class AnalyzePhotosUseCase:
                 user_id=user_id,
                 photos=new_photos,
             )
-            if spot_note is not None:
+            if spot_note_provided:
                 reflection.update_spot_note(spot_id, spot_note)
             saved_reflection = self._reflection_repository.save(reflection)
         else:
             for photo in new_photos:
                 existing_reflection.add_photo(photo)
-            if spot_note is not None:
+            if spot_note_provided:
                 existing_reflection.update_spot_note(spot_id, spot_note)
             saved_reflection = self._reflection_repository.save(existing_reflection)
 

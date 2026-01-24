@@ -183,6 +183,53 @@ def test_upload_images_accepts_empty_spot_note(
     assert saved_reflection.spot_notes == {}
 
 
+def test_upload_images_clears_spot_note_when_empty(
+    api_client: TestClient,
+    db_session: Session,
+    sample_travel_plan: TravelPlanModel,
+):
+    """前提条件: サンプル旅行計画
+    実行: spotNoteを登録後、空文字でPOST /api/v1/spot-reflections
+    検証: ステータスコード204、spot_notesから対象スポットのメモが削除される
+    """
+    initial_data = {
+        "planId": sample_travel_plan.id,
+        "userId": sample_travel_plan.user_id,
+        "spotId": "spot-001",
+        "spotNote": "最初のメモ",
+    }
+    initial_files = [
+        ("files", ("kyoto.jpg", b"dummy-bytes", "image/jpeg")),
+    ]
+    initial_response = api_client.post(
+        "/api/v1/spot-reflections", data=initial_data, files=initial_files
+    )
+    assert initial_response.status_code == 204
+
+    empty_data = {
+        "planId": sample_travel_plan.id,
+        "userId": sample_travel_plan.user_id,
+        "spotId": "spot-001",
+        "spotNote": "",
+    }
+    empty_files = [
+        ("files", ("kyoto-2.jpg", b"dummy-bytes", "image/jpeg")),
+    ]
+    empty_response = api_client.post(
+        "/api/v1/spot-reflections", data=empty_data, files=empty_files
+    )
+    assert empty_response.status_code == 204
+
+    db_session.expire_all()
+    saved_reflection = (
+        db_session.query(ReflectionModel)
+        .filter(ReflectionModel.plan_id == sample_travel_plan.id)
+        .first()
+    )
+    assert saved_reflection is not None
+    assert saved_reflection.spot_notes == {}
+
+
 def test_create_reflection(
     api_client: TestClient,
     db_session: Session,

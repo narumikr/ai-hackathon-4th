@@ -218,7 +218,10 @@ class Reflection(Entity):
             raise ValueError("spot_id is required and must not be empty.")
         if note is not None and not isinstance(note, str):
             raise ValueError("spot_note must be a string or None.")
+        if note is None:
+            self._spot_notes.pop(spot_id, None)
+            return
         if isinstance(note, str) and not note.strip():
             raise ValueError("spot_note cannot be empty.")
 
-        self._spot_notes[spot_id] = note.strip() if isinstance(note, str) else None
+        self._spot_notes[spot_id] = note.strip()
