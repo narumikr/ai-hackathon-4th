@@ -41,7 +41,6 @@
   - 旅行タイトル入力
   - 旅行先（目的地）入力
   - 観光スポット選択・追加
-  - 地図上でのスポット選択
   - 旅行ガイド生成トリガー
 - **コンポーネント**:
   - `app/travel/new/page.tsx`
@@ -53,7 +52,6 @@
 - **主要機能**:
   - 旅行概要の表示
   - 歴史年表（Timeline）の表示
-  - 歴史的コンテキスト付き地図
   - 各スポットの詳細情報
     - 歴史的背景
     - 見どころ
@@ -64,7 +62,6 @@
   - `app/travel/[id]/page.tsx`
   - `components/display/TravelGuide.tsx`
   - `components/display/Timeline.tsx`
-  - `components/display/HistoricalMap.tsx`
 
 ### 3. 旅行後フェーズの画面
 
@@ -170,8 +167,7 @@ frontend/src/
 │   │   └── ImageUploader.tsx
 │   ├── display/                 # 表示関連
 │   │   ├── TravelGuide.tsx
-│   │   ├── Timeline.tsx
-│   │   └── HistoricalMap.tsx
+│   │   └── Timeline.tsx
 │   └── reflection/              # 振り返り関連
 │       ├── ReflectionList.tsx
 │       ├── SpotReflectionForm.tsx

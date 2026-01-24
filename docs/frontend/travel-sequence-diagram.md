@@ -130,10 +130,7 @@ sequenceDiagram
     Gemini->>GeminiTools: Google Search（歴史情報収集）
     GeminiTools-->>Gemini: 歴史情報データ
     
-    Gemini->>GeminiTools: Google Maps（地図・位置情報）
-    GeminiTools-->>Gemini: 地図・位置データ
-    
-    Note over Gemini: 観光スポット提案 + 歴史情報 + 年表 + 地図を統合
+    Note over Gemini: 観光スポット提案 + 歴史情報 + 年表を統合
     Gemini-->>Backend: 完成した旅行ガイドデータ
     
     Backend->>DB: UPDATE travel_plan SET guide_data, status = "completed"
@@ -213,7 +210,6 @@ sequenceDiagram
     participant NextJS as Next.js App
     participant TravelGuide as TravelGuide Component
     participant Timeline as Timeline Component
-    participant HistoricalMap as HistoricalMap Component
     participant API as API Client
     participant Backend as FastAPI Backend
     participant DB as PostgreSQL
@@ -231,11 +227,9 @@ sequenceDiagram
     
     alt ガイドが生成済み（status: "completed"）
         TravelGuide->>Timeline: 年表データ渡し
-        TravelGuide->>HistoricalMap: 地図データ渡し
         Timeline->>Browser: 年表コンポーネント表示
-        HistoricalMap->>Browser: 地図コンポーネント表示
         TravelGuide->>Browser: 完全なガイド表示
-        Note over Browser: - AI提案の観光スポット<br/>- 歴史情報・年表<br/>- 地図・位置情報<br/>- 学習価値の高い情報
+        Note over Browser: - AI提案の観光スポット<br/>- 歴史情報・年表<br/>- 学習価値の高い情報
     else ガイド生成中（status: "processing"）
         TravelGuide->>Browser: ローディング画面表示
         Note over TravelGuide: "AIが旅行計画を作成中です..."
@@ -249,9 +243,7 @@ sequenceDiagram
             
             alt ガイド生成完了（status: "completed"）
                 TravelGuide->>Timeline: 年表データ渡し
-                TravelGuide->>HistoricalMap: 地図データ渡し
                 Timeline->>Browser: 年表コンポーネント表示
-                HistoricalMap->>Browser: 地図コンポーネント表示
                 TravelGuide->>Browser: 完全なガイド表示
             else まだ生成中（status: "processing"）
                 TravelGuide->>Browser: 進行状況更新
@@ -340,8 +332,6 @@ export function TravelGuide({ planId }: { planId: string }) {
       setGenerationStatus('観光スポットを選定中...');
     } else if (!plan.guide.timeline) {
       setGenerationStatus('歴史情報を収集中...');
-    } else if (!plan.guide.mapData) {
-      setGenerationStatus('年表を作成中...');
     } else {
       setGenerationStatus('最終調整中...');
     }
@@ -358,10 +348,6 @@ export function TravelGuide({ planId }: { planId: string }) {
         <>
           <AIGeneratedSpots spots={travelPlan.guide.aiSuggestedSpots} />
           <Timeline events={travelPlan.guide.timeline} />
-          <HistoricalMap 
-            spots={travelPlan.spots} 
-            mapData={travelPlan.guide.mapData} 
-          />
           <SpotDetails details={travelPlan.guide.spotDetails} />
           <CheckpointList checkpoints={travelPlan.guide.checkpoints} />
           <EducationalContent content={travelPlan.guide.educationalValue} />
@@ -609,8 +595,7 @@ sequenceDiagram
 ### 2. **AI処理フローの詳細化**
 - **Vertex AI Gemini Built-in Tools**を使用
 - **Google Search Tool**: 歴史情報収集
-- **Google Maps Tool**: 地図・位置情報取得
-- AIが観光スポット提案 + 歴史情報 + 年表 + 地図を統合生成
+- AIが観光スポット提案 + 歴史情報 + 年表を統合生成
 
 ### 3. **非同期処理の実装**
 - 旅行計画作成後、即座に受付レスポンス（status: "processing"）
@@ -620,14 +605,12 @@ sequenceDiagram
 ### 4. **生成進行状況の表示**
 - "観光スポットを選定中..."
 - "歴史情報を収集中..."
-- "年表を作成中..."
 - "最終調整中..."
 
 ### 5. **AIが提供する価値**
 - **観光スポット提案**: ユーザー入力を基にした最適な観光地選定
 - **歴史情報**: 各スポットの歴史的背景と意義
 - **年表**: 時系列での歴史的コンテキスト
-- **地図**: 歴史的価値を含む位置情報
 - **教育価値**: 学習に役立つ情報の提供
 - **旅行価値**: 実際の旅行として価値の高い案内
 
