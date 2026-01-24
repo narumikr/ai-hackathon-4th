@@ -109,11 +109,15 @@ const normalizeBaseUrl = (value: string): string => {
   if (!trimmed) {
     throw new ApiError('API base URL is required.');
   }
+  if (trimmed.startsWith('/')) {
+    const normalized = trimmed.replace(/\/+$/, '');
+    return normalized === '' ? '/' : normalized;
+  }
   let parsed: URL;
   try {
     parsed = new URL(trimmed);
   } catch (error) {
-    throw new ApiError('API base URL must be a valid absolute URL.', {
+    throw new ApiError('API base URL must be a valid absolute URL or start with "/".', {
       detail: { value: trimmed, error: String(error) },
     });
   }
@@ -134,15 +138,26 @@ const buildUrl = (
   path: string,
   query?: Record<string, QueryValue | null | undefined>
 ): string => {
-  const url = new URL(baseUrl);
-  url.pathname = joinPath(url.pathname, prefix, path);
+  const queryParams = new URLSearchParams();
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null) {
         continue;
       }
-      url.searchParams.set(key, String(value));
+      queryParams.set(key, String(value));
     }
+  }
+  const queryString = queryParams.toString();
+
+  if (baseUrl.startsWith('/')) {
+    const pathname = joinPath(baseUrl, prefix, path);
+    return queryString ? `${pathname}?${queryString}` : pathname;
+  }
+
+  const url = new URL(baseUrl);
+  url.pathname = joinPath(url.pathname, prefix, path);
+  if (queryString) {
+    url.search = queryString;
   }
   return url.toString();
 };

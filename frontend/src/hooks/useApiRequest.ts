@@ -14,12 +14,13 @@ export type UseApiRequestResult<T, Args extends unknown[]> = {
 export const useApiRequest = <T, Args extends unknown[]>(
   request: (...args: Args) => Promise<T>
 ): UseApiRequestResult<T, Args> => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [inFlightCount, setInFlightCount] = useState(0);
   const [error, setError] = useState<ApiError | null>(null);
+  const isLoading = inFlightCount > 0;
 
   const execute = useCallback(
     async (...args: Args): Promise<T> => {
-      setIsLoading(true);
+      setInFlightCount(count => count + 1);
       setError(null);
       try {
         return await request(...args);
@@ -28,7 +29,7 @@ export const useApiRequest = <T, Args extends unknown[]>(
         setError(apiError);
         throw apiError;
       } finally {
-        setIsLoading(false);
+        setInFlightCount(count => Math.max(0, count - 1));
       }
     },
     [request]
