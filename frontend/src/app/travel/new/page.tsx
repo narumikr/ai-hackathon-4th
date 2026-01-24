@@ -1,5 +1,8 @@
+'use client';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Container } from '@/components/layout';
-import { Button, TextField } from '@/components/ui';
+import { Button, TextField, Tooltip } from '@/components/ui';
 import {
   BUTTON_LABELS,
   FORM_LABELS,
@@ -12,6 +15,50 @@ import {
 } from '@/constants';
 
 export default function TravelNewPage() {
+  const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [destination, setDestination] = useState('');
+  const [spots, setSpots] = useState<string[]>(['', '', '']);
+
+  const handleSpotChange = (index: number, value: string) => {
+    const newSpots = [...spots];
+    newSpots[index] = value;
+    setSpots(newSpots);
+  };
+
+  const [showTitleError, setShowTitleError] = useState(false);
+  const [showDestinationError, setShowDestinationError] = useState(false);
+
+  // ... (handleSpotChange is unchanged, skipping line range)
+
+  const handleCancel = () => {
+    router.push('/travel');
+  };
+
+  const handleCreate = () => {
+    let isValid = true;
+    
+    if (!title.trim()) {
+      setShowTitleError(true);
+      isValid = false;
+    } else {
+      setShowTitleError(false);
+    }
+
+    if (!destination.trim()) {
+       setShowDestinationError(true);
+       isValid = false;
+    } else {
+       setShowDestinationError(false);
+    }
+
+    if (!isValid) return;
+
+    // API calls are not required yet.
+    console.log('Create travel:', { title, destination, spots });
+    alert('作成ボタンが押されました（API未実装）');
+  };
+
   return (
     <div className="py-8">
       <Container variant="standard">
@@ -22,26 +69,48 @@ export default function TravelNewPage() {
           </div>
 
           <div className="rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
               {/* 旅行タイトル */}
               <div>
-                <TextField
-                  label={FORM_LABELS.TRAVEL_TITLE}
-                  placeholder={PLACEHOLDERS.TRAVEL_TITLE}
-                  fullWidth
-                  required
-                />
+                <Tooltip
+                  content="タイトルを入力してください"
+                  isOpen={showTitleError}
+                  position="top"
+                >
+                  <TextField
+                    label={FORM_LABELS.TRAVEL_TITLE}
+                    placeholder={PLACEHOLDERS.TRAVEL_TITLE}
+                    fullWidth
+                    required
+                    value={title}
+                    onChange={(value) => {
+                      setTitle(value);
+                      if (showTitleError) setShowTitleError(false);
+                    }}
+                  />
+                </Tooltip>
               </div>
 
               {/* 目的地 */}
               <div>
-                <TextField
-                  label={FORM_LABELS.DESTINATION}
-                  placeholder={PLACEHOLDERS.DESTINATION}
-                  helpText={HELP_TEXTS.DESTINATION}
-                  fullWidth
-                  required
-                />
+                <Tooltip
+                  content="目的地を入力してください"
+                  isOpen={showDestinationError}
+                  position="top"
+                >
+                  <TextField
+                    label={FORM_LABELS.DESTINATION}
+                    placeholder={PLACEHOLDERS.DESTINATION}
+                    helpText={HELP_TEXTS.DESTINATION}
+                    fullWidth
+                    required
+                    value={destination}
+                    onChange={(value) => {
+                      setDestination(value);
+                      if (showDestinationError) setShowDestinationError(false);
+                    }}
+                  />
+                </Tooltip>
               </div>
 
               {/* 観光スポット */}
@@ -50,26 +119,41 @@ export default function TravelNewPage() {
                   {FORM_LABELS.SPOTS}
                 </div>
                 <div className="space-y-3">
-                  <TextField placeholder={PLACEHOLDERS.SPOT_1} fullWidth />
-                  <TextField placeholder={PLACEHOLDERS.SPOT_2} fullWidth />
-                  <TextField placeholder={PLACEHOLDERS.SPOT_3} fullWidth />
+                  <TextField 
+                    placeholder={PLACEHOLDERS.SPOT_1} 
+                    fullWidth 
+                    value={spots[0]}
+                    onChange={(value) => handleSpotChange(0, value)}
+                  />
+                  <TextField 
+                    placeholder={PLACEHOLDERS.SPOT_2} 
+                    fullWidth 
+                    value={spots[1]}
+                    onChange={(value) => handleSpotChange(1, value)}
+                  />
+                  <TextField 
+                    placeholder={PLACEHOLDERS.SPOT_3} 
+                    fullWidth 
+                    value={spots[2]}
+                    onChange={(value) => handleSpotChange(2, value)}
+                  />
                 </div>
                 <p className="mt-2 text-neutral-500 text-sm">{HELP_TEXTS.SPOTS}</p>
               </div>
 
               {/* スポット追加ボタン */}
               <div>
-                <Button variant="ghost" fullWidth>
+                <Button variant="ghost" fullWidth type="button">
                   {BUTTON_LABELS.ADD_SPOT}
                 </Button>
               </div>
 
               {/* アクションボタン */}
               <div className="flex gap-4 pt-4">
-                <Button variant="ghost" className="flex-1">
+                <Button variant="ghost" className="flex-1" onClick={handleCancel} type="button">
                   {BUTTON_LABELS.CANCEL}
                 </Button>
-                <Button variant="primary" className="flex-1">
+                <Button variant="primary" className="flex-1" onClick={handleCreate} type="button">
                   {BUTTON_LABELS.GENERATE_GUIDE}
                 </Button>
               </div>

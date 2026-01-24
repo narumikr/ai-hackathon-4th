@@ -38,14 +38,17 @@ export function Tooltip({
   delay = 200,
   children,
   className = '',
+  isOpen,
 }: TooltipProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  // If isOpen is provided (controlled), use it. Otherwise use internal hover state.
+  const isVisible = isOpen !== undefined ? isOpen : isHovered;
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tooltipId = useId();
 
   const showTooltip = useCallback(() => {
     timeoutRef.current = setTimeout(() => {
-      setIsVisible(true);
+      setIsHovered(true);
     }, delay);
   }, [delay]);
 
@@ -54,7 +57,7 @@ export function Tooltip({
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    setIsVisible(false);
+    setIsHovered(false);
   }, []);
 
   useEffect(() => {
