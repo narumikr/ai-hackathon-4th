@@ -16,6 +16,7 @@ class ReflectionDTO:
     user_id: str
     photos: list[dict]
     user_notes: str | None
+    spot_notes: dict[str, str | None]
     created_at: datetime
 
     @staticmethod
@@ -35,6 +36,7 @@ class ReflectionDTO:
             photos=[
                 {
                     "id": photo.id,
+                    "spotId": photo.spot_id,
                     "url": photo.url,
                     "analysis": {
                         "detectedSpots": list(photo.analysis.detected_spots),
@@ -47,6 +49,7 @@ class ReflectionDTO:
                 for photo in entity.photos
             ],
             user_notes=entity.user_notes,
+            spot_notes=entity.spot_notes,
             created_at=entity.created_at,
         )
 

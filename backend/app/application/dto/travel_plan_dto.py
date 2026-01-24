@@ -22,11 +22,17 @@ class TravelPlanDTO:
     guide_generation_status: str
     reflection_generation_status: str
     guide: dict | None
+    reflection: dict | None
     created_at: datetime
     updated_at: datetime
 
     @staticmethod
-    def from_entity(entity: TravelPlan, *, guide: dict | None = None) -> "TravelPlanDTO":
+    def from_entity(
+        entity: TravelPlan,
+        *,
+        guide: dict | None = None,
+        reflection: dict | None = None,
+    ) -> "TravelPlanDTO":
         """ドメインエンティティからDTOを生成する
 
         Args:
@@ -57,6 +63,7 @@ class TravelPlanDTO:
             guide_generation_status=entity.guide_generation_status.value,
             reflection_generation_status=entity.reflection_generation_status.value,
             guide=guide,
+            reflection=reflection,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.domain.reflection.entity import Photo, Reflection
 from app.domain.reflection.repository import IReflectionRepository
 from app.domain.reflection.value_objects import ImageAnalysis
-from app.infrastructure.persistence.models import ReflectionModel
+from app.infrastructure.persistence.models import ReflectionModel, TravelPlanModel
 
 
 class ReflectionRepository(IReflectionRepository):
@@ -45,6 +45,7 @@ class ReflectionRepository(IReflectionRepository):
                 user_id=reflection.user_id,
                 photos=self._photos_to_dict(reflection.photos),
                 user_notes=reflection.user_notes,
+                spot_notes=reflection.spot_notes,
             )
             self._session.add(model)
         else:
@@ -55,6 +56,7 @@ class ReflectionRepository(IReflectionRepository):
 
             model.photos = self._photos_to_dict(reflection.photos)
             model.user_notes = reflection.user_notes
+            model.spot_notes = reflection.spot_notes
 
         self._session.commit()
         self._session.refresh(model)
@@ -122,8 +124,10 @@ class ReflectionRepository(IReflectionRepository):
                 landmarks=analysis_data.get("landmarks", []),
                 confidence=analysis_data["confidence"],
             )
+            spot_id = self._resolve_spot_id(photo_data, model.plan_id)
             photo = Photo(
                 id=photo_data["id"],
+                spot_id=spot_id,
                 url=photo_data["url"],
                 analysis=analysis,
                 user_description=photo_data.get("userDescription"),
@@ -136,8 +140,46 @@ class ReflectionRepository(IReflectionRepository):
             user_id=model.user_id,
             photos=photos,
             user_notes=model.user_notes,
+            spot_notes=model.spot_notes or {},
             created_at=model.created_at,
         )
+
+    def _resolve_spot_id(self, photo_data: dict, plan_id: str) -> str:
+        """保存済み写真データからspotIdを解決する"""
+        spot_id = photo_data.get("spotId")
+        if isinstance(spot_id, str) and spot_id.strip():
+            return spot_id.strip()
+
+        analysis_data = photo_data.get("analysis") or {}
+        detected_spots = analysis_data.get("detectedSpots")
+        detected_names: list[str] = []
+        if isinstance(detected_spots, list):
+            for item in detected_spots:
+                if isinstance(item, str) and item.strip():
+                    detected_names.append(item.strip())
+
+        if not detected_names:
+            raise ValueError("spotId is required in stored photo data.")
+
+        plan = self._session.get(TravelPlanModel, plan_id)
+        if plan is None:
+            raise ValueError(f"Travel plan not found for reflection: {plan_id}")
+
+        name_to_id: dict[str, str] = {}
+        for spot in plan.spots or []:
+            if not isinstance(spot, dict):
+                continue
+            name = spot.get("name")
+            spot_id_value = spot.get("id")
+            if isinstance(name, str) and name.strip() and isinstance(spot_id_value, str):
+                name_to_id[name.strip()] = spot_id_value.strip()
+
+        for name in detected_names:
+            inferred_id = name_to_id.get(name)
+            if inferred_id:
+                return inferred_id
+
+        raise ValueError("spotId is missing and could not be inferred from detected spots.")
 
     def _photos_to_dict(self, photos: list[Photo]) -> list[dict]:
         """Photo → 辞書変換（JSON型で保存するため）
@@ -151,6 +193,7 @@ class ReflectionRepository(IReflectionRepository):
         return [
             {
                 "id": photo.id,
+                "spotId": photo.spot_id,
                 "url": photo.url,
                 "analysis": {
                     "detectedSpots": list(photo.analysis.detected_spots),
