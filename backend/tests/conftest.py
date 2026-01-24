@@ -147,6 +147,7 @@ def sample_reflection(
         photos=[
             {
                 "id": "photo_001",
+                "spotId": "spot-001",
                 "url": "https://example.com/photos/kiyomizu.jpg",
                 "analysis": {
                     "detectedSpots": ["清水寺"],
@@ -158,6 +159,7 @@ def sample_reflection(
             },
         ],
         user_notes="歴史の重みを感じる素晴らしい旅でした",
+        spot_notes={"spot-001": "清水寺の舞台が印象的だった"},
     )
     db_session.add(reflection)
     db_session.commit()

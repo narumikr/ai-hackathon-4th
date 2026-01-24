@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config.settings import get_settings
-from app.interfaces.api.v1 import travel_guides, travel_plans
+from app.interfaces.api.v1 import reflections, travel_guides, travel_plans, uploads
 from app.interfaces.middleware import (
     generic_exception_handler,
     http_exception_handler,
@@ -49,6 +49,8 @@ app.add_exception_handler(Exception, generic_exception_handler)
 # APIルーターの登録
 app.include_router(travel_plans.router, prefix="/api/v1")
 app.include_router(travel_guides.router, prefix="/api/v1")
+app.include_router(reflections.router, prefix="/api/v1")
+app.include_router(uploads.router, prefix="/api/v1")
 
 
 @app.get("/")

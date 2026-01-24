@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.domain.travel_plan.value_objects import PlanStatus
+from app.interfaces.schemas.reflection import ReflectionResponse
 from app.interfaces.schemas.travel_guide import TravelGuideResponse
 
 
@@ -83,5 +84,6 @@ class TravelPlanResponse(BaseModel):
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
     guide: TravelGuideResponse | None = None
+    reflection: ReflectionResponse | None = None
 
     model_config = {"populate_by_name": True}

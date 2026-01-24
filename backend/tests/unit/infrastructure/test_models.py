@@ -114,6 +114,7 @@ def test_create_reflection(db_session: Session, sample_travel_plan: TravelPlanMo
         photos=[
             {
                 "id": "photo123",
+                "spotId": "spot-001",
                 "url": "https://example.com/photo.jpg",
                 "analysis": {
                     "detectedSpots": ["京都タワー"],
@@ -125,6 +126,7 @@ def test_create_reflection(db_session: Session, sample_travel_plan: TravelPlanMo
             }
         ],
         user_notes="素晴らしい旅でした",
+        spot_notes={"spot-001": "京都タワーが印象的だった"},
     )
     db_session.add(reflection)
     db_session.commit()

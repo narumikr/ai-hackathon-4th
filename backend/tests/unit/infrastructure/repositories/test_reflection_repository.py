@@ -17,6 +17,7 @@ def test_save_new_reflection(db_session: Session, sample_travel_plan: TravelPlan
     repository = ReflectionRepository(db_session)
     photo = Photo(
         id="photo_nara_001",
+        spot_id="spot-001",
         url="https://example.com/photos/todaiji.jpg",
         analysis=ImageAnalysis(
             detected_spots=["東大寺"],
@@ -150,6 +151,7 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
     repository = ReflectionRepository(db_session)
     photo1 = Photo(
         id="photo_osaka_001",
+        spot_id="spot-001",
         url="https://example.com/photos/osaka_castle.jpg",
         analysis=ImageAnalysis(
             detected_spots=["大阪城"],
@@ -161,6 +163,7 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
     )
     photo2 = Photo(
         id="photo_osaka_002",
+        spot_id="spot-001",
         url="https://example.com/photos/osaka_moat.jpg",
         analysis=ImageAnalysis(
             detected_spots=["大阪城"],
@@ -189,6 +192,7 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
     # photo1の検証
     retrieved_photo1 = retrieved.photos[0]
     assert retrieved_photo1.id == "photo_osaka_001"
+    assert retrieved_photo1.spot_id == "spot-001"
     assert retrieved_photo1.url == "https://example.com/photos/osaka_castle.jpg"
     assert retrieved_photo1.user_description == "大阪城の壮大さに感動"
     assert retrieved_photo1.analysis.detected_spots == ("大阪城",)
@@ -199,6 +203,7 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
     # photo2の検証
     retrieved_photo2 = retrieved.photos[1]
     assert retrieved_photo2.id == "photo_osaka_002"
+    assert retrieved_photo2.spot_id == "spot-001"
     assert retrieved_photo2.url == "https://example.com/photos/osaka_moat.jpg"
     assert retrieved_photo2.user_description == "堀と石垣の美しさ"
     assert retrieved_photo2.analysis.detected_spots == ("大阪城",)
@@ -213,6 +218,7 @@ def test_save_update_not_found(db_session: Session):
     repository = ReflectionRepository(db_session)
     photo = Photo(
         id="test_photo",
+        spot_id="spot-001",
         url="https://example.com/test.jpg",
         analysis=ImageAnalysis(
             detected_spots=["テスト"],

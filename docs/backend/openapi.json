@@ -263,6 +263,76 @@
         }
       }
     },
+    "/api/v1/reflections": {
+      "post": {
+        "tags": [
+          "reflections"
+        ],
+        "summary": "振り返り生成を開始",
+        "description": "振り返り生成を開始する",
+        "operationId": "create_reflection_api_v1_reflections_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReflectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/spot-reflections": {
+      "post": {
+        "tags": [
+          "spot-reflections"
+        ],
+        "summary": "スポットの写真と感想を登録",
+        "description": "スポットごとの写真と感想を登録する",
+        "operationId": "upload_images_api_v1_spot_reflections_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_images_api_v1_spot_reflections_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -312,6 +382,49 @@
   },
   "components": {
     "schemas": {
+      "Body_upload_images_api_v1_spot_reflections_post": {
+        "properties": {
+          "planId": {
+            "type": "string",
+            "title": "Planid"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid"
+          },
+          "spotId": {
+            "type": "string",
+            "title": "Spotid"
+          },
+          "spotNote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spotnote"
+          },
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planId",
+          "userId",
+          "spotId",
+          "files"
+        ],
+        "title": "Body_upload_images_api_v1_spot_reflections_post"
+      },
       "CheckpointSchema": {
         "properties": {
           "spotName": {
@@ -338,6 +451,39 @@
         ],
         "title": "CheckpointSchema",
         "description": "チェックポイントスキーマ"
+      },
+      "CreateReflectionRequest": {
+        "properties": {
+          "planId": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Planid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Userid"
+          },
+          "userNotes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usernotes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planId",
+          "userId"
+        ],
+        "title": "CreateReflectionRequest",
+        "description": "振り返り作成リクエスト"
       },
       "CreateTravelPlanRequest": {
         "properties": {
@@ -438,6 +584,44 @@
         "title": "HistoricalEventSchema",
         "description": "歴史イベントスキーマ"
       },
+      "ImageAnalysisResponse": {
+        "properties": {
+          "detectedSpots": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detectedspots"
+          },
+          "historicalElements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Historicalelements"
+          },
+          "landmarks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Landmarks"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "detectedSpots",
+          "historicalElements",
+          "landmarks",
+          "confidence"
+        ],
+        "title": "ImageAnalysisResponse",
+        "description": "画像分析レスポンス"
+      },
       "MapCenterSchema": {
         "properties": {
           "lat": {
@@ -506,6 +690,108 @@
         ],
         "title": "MapMarkerSchema",
         "description": "地図マーカースキーマ"
+      },
+      "ReflectionPhotoResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "spotId": {
+            "type": "string",
+            "title": "Spotid"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/ImageAnalysisResponse"
+          },
+          "userDescription": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userdescription"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "spotId",
+          "url",
+          "analysis"
+        ],
+        "title": "ReflectionPhotoResponse",
+        "description": "振り返り写真レスポンス"
+      },
+      "ReflectionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "planId": {
+            "type": "string",
+            "title": "Planid"
+          },
+          "userId": {
+            "type": "string",
+            "title": "Userid"
+          },
+          "photos": {
+            "items": {
+              "$ref": "#/components/schemas/ReflectionPhotoResponse"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "userNotes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usernotes"
+          },
+          "spotNotes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Spotnotes"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "planId",
+          "userId",
+          "photos",
+          "createdAt"
+        ],
+        "title": "ReflectionResponse",
+        "description": "振り返りレスポンス"
       },
       "SpotDetailSchema": {
         "properties": {
@@ -712,6 +998,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/TravelGuideResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reflection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReflectionResponse"
               },
               {
                 "type": "null"
