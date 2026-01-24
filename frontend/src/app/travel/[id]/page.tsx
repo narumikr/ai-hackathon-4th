@@ -1,3 +1,6 @@
+'use client';
+
+import { useRouter, useParams } from 'next/navigation';
 import { Container } from '@/components/layout';
 import { Button, Emoji } from '@/components/ui';
 import {
@@ -6,9 +9,26 @@ import {
   LABELS,
   SECTION_TITLES,
 } from '@/constants';
-import { sampleGuide } from '@/data';
+import { sampleGuide, sampleTravels } from '@/data';
+import Link from 'next/link';
 
 export default function TravelGuidePage() {
+  const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
+  const travel = sampleTravels.find(t => t.id === id);
+  const isCompleted = travel?.status === 'completed';
+
+  const handleBack = () => {
+    router.push('/travel');
+  };
+
+  const handleCompleteTravel = () => {
+    // TODO: 旅行を完了状態に更新するAPI呼び出し
+    // URLから取得した旅行IDを使用して、対応する振り返り閲覧ページへ遷移
+    router.push(`/reflection/${id}/view`);
+  };
+
   return (
     <div className="py-8">
       <Container variant="wide">
@@ -19,11 +39,11 @@ export default function TravelGuidePage() {
               <h1 className="mb-2 font-bold text-3xl text-neutral-900">{sampleGuide.title}</h1>
               <p className="text-lg text-neutral-600">{sampleGuide.destination}</p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="ghost">{BUTTON_LABELS.PRINT}</Button>
-              <Button variant="secondary">{BUTTON_LABELS.PDF_EXPORT}</Button>
-              <Button variant="primary">{BUTTON_LABELS.TRAVEL_COMPLETE}</Button>
-            </div>
+            {!isCompleted && (
+              <div className="flex gap-2">
+                <Button variant="primary">{BUTTON_LABELS.TRAVEL_COMPLETE}</Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -96,12 +116,20 @@ export default function TravelGuidePage() {
 
         {/* アクション */}
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
-          <Button variant="ghost" size="lg">
-            {BUTTON_LABELS.BACK}
-          </Button>
-          <Button variant="primary" size="lg">
-            {BUTTON_LABELS.COMPLETE_TRAVEL_AND_CREATE_FEEDBACK}
-          </Button>
+           <Button variant="ghost" size="lg" onClick={handleBack}>
+             {BUTTON_LABELS.BACK}
+           </Button>
+           {isCompleted ? (
+              <Button variant="primary" size="lg" onClick={handleCompleteTravel}>
+                {BUTTON_LABELS.CREATE_REFLECTION}
+              </Button>
+           ) : (
+              <Link href={`/travel/${id}/edit`}>
+                <Button variant="primary" size="lg">
+                  {BUTTON_LABELS.EDIT}
+                </Button>
+              </Link>
+           )}
         </div>
       </Container>
     </div>

@@ -114,6 +114,7 @@ export const PAGE_TITLES = {
   HOME: 'ホーム',
   TRAVEL_LIST: '旅行一覧',
   TRAVEL_NEW: '新規旅行作成',
+  TRAVEL_EDIT: '旅行計画の編集',
   TRAVEL_GUIDE: '旅行ガイド',
   REFLECTION_LIST: '振り返り一覧',
   REFLECTION_CREATE: '振り返り作成',
@@ -137,6 +138,7 @@ export const BUTTON_LABELS = {
   CREATE_NEW_TRAVEL: '新しい旅行を作成',
   VIEW_DETAILS: '詳細を見る',
   EDIT: '編集',
+  UPDATE: '更新',
   DELETE: '削除',
   REMOVE: '削除',
   SAVE: '保存',
@@ -156,7 +158,7 @@ export const BUTTON_LABELS = {
   VIEW_TRAVEL_LIST_ALT: '旅行一覧へ',
   VIEW_REFLECTION: '振り返りを見る',
   CREATE_REFLECTION: '振り返りを作成',
-  COMPLETE_TRAVEL_AND_CREATE_FEEDBACK: '旅行を完了してフィードバックを作成',
+  COMPLETE_TRAVEL_AND_CREATE_REFLECTION: '旅行を完了して振り返りを作成',
 } as const;
 
 /**
@@ -177,7 +179,6 @@ export const MESSAGES = {
  */
 export const STATUS_LABELS = {
   PLANNING: '計画中',
-  TRAVELING: '旅行中',
   COMPLETED: '完了',
   REFLECTION_CREATED: '作成済み',
   ADDED_SPOT: '追加スポット',
@@ -188,7 +189,6 @@ export const STATUS_LABELS = {
  */
 export const STATUS_COLORS = {
   PLANNING: 'bg-info text-white',
-  TRAVELING: 'bg-warning text-white',
   COMPLETED: 'bg-success text-white',
 } as const;
 

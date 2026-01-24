@@ -1,7 +1,7 @@
 /**
  * 旅行ステータスの型定義
  */
-export type TravelStatus = 'planning' | 'traveling' | 'completed';
+export type TravelStatus = 'planning' | 'completed';
 
 /**
  * 旅行データの型定義
@@ -35,7 +35,7 @@ export const sampleTravels: SampleTravel[] = [
     id: '2',
     title: '奈良 古代史の旅',
     destination: '奈良県',
-    status: 'traveling',
+    status: 'planning',
     spotsCount: 4,
     createdAt: '2026-01-08',
   },
