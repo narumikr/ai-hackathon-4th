@@ -1,6 +1,6 @@
 'use client';
 import { Container } from '@/components/layout';
-import { Button, TextField, Tooltip } from '@/components/ui';
+import { Button, Emoji, TextField, Tooltip } from '@/components/ui';
 import {
   BUTTON_LABELS,
   FORM_LABELS,
@@ -13,17 +13,33 @@ import {
   TOOLTIP_MESSAGES,
 } from '@/constants';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 export default function TravelNewPage() {
   const router = useRouter();
+  const componentId = useId();
   const [title, setTitle] = useState('');
   const [destination, setDestination] = useState('');
-  const [spots, setSpots] = useState<string[]>(['', '', '']);
+  const [spots, setSpots] = useState([
+    { id: `${componentId}-spot-0`, name: '' },
+    { id: `${componentId}-spot-1`, name: '' },
+    { id: `${componentId}-spot-2`, name: '' },
+  ]);
+  const [spotIdCounter, setSpotIdCounter] = useState(3);
 
-  const handleSpotChange = (index: number, value: string) => {
-    const newSpots = [...spots];
-    newSpots[index] = value;
+  const handleSpotChange = (id: string, value: string) => {
+    const newSpots = spots.map(spot => (spot.id === id ? { ...spot, name: value } : spot));
+    setSpots(newSpots);
+  };
+
+  const handleAddSpot = () => {
+    const newId = `${componentId}-spot-${spotIdCounter}`;
+    setSpotIdCounter(spotIdCounter + 1);
+    setSpots([...spots, { id: newId, name: '' }]);
+  };
+
+  const handleRemoveSpot = (id: string) => {
+    const newSpots = spots.filter(spot => spot.id !== id);
     setSpots(newSpots);
   };
 
@@ -115,31 +131,34 @@ export default function TravelNewPage() {
                   {FORM_LABELS.SPOTS}
                 </div>
                 <div className="space-y-3">
-                  <TextField
-                    placeholder={PLACEHOLDERS.SPOT_1}
-                    fullWidth
-                    value={spots[0]}
-                    onChange={value => handleSpotChange(0, value)}
-                  />
-                  <TextField
-                    placeholder={PLACEHOLDERS.SPOT_2}
-                    fullWidth
-                    value={spots[1]}
-                    onChange={value => handleSpotChange(1, value)}
-                  />
-                  <TextField
-                    placeholder={PLACEHOLDERS.SPOT_3}
-                    fullWidth
-                    value={spots[2]}
-                    onChange={value => handleSpotChange(2, value)}
-                  />
+                  {spots.map(spot => (
+                    <div key={spot.id} className="flex gap-2">
+                      <div className="flex-1">
+                        <TextField
+                          placeholder={PLACEHOLDERS.SPOT_1}
+                          fullWidth
+                          value={spot.name}
+                          onChange={value => handleSpotChange(spot.id, value)}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleRemoveSpot(spot.id)}
+                        disabled={spots.length <= 1}
+                        title="Remove spot"
+                        type="button"
+                      >
+                        <Emoji symbol="🗑️" label="Delete" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
                 <p className="mt-2 text-neutral-500 text-sm">{HELP_TEXTS.SPOTS}</p>
               </div>
 
               {/* スポット追加ボタン */}
               <div>
-                <Button variant="ghost" fullWidth type="button">
+                <Button variant="ghost" fullWidth type="button" onClick={handleAddSpot}>
                   {BUTTON_LABELS.ADD_SPOT}
                 </Button>
               </div>
