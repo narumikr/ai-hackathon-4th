@@ -90,7 +90,9 @@ async def upload_images(
     user_id = _ensure_non_empty(user_id, "user_id")
     spot_id = _ensure_non_empty(spot_id, "spot_id")
     if spot_note is not None:
-        spot_note = _ensure_non_empty(spot_note, "spot_note")
+        spot_note = spot_note.strip()
+        if not spot_note:
+            spot_note = None
 
     if not files:
         raise HTTPException(

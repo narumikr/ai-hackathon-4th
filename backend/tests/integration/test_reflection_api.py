@@ -150,6 +150,39 @@ def test_upload_images(
     assert response.status_code == 204
 
 
+def test_upload_images_accepts_empty_spot_note(
+    api_client: TestClient,
+    db_session: Session,
+    sample_travel_plan: TravelPlanModel,
+):
+    """前提条件: サンプル旅行計画
+    実行: spotNoteが空文字のPOST /api/v1/spot-reflections
+    検証: ステータスコード204、spot_notesに空文字が保存されない
+    """
+    data = {
+        "planId": sample_travel_plan.id,
+        "userId": sample_travel_plan.user_id,
+        "spotId": "spot-001",
+        "spotNote": "",
+    }
+    files = [
+        ("files", ("kyoto.jpg", b"dummy-bytes", "image/jpeg")),
+    ]
+
+    response = api_client.post("/api/v1/spot-reflections", data=data, files=files)
+
+    assert response.status_code == 204
+
+    db_session.expire_all()
+    saved_reflection = (
+        db_session.query(ReflectionModel)
+        .filter(ReflectionModel.plan_id == sample_travel_plan.id)
+        .first()
+    )
+    assert saved_reflection is not None
+    assert saved_reflection.spot_notes == {}
+
+
 def test_create_reflection(
     api_client: TestClient,
     db_session: Session,
@@ -209,6 +242,59 @@ def test_create_reflection(
     )
     assert saved_reflection is not None
     assert saved_reflection.spot_notes == {"spot-001": "清水寺の舞台からの眺めが最高だった"}
+
+
+def test_create_reflection_accepts_empty_user_notes(
+    api_client: TestClient,
+    db_session: Session,
+    sample_travel_plan: TravelPlanModel,
+    sample_travel_guide,
+):
+    """前提条件: サンプル旅行計画と旅行ガイド
+    実行: userNotesが空文字のPOST /api/v1/reflections
+    検証: ステータスコード204、user_notesがNoneとして扱われる
+    """
+    upload_data = {
+        "planId": sample_travel_plan.id,
+        "userId": sample_travel_plan.user_id,
+        "spotId": "spot-001",
+    }
+
+    files = [("files", ("kiyomizu.jpg", b"dummy-bytes", "image/jpeg"))]
+    upload_response = api_client.post(
+        "/api/v1/spot-reflections", data=upload_data, files=files
+    )
+    assert upload_response.status_code == 204
+
+    response = api_client.post(
+        "/api/v1/reflections",
+        json={
+            "planId": sample_travel_plan.id,
+            "userId": sample_travel_plan.user_id,
+            "userNotes": "",
+        },
+    )
+
+    assert response.status_code == 204
+
+    for _ in range(20):
+        status_data = api_client.get(
+            f"/api/v1/travel-plans/{sample_travel_plan.id}"
+        ).json()
+        if status_data["reflectionGenerationStatus"] == "succeeded":
+            break
+        time.sleep(0.01)
+
+    assert status_data["reflectionGenerationStatus"] == "succeeded"
+
+    db_session.expire_all()
+    saved_reflection = (
+        db_session.query(ReflectionModel)
+        .filter(ReflectionModel.plan_id == sample_travel_plan.id)
+        .first()
+    )
+    assert saved_reflection is not None
+    assert saved_reflection.user_notes is None
 
 
 def test_create_reflection_without_travel_guide(
