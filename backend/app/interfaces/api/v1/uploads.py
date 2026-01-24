@@ -100,6 +100,7 @@ async def upload_images(
     plan_id = _ensure_non_empty(plan_id, "plan_id")
     user_id = _ensure_non_empty(user_id, "user_id")
     spot_id = _ensure_non_empty(spot_id, "spot_id")
+    # spotNoteの未送信と空文字送信を区別するためにキーの有無を見る
     form_data = await request.form()
     spot_note_provided = "spotNote" in form_data
     if spot_note is not None:

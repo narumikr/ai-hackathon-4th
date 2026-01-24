@@ -182,6 +182,8 @@ class AnalyzePhotosUseCase:
             plan_id: 旅行計画ID
             user_id: ユーザーID
             photos: 写真リスト（辞書形式）
+            spot_note: スポットの感想
+            spot_note_provided: フォームでspotNoteが送信されたかどうか
 
         Returns:
             ReflectionDTO: 保存された振り返り
