@@ -29,8 +29,6 @@ export default function TravelNewPage() {
   const [showTitleError, setShowTitleError] = useState(false);
   const [showDestinationError, setShowDestinationError] = useState(false);
 
-  // ... (handleSpotChange is unchanged, skipping line range)
-
   const handleCancel = () => {
     router.push('/travel');
   };
