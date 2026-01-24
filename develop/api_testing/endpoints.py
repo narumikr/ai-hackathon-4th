@@ -127,10 +127,22 @@ BODY_SAMPLES = {
         "spots": [
             {
                 "name": "金閣寺",
-                "location": {"lat": 35.0394, "lng": 135.7292},
                 "description": "金色に輝く寺院",
+                "userNotes": "朝早く訪れるのがおすすめ",
             }
         ],
+    },
+    "/api/v1/travel-plans/{plan_id}": {
+        "title": "奈良歴史巡り",
+        "destination": "奈良",
+        "spots": [
+            {
+                "name": "東大寺",
+                "description": "大仏で有名な寺院",
+                "userNotes": "鹿にせんべいをあげられる",
+            }
+        ],
+        "status": "planning",
     },
     "/api/v1/travel-guides": {"planId": "plan123"},
     "/api/v1/reflections": {

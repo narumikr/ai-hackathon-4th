@@ -123,18 +123,21 @@ def render_request_form(endpoint: EndpointDefinition) -> dict[str, Any]:
 
             # フォームフィールドの入力
             st.markdown("**フォームフィールド**")
-            plan_id = st.text_input("plan_id", key="form_plan_id", help="旅行計画ID")
-            spot_name = st.text_input(
-                "spot_name", key="form_spot_name", help="スポット名"
-            )
-            comment = st.text_area(
-                "comment", key="form_comment", help="コメント", height=100
+            plan_id = st.text_input("planId", key="form_plan_id", help="旅行計画ID")
+            user_id = st.text_input("userId", key="form_user_id", help="ユーザーID")
+            spot_id = st.text_input("spotId", key="form_spot_id", help="スポットID")
+            spot_note = st.text_area(
+                "spotNote (オプショナル)",
+                key="form_spot_note",
+                help="スポットへの感想・メモ",
+                height=100,
             )
 
             result["form_data"] = {
-                "plan_id": plan_id,
-                "spot_name": spot_name,
-                "comment": comment,
+                "planId": plan_id,
+                "userId": user_id,
+                "spotId": spot_id,
+                "spotNote": spot_note,
             }
 
             st.markdown("---")
