@@ -216,10 +216,10 @@ const parseErrorDetail = async (response: Response): Promise<ApiErrorDetail> => 
   }
 };
 
-const getRequiredEnv = (name: string): string => {
-  const value = process.env[name];
+const getRequiredEnv = (): string => {
+  const value = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!value) {
-    throw new ApiError(`${name} is required for API requests.`);
+    throw new ApiError('NEXT_PUBLIC_API_BASE_URL is required for API requests.');
   }
   return value;
 };
@@ -373,6 +373,6 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
 };
 
 export const createApiClientFromEnv = (options?: { prefix?: string }): ApiClient => {
-  const baseUrl = getRequiredEnv('NEXT_PUBLIC_API_BASE_URL');
+  const baseUrl = getRequiredEnv();
   return createApiClient({ baseUrl, prefix: options?.prefix });
 };
