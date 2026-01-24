@@ -33,7 +33,7 @@
 - [ ] 3. ドメイン層の実装
   - [ ] 3.1 TravelPlan集約の実装
     - TravelPlan, TouristSpotエンティティの実装
-    - Location, PlanStatus値オブジェクトの実装
+    - PlanStatus値オブジェクトの実装
     - ITravelPlanRepositoryインターフェースの定義
     - _Requirements: 1.1_
 

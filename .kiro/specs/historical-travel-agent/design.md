@@ -196,7 +196,7 @@ historical-travel-agent/
 │   │   │   ├── travel_plan/         # TravelPlan集約
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── entity.py        # TravelPlan, TouristSpot エンティティ
-│   │   │   │   ├── value_objects.py # Location, PlanStatus 値オブジェクト
+│   │   │   │   ├── value_objects.py # PlanStatus 値オブジェクト
 │   │   │   │   ├── repository.py    # ITravelPlanRepository インターフェース
 │   │   │   │   └── exceptions.py
 │   │   │   ├── travel_guide/        # TravelGuide集約
@@ -458,14 +458,13 @@ cd deployment/terraform && terraform apply
 **TravelPlan集約**:
 - `TravelPlan` エンティティ: 旅行計画のルート集約
 - `TouristSpot` エンティティ: 観光スポット
-- `Location` 値オブジェクト: 緯度経度の不変オブジェクト
 - `PlanStatus` 値オブジェクト: 旅行の状態 (planning/completed)
 - `ITravelPlanRepository` インターフェース: リポジトリの抽象化
 
 **TravelGuide集約**:
 - `TravelGuide` エンティティ: 旅行ガイドのルート集約
 - `HistoricalEvent`, `SpotDetail`, `Checkpoint` 値オブジェクト
-- `TravelGuideComposer` ドメインサービス: 年表、地図、見どころを統合してガイドを構成
+- `TravelGuideComposer` ドメインサービス: 年表、見どころ、チェックポイントを統合してガイドを構成
 - `ITravelGuideRepository` インターフェース
 
 **振り返り集約**:
@@ -566,10 +565,6 @@ interface TravelPlan {
 interface TouristSpot {
   id: string;
   name: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
   description?: string;
   userNotes?: string;
 }
@@ -591,7 +586,6 @@ interface TravelGuide {
   timeline: HistoricalEvent[];
   spotDetails: SpotDetail[];
   checkpoints: Checkpoint[];
-  mapData: MapData;
   generatedAt: Date;
 }
 
@@ -688,35 +682,31 @@ Property 3: Timeline generation
 *For any* collected historical information, the Timeline_Generator should produce a chronologically ordered timeline
 **Validates: Requirement 1, Acceptance Criteria 3**
 
-Property 4: Map generation with historical context
-*For any* collected historical information, the Map_Generator should produce a map containing historical context markers
-**Validates: Requirement 1, Acceptance Criteria 4**
-
-Property 5: Travel guide completeness
+Property 4: Travel guide completeness
 *For any* complete set of travel information (destination, spots, historical data), the system should generate a comprehensive Travel_Guide containing all required components
 **Validates: Requirement 1, Acceptance Criteria 5**
 
-Property 6: Historical background summarization
+Property 5: Historical background summarization
 *For any* tourist spot information, the system should generate a historical background summary specific to that location
 **Validates: Requirement 2, Acceptance Criteria 1**
 
-Property 7: Historical highlights organization
+Property 6: Historical highlights organization
 *For any* historical information, the system should organize highlights from a historical perspective
 **Validates: Requirement 2, Acceptance Criteria 2**
 
-Property 8: Checkpoint list inclusion
+Property 7: Checkpoint list inclusion
 *For any* generated Travel_Guide, it should contain a Checkpoint_List component
 **Validates: Requirement 2, Acceptance Criteria 3**
 
-Property 9: Content integration completeness
-*For any* generated content, it should integrate timeline, map, historical summary, and highlights into a unified structure
+Property 8: Content integration completeness
+*For any* generated content, it should integrate timeline, historical summary, and highlights into a unified structure
 **Validates: Requirement 2, Acceptance Criteria 4**
 
-Property 10: Image analysis execution
+Property 9: Image analysis execution
 *For any* uploaded photo, the Image_Analyzer should identify tourist spots and historical elements and return analysis results
 **Validates: Requirement 3, Acceptance Criteria 1**
 
-Property 11: Information integration
+Property 10: Information integration
 *For any* post-travel input (photos, notes), the system should integrate this information with pre-travel data
 **Validates: Requirement 3, Acceptance Criteria 2**
 
