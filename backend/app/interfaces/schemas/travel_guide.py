@@ -4,8 +4,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.interfaces.schemas.location import LocationSchema
-
 
 class HistoricalEventSchema(BaseModel):
     """歴史イベントスキーマ"""
@@ -40,22 +38,6 @@ class CheckpointSchema(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class MapMarkerSchema(BaseModel):
-    """地図マーカースキーマ"""
-
-    lat: float
-    lng: float
-    label: str
-
-
-class MapDataSchema(BaseModel):
-    """地図データスキーマ"""
-
-    center: LocationSchema
-    zoom: int
-    markers: list[MapMarkerSchema]
-
-
 class GenerateTravelGuideRequest(BaseModel):
     """旅行ガイド生成リクエスト"""
 
@@ -81,7 +63,6 @@ class TravelGuideResponse(BaseModel):
     timeline: list[HistoricalEventSchema]
     spot_details: list[SpotDetailSchema] = Field(..., alias="spotDetails")
     checkpoints: list[CheckpointSchema]
-    map_data: MapDataSchema = Field(..., alias="mapData")
     created_at: datetime = Field(..., alias="createdAt")
     updated_at: datetime = Field(..., alias="updatedAt")
 

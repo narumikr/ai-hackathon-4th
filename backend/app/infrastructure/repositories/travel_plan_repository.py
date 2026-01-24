@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.repository import ITravelPlanRepository
-from app.domain.travel_plan.value_objects import GenerationStatus, Location, PlanStatus
+from app.domain.travel_plan.value_objects import GenerationStatus, PlanStatus
 from app.infrastructure.persistence.models import TravelPlanModel
 
 
@@ -133,10 +133,6 @@ class TravelPlanRepository(ITravelPlanRepository):
                 TouristSpot(
                     id=str(spot_id),
                     name=spot["name"],
-                    location=Location(
-                        lat=spot["location"]["lat"],
-                        lng=spot["location"]["lng"],
-                    ),
                     description=spot.get("description"),
                     user_notes=spot.get("userNotes"),
                 )
@@ -168,10 +164,6 @@ class TravelPlanRepository(ITravelPlanRepository):
             {
                 "id": spot.id,
                 "name": spot.name,
-                "location": {
-                    "lat": spot.location.lat,
-                    "lng": spot.location.lng,
-                },
                 "description": spot.description,
                 "userNotes": spot.user_notes,
             }

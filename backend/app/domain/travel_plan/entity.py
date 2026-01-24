@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 
 from app.domain.shared.entity import Entity
-from app.domain.travel_plan.value_objects import GenerationStatus, Location, PlanStatus
+from app.domain.travel_plan.value_objects import GenerationStatus, PlanStatus
 
 
 class TouristSpot(Entity):
@@ -13,7 +13,6 @@ class TouristSpot(Entity):
         self,
         id: str,
         name: str,
-        location: Location,
         description: str | None = None,
         user_notes: str | None = None,
     ):
@@ -22,7 +21,6 @@ class TouristSpot(Entity):
         Args:
             id: 観光スポットID
             name: スポット名
-            location: 位置情報
             description: 説明
             user_notes: ユーザーメモ
 
@@ -38,11 +36,7 @@ class TouristSpot(Entity):
         if not name or not name.strip():
             raise ValueError("Tourist spot name is required and must not be empty.")
 
-        if not isinstance(location, Location):
-            raise ValueError("location must be a Location instance.")
-
         self._name = name
-        self._location = location
         self._description = description
         self._user_notes = user_notes
 
@@ -50,11 +44,6 @@ class TouristSpot(Entity):
     def name(self) -> str:
         """スポット名"""
         return self._name
-
-    @property
-    def location(self) -> Location:
-        """位置情報"""
-        return self._location
 
     @property
     def description(self) -> str | None:

@@ -1,13 +1,12 @@
 """TravelGuideリポジトリの実装"""
 
 import uuid
-from typing import cast
 
 from sqlalchemy.orm import Session
 
 from app.domain.travel_guide.entity import TravelGuide
 from app.domain.travel_guide.repository import ITravelGuideRepository
-from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, MapData, SpotDetail
+from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
 from app.infrastructure.persistence.models import TravelGuideModel
 
 
@@ -48,7 +47,6 @@ class TravelGuideRepository(ITravelGuideRepository):
                 timeline=self._timeline_to_dict(travel_guide.timeline),
                 spot_details=self._spot_details_to_dict(travel_guide.spot_details),
                 checkpoints=self._checkpoints_to_dict(travel_guide.checkpoints),
-                map_data=dict(travel_guide.map_data),
             )
             self._session.add(model)
         else:
@@ -61,7 +59,6 @@ class TravelGuideRepository(ITravelGuideRepository):
             model.timeline = self._timeline_to_dict(travel_guide.timeline)
             model.spot_details = self._spot_details_to_dict(travel_guide.spot_details)
             model.checkpoints = self._checkpoints_to_dict(travel_guide.checkpoints)
-            model.map_data = dict(travel_guide.map_data)
 
         if commit:
             self._session.commit()
@@ -165,7 +162,6 @@ class TravelGuideRepository(ITravelGuideRepository):
             timeline=timeline,
             spot_details=spot_details,
             checkpoints=checkpoints,
-            map_data=cast(MapData, model.map_data),
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

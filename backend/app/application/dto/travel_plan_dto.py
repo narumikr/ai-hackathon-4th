@@ -50,10 +50,6 @@ class TravelPlanDTO:
                 {
                     "id": spot.id,
                     "name": spot.name,
-                    "location": {
-                        "lat": spot.location.lat,
-                        "lng": spot.location.lng,
-                    },
                     "description": spot.description,
                     "userNotes": spot.user_notes,
                 }

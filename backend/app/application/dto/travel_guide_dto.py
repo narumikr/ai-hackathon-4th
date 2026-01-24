@@ -19,7 +19,6 @@ class TravelGuideDTO:
     timeline: list[dict]
     spot_details: list[dict]
     checkpoints: list[dict]
-    map_data: dict
     created_at: datetime
     updated_at: datetime
 
@@ -64,7 +63,6 @@ class TravelGuideDTO:
                 }
                 for checkpoint in entity.checkpoints
             ],
-            map_data=dict(entity.map_data),
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )

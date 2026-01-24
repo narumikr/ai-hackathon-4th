@@ -1,32 +1,8 @@
 """TravelGuide Aggregateの値オブジェクト"""
 
 from dataclasses import dataclass
-from typing import TypedDict
 
 from app.domain.shared.value_object import ValueObject
-
-
-class MapCenter(TypedDict):
-    """地図の中心座標"""
-
-    lat: float
-    lng: float
-
-
-class MapMarker(TypedDict):
-    """地図上のマーカー"""
-
-    lat: float
-    lng: float
-    label: str
-
-
-class MapData(TypedDict):
-    """地図データ"""
-
-    center: MapCenter
-    zoom: int
-    markers: list[MapMarker]
 
 
 def _normalize_str_list(value: list[str] | tuple[str, ...], field_name: str) -> tuple[str, ...]:

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from hypothesis import given, strategies as st
 
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
-from app.domain.travel_plan.value_objects import GenerationStatus, Location, PlanStatus
+from app.domain.travel_plan.value_objects import GenerationStatus, PlanStatus
 
 
 def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.SearchStrategy[str]:
@@ -34,44 +34,6 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
 
 
 @st.composite
-def _locations(draw: st.DrawFn) -> Location:
-    """地理的に有効な位置情報を生成するStrategy。
-
-    Hypothesis Composite Strategy: 複数の値を組み合わせて複雑なオブジェクトを生成
-
-    Location値オブジェクトのバリデーション要件に適合:
-    - 緯度: -90度 ≤ lat ≤ 90度
-    - 経度: -180度 ≤ lng ≤ 180度
-    - NaN/Infinityは不正値として除外
-
-    Args:
-        draw: Hypothesisの描画関数
-
-    Returns:
-        地理的に有効なLocation値オブジェクト
-    """
-    # 緯度: -90度（南極）から90度（北極）
-    lat = draw(
-        st.floats(
-            min_value=-90,
-            max_value=90,
-            allow_nan=False,  # NaNを除外
-            allow_infinity=False,  # 無限大を除外
-        )
-    )
-    # 経度: -180度から180度（国際日付変更線）
-    lng = draw(
-        st.floats(
-            min_value=-180,
-            max_value=180,
-            allow_nan=False,
-            allow_infinity=False,
-        )
-    )
-    return Location(lat=lat, lng=lng)
-
-
-@st.composite
 def _tourist_spots(draw: st.DrawFn) -> TouristSpot:
     """観光スポットエンティティを生成するStrategy。
 
@@ -80,7 +42,6 @@ def _tourist_spots(draw: st.DrawFn) -> TouristSpot:
     TouristSpotエンティティのバリデーション要件に適合:
     - id: 必須、非空文字列
     - name: 必須、非空文字列
-    - location: 必須、Location値オブジェクト
     - description: オプショナル（Noneまたは非空文字列）
     - user_notes: オプショナル（Noneまたは非空文字列）
 
@@ -93,8 +54,6 @@ def _tourist_spots(draw: st.DrawFn) -> TouristSpot:
     # 必須フィールド
     spot_id = draw(_non_empty_printable_text(max_size=40))
     name = draw(_non_empty_printable_text(max_size=40))
-    location = draw(_locations())
-
     # オプショナルフィールド: Noneまたは非空文字列
     description = draw(st.one_of(st.none(), _non_empty_printable_text(max_size=80)))
     user_notes = draw(st.one_of(st.none(), _non_empty_printable_text(max_size=80)))
@@ -102,7 +61,6 @@ def _tourist_spots(draw: st.DrawFn) -> TouristSpot:
     return TouristSpot(
         id=spot_id,
         name=name,
-        location=location,
         description=description,
         user_notes=user_notes,
     )
@@ -167,7 +125,5 @@ def test_travel_plan_property_travel_information_storage(
     for stored_spot, original_spot in zip(plan.spots, spots, strict=True):
         assert stored_spot.id == original_spot.id
         assert stored_spot.name == original_spot.name
-        assert stored_spot.location.lat == original_spot.location.lat
-        assert stored_spot.location.lng == original_spot.location.lng
         assert stored_spot.description == original_spot.description
         assert stored_spot.user_notes == original_spot.user_notes

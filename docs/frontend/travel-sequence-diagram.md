@@ -340,8 +340,6 @@ export function TravelGuide({ planId }: { planId: string }) {
       setGenerationStatus('観光スポットを選定中...');
     } else if (!plan.guide.timeline) {
       setGenerationStatus('歴史情報を収集中...');
-    } else if (!plan.guide.mapData) {
-      setGenerationStatus('年表を作成中...');
     } else {
       setGenerationStatus('最終調整中...');
     }
@@ -358,10 +356,7 @@ export function TravelGuide({ planId }: { planId: string }) {
         <>
           <AIGeneratedSpots spots={travelPlan.guide.aiSuggestedSpots} />
           <Timeline events={travelPlan.guide.timeline} />
-          <HistoricalMap 
-            spots={travelPlan.spots} 
-            mapData={travelPlan.guide.mapData} 
-          />
+          <HistoricalMap spots={travelPlan.spots} />
           <SpotDetails details={travelPlan.guide.spotDetails} />
           <CheckpointList checkpoints={travelPlan.guide.checkpoints} />
           <EducationalContent content={travelPlan.guide.educationalValue} />

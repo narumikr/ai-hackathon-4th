@@ -101,14 +101,6 @@ class StubAIService(IAIService):
                     "historicalContext": "北山文化の代表的建築",
                 },
             ],
-            "mapData": {
-                "center": {"lat": 35.0, "lng": 135.7},
-                "zoom": 12,
-                "markers": [
-                    {"lat": 34.9949, "lng": 135.785, "label": "清水寺"},
-                    {"lat": 35.0394, "lng": 135.7292, "label": "金閣寺"},
-                ],
-            },
         }
 
 

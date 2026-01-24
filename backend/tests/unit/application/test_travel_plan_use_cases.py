@@ -24,7 +24,6 @@ def test_create_travel_plan_use_case_creates_plan(db_session: Session):
     spots = [
         {
             "name": "清水寺",
-            "location": {"lat": 34.9949, "lng": 135.785},
             "description": "京都を代表する寺院",
             "userNotes": "早朝訪問予定",
         }
@@ -66,7 +65,6 @@ def test_create_travel_plan_use_case_invalid_spot_raises(db_session: Session):
     spots = [
         {
             "name": " ",
-            "location": {"lat": 34.9949, "lng": 135.785},
         }
     ]
 
