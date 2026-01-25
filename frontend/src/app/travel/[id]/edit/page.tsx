@@ -9,8 +9,6 @@ import { useId, useState } from 'react';
 export default function TravelEditPage() {
   const router = useRouter();
   const componentId = useId();
-  // const params = useParams(); // status check not needed here for now as per instructions (or maybe needed later but unused now)
-  // const id = params?.id as string;
 
   // Initial state based on sampleGuide
   const [formData, setFormData] = useState({
