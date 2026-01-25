@@ -1,5 +1,6 @@
 """FastAPI application entry point"""
 
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -22,6 +23,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """アプリケーションのライフサイクル管理"""
     # 起動時の処理
     print("Starting up...")
+
+    # Google Cloud認証情報の環境変数を設定
+    settings = get_settings()
+    if settings.google_application_credentials:
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.google_application_credentials
+        print(f"Set GOOGLE_APPLICATION_CREDENTIALS: {settings.google_application_credentials}")
+
     yield
     # 終了時の処理
     print("Shutting down...")

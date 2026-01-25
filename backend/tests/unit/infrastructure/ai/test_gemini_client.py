@@ -14,6 +14,19 @@ from app.infrastructure.ai.exceptions import (
 from app.infrastructure.ai.gemini_client import GeminiClient
 
 
+def _build_response_with_text(text: str) -> MagicMock:
+    """候補テキストを含むレスポンスを構築する"""
+    part = MagicMock()
+    part.text = text
+    content = MagicMock()
+    content.parts = [part]
+    candidate = MagicMock()
+    candidate.content = content
+    response = MagicMock()
+    response.candidates = [candidate]
+    return response
+
+
 @pytest.fixture
 def gemini_client():
     """GeminiClientのフィクスチャ
@@ -23,7 +36,7 @@ def gemini_client():
     return GeminiClient(
         project_id="test-project",
         location="asia-northeast1",
-        model_name="gemini-3-flash",
+        model_name="gemini-2.5-flash",
     )
 
 
@@ -35,8 +48,7 @@ async def test_generate_text_success(gemini_client):
     検証項目: 生成されたテキストが返されること
     """
     # モックレスポンスの準備
-    mock_response = MagicMock()
-    mock_response.text = "生成されたテキスト"
+    mock_response = _build_response_with_text("生成されたテキスト")
 
     # GenerativeModelをモック
     with patch(
@@ -67,27 +79,24 @@ async def test_generate_with_search_success(gemini_client):
     検証項目: 検索結果を含むテキストが返されること
     """
     # モックレスポンスの準備
-    mock_response = MagicMock()
-    mock_response.text = "検索結果を含む生成テキスト"
+    mock_response = _build_response_with_text("検索結果を含む生成テキスト")
 
     # モックツール
     mock_tool = MagicMock()
 
-    # groundingモジュールをモック
-    mock_grounding = MagicMock()
-    mock_grounding.GoogleSearchRetrieval = MagicMock()
+    # GapicToolをモック
+    mock_gapic_tool = MagicMock()
+    mock_gapic_tool.GoogleSearch = MagicMock(return_value=MagicMock())
 
     # GenerativeModelをモック
     with patch(
         "app.infrastructure.ai.gemini_client.GenerativeModel"
     ) as mock_model_class, patch(
-        "app.infrastructure.ai.gemini_client.grounding", mock_grounding
+        "app.infrastructure.ai.gemini_client.GapicTool", mock_gapic_tool
     ), patch(
         "app.infrastructure.ai.gemini_client.Tool"
     ) as mock_tool_class:
-        mock_tool_class.from_google_search_retrieval = MagicMock(
-            return_value=mock_tool
-        )
+        mock_tool_class._from_gapic.return_value = mock_tool
 
         mock_model = MagicMock()
         mock_model.generate_content_async = AsyncMock(return_value=mock_response)
@@ -113,8 +122,7 @@ async def test_analyze_image_success(gemini_client):
     検証項目: 画像分析結果のテキストが返されること
     """
     # モックレスポンスの準備
-    mock_response = MagicMock()
-    mock_response.text = "この画像には富士山が写っています"
+    mock_response = _build_response_with_text("この画像には富士山が写っています")
 
     # GenerativeModelをモック
     with patch(
@@ -145,8 +153,7 @@ async def test_generate_structured_data_success(gemini_client):
     """
     # モックレスポンスの準備
     expected_data = {"name": "富士山", "type": "自然"}
-    mock_response = MagicMock()
-    mock_response.text = json.dumps(expected_data)
+    mock_response = _build_response_with_text(json.dumps(expected_data))
 
     # GenerativeModelをモック
     with patch(
@@ -207,8 +214,7 @@ async def test_retry_on_transient_error(gemini_client):
     検証項目: リトライ後に正常なレスポンスが返されること
     """
     # モックレスポンスの準備
-    mock_response = MagicMock()
-    mock_response.text = "リトライ後の成功レスポンス"
+    mock_response = _build_response_with_text("リトライ後の成功レスポンス")
 
     # GenerativeModelをモック（最初の2回はエラー、3回目は成功）
     with patch(

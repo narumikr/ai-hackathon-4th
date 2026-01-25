@@ -14,9 +14,9 @@ from vertexai.generative_models import (
 )
 
 try:
-    from vertexai.preview import grounding  # type: ignore[import-not-found]
+    from google.cloud.aiplatform_v1beta1 import Tool as GapicTool
 except ImportError:
-    grounding = None  # type: ignore[assignment]
+    GapicTool = None  # type: ignore[assignment]
 
 from app.infrastructure.ai.exceptions import (
     AIServiceConnectionError,
@@ -28,7 +28,7 @@ from app.infrastructure.ai.exceptions import (
 class GeminiClient:
     """Vertex AI Gemini APIクライアント
 
-    Gemini 3 Flashモデルを使用したテキスト生成、画像分析、
+    テキスト生成、画像分析、
     Function Calling、構造化出力などの機能を提供する
     """
 
@@ -36,14 +36,14 @@ class GeminiClient:
         self,
         project_id: str,
         location: str = "asia-northeast1",
-        model_name: str = "gemini-3-flash",
+        model_name: str = "gemini-2.5-flash",
     ) -> None:
         """GeminiClientを初期化する
 
         Args:
             project_id: Google CloudプロジェクトID
             location: Vertex AIのロケーション（デフォルト: asia-northeast1）
-            model_name: 使用するモデル名（デフォルト: gemini-3-flash）
+            model_name: 使用するモデル名（デフォルト: gemini-2.5-flash）
         """
         self.project_id = project_id
         self.location = location
@@ -113,7 +113,7 @@ class GeminiClient:
                     ),
                     timeout=timeout,
                 )
-                return response.text
+                return self._extract_text(response)
 
             except TimeoutError as e:
                 if attempt == max_retries - 1:
@@ -213,7 +213,7 @@ class GeminiClient:
                     timeout=timeout,
                 )
                 # JSONをパースして返す
-                return json.loads(response.text)
+                return json.loads(self._extract_text(response))
 
             except TimeoutError as e:
                 if attempt == max_retries - 1:
@@ -262,14 +262,12 @@ class GeminiClient:
         for tool_name in tool_names:
             if tool_name == "google_search":
                 # Google Search統合
-                if grounding is None:
+                if GapicTool is None:
                     raise AIServiceInvalidRequestError(
-                        "Google Search tool is not available. Please check vertexai SDK version."
+                        "Google Search tool is not available. Please check google-cloud-aiplatform SDK version."
                     )
                 tools.append(
-                    Tool.from_google_search_retrieval(
-                        grounding.GoogleSearchRetrieval()  # type: ignore[union-attr]
-                    )
+                    Tool._from_gapic(raw_tool=GapicTool(google_search=GapicTool.GoogleSearch()))
                 )
                 continue
             raise AIServiceInvalidRequestError(f"Unsupported tool name: {tool_name}")
@@ -294,6 +292,30 @@ class GeminiClient:
             parts.append(Part.from_uri(image_uri, mime_type="image/jpeg"))
         parts.append(Part.from_text(prompt))
         return parts
+
+    def _extract_text(self, response: Any) -> str:
+        """レスポンスからテキストを取り出す。
+
+        Vertex AIのSDKは複数partの.text取得に失敗するため、
+        partを明示的に連結する。
+        """
+        candidates = getattr(response, "candidates", None)
+        if not candidates:
+            raise AIServiceInvalidRequestError("Empty response candidates.")
+
+        candidate = candidates[0]
+        content = getattr(candidate, "content", None)
+        parts = getattr(content, "parts", None)
+        if not parts:
+            raise AIServiceInvalidRequestError("Empty response content parts.")
+
+        texts: list[str] = []
+        for part in parts:
+            text = getattr(part, "text", None)
+            if text is None:
+                raise AIServiceInvalidRequestError("Non-text part in response content.")
+            texts.append(text)
+        return "".join(texts)
 
     async def _exponential_backoff(self, attempt: int) -> None:
         """指数バックオフを実行する
