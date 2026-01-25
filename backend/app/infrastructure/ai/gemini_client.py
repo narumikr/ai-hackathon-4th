@@ -276,10 +276,22 @@ class GeminiClient:
         return parts
 
     def _extract_text(self, response: Any) -> str:
-        """レスポンスからテキストを取り出す。"""
-        text = getattr(response, "text", None)
-        if text is None:
-            raise AIServiceInvalidRequestError("Empty response text.")
+        """レスポンスからテキストを取り出す
+
+        Args:
+            response: Gemini APIからのレスポンスオブジェクト
+
+        Returns:
+            str: 抽出されたテキスト
+
+        Raises:
+            AIServiceInvalidRequestError: text属性が存在しない、または空の場合
+        """
+        if not hasattr(response, "text"):
+            raise AIServiceInvalidRequestError("Response does not contain a text attribute.")
+        text = response.text
+        if text is None or (isinstance(text, str) and not text.strip()):
+            raise AIServiceInvalidRequestError("Response text is empty.")
         return text
 
     async def _exponential_backoff(self, attempt: int) -> None:
