@@ -1,0 +1,34 @@
+# Terraform Variables Example
+# 
+# このファイルをコピーして terraform.tfvars を作成し、実際の値を設定してください。
+# 
+# 開発環境の場合:
+#   cp terraform.tfvars.example terraform.tfvars
+#   または environments/development-template.tfvars を使用
+# 
+# 本番環境の場合:
+#   environments/production.tfvars を使用
+
+# 開発環境のGCPプロジェクトID
+dev_project_id = "your-dev-project-id"
+
+# 本番環境のGCPプロジェクトID
+prod_project_id = "your-prod-project-id"
+
+# リージョンとゾーン（デフォルト: asia-northeast1）
+region = "asia-northeast1"
+zone   = "asia-northeast1-a"
+
+# 開発者の識別子（開発環境用）
+# 例: "alice", "bob", "dev-team-member-1"
+developer_id = "your-name"
+
+# 本番ドメイン
+production_domain = "your-domain.com"
+
+# GitHub設定
+github_repository             = "your-org/your-repo"
+github_workload_identity_pool = "github-pool"
+
+# コストセンター
+cost_center = "historical-travel-agent"

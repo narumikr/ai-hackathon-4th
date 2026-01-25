@@ -79,6 +79,9 @@ infrastructure/terraform/.terraform/
 infrastructure/terraform/*.tfstate
 infrastructure/terraform/*.tfstate.backup
 infrastructure/terraform/.terraform.lock.hcl
+infrastructure/terraform/terraform.tfvars
+infrastructure/terraform/environments/development-*.tfvars
+!infrastructure/terraform/environments/development-template.tfvars
 
 # Google Cloud
 service-account-key.json
