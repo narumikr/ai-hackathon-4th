@@ -1,5 +1,5 @@
 import { Container } from '@/components/layout';
-import { Button, Emoji } from '@/components/ui';
+import { Button, Emoji, LoadingSpinner } from '@/components/ui';
 import {
   BUTTON_LABELS,
   EMOJI_LABELS,
@@ -47,10 +47,16 @@ export default function ReflectionListPage() {
                 <div className="mb-4">
                   <div className="mb-2 flex items-start justify-between">
                     <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
-                    {travel.hasReflection && (
-                      <span className="rounded-full bg-success px-3 py-1 font-medium text-white text-xs">
-                        {STATUS_LABELS.REFLECTION_CREATED}
+                    {travel.reflectionGenerationStatus === 'processing' ? (
+                      <span className="rounded-full bg-warning px-3 py-1 font-medium text-white text-xs">
+                        {STATUS_LABELS.REFLECTION_PROCESSING}
                       </span>
+                    ) : (
+                      travel.hasReflection && (
+                        <span className="rounded-full bg-success px-3 py-1 font-medium text-white text-xs">
+                          {STATUS_LABELS.REFLECTION_CREATED}
+                        </span>
+                      )
                     )}
                   </div>
                   <p className="text-neutral-500 text-sm">{travel.destination}</p>
@@ -70,8 +76,13 @@ export default function ReflectionListPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  {travel.hasReflection ? (
-                    <Link href={`/reflection/${travel.id}`} className="flex-1">
+                  {travel.reflectionGenerationStatus === 'processing' ? (
+                    <Button variant="secondary" fullWidth disabled>
+                      <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
+                      {STATUS_LABELS.REFLECTION_PROCESSING}
+                    </Button>
+                  ) : travel.hasReflection ? (
+                    <Link href={`/reflection/${travel.id}/view`} className="flex-1">
                       <Button variant="primary" fullWidth>
                         {BUTTON_LABELS.VIEW_REFLECTION}
                       </Button>

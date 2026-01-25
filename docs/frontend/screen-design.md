@@ -41,7 +41,6 @@
   - 旅行タイトル入力
   - 旅行先（目的地）入力
   - 観光スポット選択・追加
-  - 地図上でのスポット選択
   - 旅行ガイド生成トリガー
 - **コンポーネント**:
   - `app/travel/new/page.tsx`
@@ -53,18 +52,15 @@
 - **主要機能**:
   - 旅行概要の表示
   - 歴史年表（Timeline）の表示
-  - 歴史的コンテキスト付き地図
   - 各スポットの詳細情報
     - 歴史的背景
     - 見どころ
     - チェックポイント
-  - 印刷・PDF出力機能
   - 旅行完了マーク機能
 - **コンポーネント**:
   - `app/travel/[id]/page.tsx`
   - `components/display/TravelGuide.tsx`
   - `components/display/Timeline.tsx`
-  - `components/display/HistoricalMap.tsx`
 
 ### 3. 旅行後フェーズの画面
 
@@ -109,7 +105,6 @@
 - **アクセス制御**: 振り返り作成済みの旅行のみアクセス可能
 - **主要機能**:
   - 生成された振り返りパンフレットの表示
-  - 印刷・PDF出力機能
   - 編集機能なし（閲覧専用）
 - **コンポーネント**:
   - `app/reflection/[id]/view/page.tsx`
@@ -170,8 +165,7 @@ frontend/src/
 │   │   └── ImageUploader.tsx
 │   ├── display/                 # 表示関連
 │   │   ├── TravelGuide.tsx
-│   │   ├── Timeline.tsx
-│   │   └── HistoricalMap.tsx
+│   │   └── Timeline.tsx
 │   └── reflection/              # 振り返り関連
 │       ├── ReflectionList.tsx
 │       ├── SpotReflectionForm.tsx
@@ -199,7 +193,7 @@ frontend/src/
 2. 旅行一覧画面で既存旅行を確認または新規作成を選択
 3. 新規旅行作成画面で旅行先と観光スポットを入力
 4. AI処理によるガイド生成（ローディング画面）
-5. 旅行ガイド表示画面で生成されたガイドを確認・印刷
+5. 旅行ガイド表示画面で生成されたガイドを確認
 
 ### 旅行後フェーズ
 1. 振り返り一覧画面で完了ステータスの旅行から振り返り対象を選択

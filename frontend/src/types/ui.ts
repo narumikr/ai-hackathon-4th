@@ -275,6 +275,8 @@ export interface TooltipProps {
   children: ReactNode;
   /** Additional CSS classes for tooltip container */
   className?: string;
+  /** Force tooltip visible state */
+  isOpen?: boolean;
 }
 
 /**

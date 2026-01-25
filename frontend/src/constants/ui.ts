@@ -114,6 +114,7 @@ export const PAGE_TITLES = {
   HOME: 'ホーム',
   TRAVEL_LIST: '旅行一覧',
   TRAVEL_NEW: '新規旅行作成',
+  TRAVEL_EDIT: '旅行計画の編集',
   TRAVEL_GUIDE: '旅行ガイド',
   REFLECTION_LIST: '振り返り一覧',
   REFLECTION_CREATE: '振り返り作成',
@@ -137,6 +138,7 @@ export const BUTTON_LABELS = {
   CREATE_NEW_TRAVEL: '新しい旅行を作成',
   VIEW_DETAILS: '詳細を見る',
   EDIT: '編集',
+  UPDATE: '更新',
   DELETE: '削除',
   REMOVE: '削除',
   SAVE: '保存',
@@ -156,7 +158,7 @@ export const BUTTON_LABELS = {
   VIEW_TRAVEL_LIST_ALT: '旅行一覧へ',
   VIEW_REFLECTION: '振り返りを見る',
   CREATE_REFLECTION: '振り返りを作成',
-  COMPLETE_TRAVEL_AND_CREATE_FEEDBACK: '旅行を完了してフィードバックを作成',
+  COMPLETE_TRAVEL_AND_CREATE_REFLECTION: '旅行を完了して振り返りを作成',
 } as const;
 
 /**
@@ -177,9 +179,9 @@ export const MESSAGES = {
  */
 export const STATUS_LABELS = {
   PLANNING: '計画中',
-  TRAVELING: '旅行中',
   COMPLETED: '完了',
   REFLECTION_CREATED: '作成済み',
+  REFLECTION_PROCESSING: '生成中',
   ADDED_SPOT: '追加スポット',
 } as const;
 
@@ -188,7 +190,6 @@ export const STATUS_LABELS = {
  */
 export const STATUS_COLORS = {
   PLANNING: 'bg-info text-white',
-  TRAVELING: 'bg-warning text-white',
   COMPLETED: 'bg-success text-white',
 } as const;
 
@@ -199,7 +200,6 @@ export const FORM_LABELS = {
   TRAVEL_TITLE: '旅行タイトル',
   DESTINATION: '目的地',
   SPOTS: '観光スポット',
-  SELECT_FROM_MAP: '地図から選択',
   PHOTO_UPLOAD: '📸 写真をアップロード',
   PHOTO_COMMENTS: '✍️ 写真ごとの感想',
   OVERALL_IMPRESSION: '📝 旅行全体の感想',
@@ -249,6 +249,14 @@ export const ERROR_MESSAGES = {
 } as const;
 
 /**
+ * Tooltipメッセージ
+ */
+export const TOOLTIP_MESSAGES = {
+  TITLE_REQUIRED: 'タイトルを入力してください',
+  DESTINATION_REQUIRED: '目的地を入力してください',
+} as const;
+
+/**
  * セクション見出し
  */
 export const SECTION_TITLES = {
@@ -256,7 +264,6 @@ export const SECTION_TITLES = {
   HOW_TO_USE: '使い方',
   CTA: 'さあ、歴史を学ぶ旅を始めましょう',
   TIMELINE: '📅 歴史年表',
-  MAP: '🗺️ 観光マップ',
   SPOT_DETAILS: '📍 観光スポット詳細',
   HISTORICAL_CONTEXT: '🏛️ 歴史的背景',
   CHECKPOINTS: '✅ チェックポイント',
@@ -286,10 +293,9 @@ export const HOME_CONTENT = {
         '訪問予定の観光スポットの歴史的背景や見どころを、AIが分かりやすくまとめた旅行ガイドを自動生成。',
     },
     {
-      emoji: '🗺️',
-      title: '歴史年表と地図',
-      description:
-        '時系列で整理された歴史年表と、歴史的コンテキスト付きの地図で、訪問地の理解を深めます。',
+      emoji: '📅',
+      title: '歴史年表',
+      description: '時系列で整理された歴史年表で、訪問地の歴史的背景を深く理解できます。',
     },
     {
       emoji: '📸',
@@ -333,7 +339,7 @@ export const HINTS = {
   REFLECTION: [
     '旅行の写真をアップロードして感想を入力してください',
     'AIが事前学習との比較を含めた振り返りパンフレットを生成します',
-    '生成されたパンフレットは保存・印刷できます',
+    '生成されたパンフレットは保存できます',
   ],
   REFLECTION_CREATE: [
     '写真は訪問した場所が分かるものがおすすめです',
@@ -345,10 +351,7 @@ export const HINTS = {
 /**
  * プレースホルダーメッセージ
  */
-export const PLACEHOLDER_MESSAGES = {
-  MAP_COMING_SOON: '地図機能は今後実装予定',
-  MAP_DESCRIPTION: '各スポットの位置と歴史的コンテキストを表示',
-} as const;
+export const PLACEHOLDER_MESSAGES = {} as const;
 
 /**
  * その他の表示文言
@@ -371,7 +374,6 @@ export const EMOJI_LABELS = {
   HISTORIC_BUILDING: '歴史的建造物',
   USER: 'ユーザー',
   BOOK: '本',
-  MAP: '地図',
   CAMERA: 'カメラ',
   PENCIL: '鉛筆',
   NOTEBOOK: 'ノート',
