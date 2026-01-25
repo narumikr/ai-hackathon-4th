@@ -21,3 +21,9 @@
 ## Codex固有の設定
 
 - git操作はサンドボックス環境外で行うこと
+
+## GitHub issue & PR
+
+- issueやPRはtemplateに従って記述すること。
+- issueやPRのタイトルは簡潔に要点をまとめること。
+- issueやPRのタイトル、本文は日本語で記述すること。
