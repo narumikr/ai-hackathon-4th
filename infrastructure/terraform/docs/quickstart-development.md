@@ -2,8 +2,6 @@
 
 このガイドは、最小限の手順で個人用Cloud Storageバケットを作成する方法を説明します。
 
-詳細な説明が必要な場合は、[setup-development.md](./setup-development.md) を参照してください。
-
 ## 前提条件
 
 - Terraform 1.6.0以上がインストールされていること
@@ -46,22 +44,22 @@ gsutil versioning set on gs://${DEV_PROJECT_ID}-terraform-state
 
 # 4. backend.tfを作成（開発環境用テンプレートをコピー）
 cd infrastructure/terraform
-cp backend-development.tf.example backend.tf
+cp backend-template.tfbackend backend-${DEVELOPER_ID}.tfbackend
 
 # 5. backend.tfを編集（バケット名を置き換え）
-sed -i.bak "s/YOUR-DEV-PROJECT-ID/${DEV_PROJECT_ID}/g" backend.tf
+sed -i.bak "s/YOUR-DEV-PROJECT-ID/${DEV_PROJECT_ID}/g" backend-${DEVELOPER_ID}.tfbackend
 
 # 6. Terraformを初期化
-terraform init
+terraform init -backend-config=backend-${DEVELOPER_ID}.tfbackend
 
-# 7. 個人用ワークスペースを作成
-terraform workspace new dev-${DEVELOPER_ID}
+# 7. 開発用ワークスペースを作成
+terraform workspace new development
 
 # 8. 変数ファイルを作成
-cp environments/development-template.tfvars environments/development-${DEVELOPER_ID}.tfvars
+cp environments/dev-template.tfvars environments/dev-${DEVELOPER_ID}.tfvars
 
 # 8. 変数ファイルを編集（プロジェクトIDと開発者IDを置き換え）
-cat > environments/development-${DEVELOPER_ID}.tfvars <<EOF
+cat > environments/dev-${DEVELOPER_ID}.tfvars <<EOF
 # 開発環境のGCPプロジェクトID
 dev_project_id = "${DEV_PROJECT_ID}"
 
@@ -76,10 +74,10 @@ github_workload_identity_pool = ""
 EOF
 
 # 9. プランを確認
-terraform plan -var-file=environments/development-${DEVELOPER_ID}.tfvars
+terraform plan -var-file=environments/dev-${DEVELOPER_ID}.tfvars
 
 # 10. デプロイを実行
-terraform apply -var-file=environments/development-${DEVELOPER_ID}.tfvars
+terraform apply -var-file=environments/dev-${DEVELOPER_ID}.tfvars
 ```
 
 ### 4. 確認
@@ -89,48 +87,4 @@ terraform apply -var-file=environments/development-${DEVELOPER_ID}.tfvars
 ```bash
 # バケット一覧を表示
 gsutil ls
-
-# 出力例:
-# gs://your-name-travel-agent-dev/
-
-# Terraformの出力を確認
-terraform output
 ```
-
-## 動作確認
-
-テストファイルをアップロードしてみます：
-
-```bash
-# テストファイルを作成
-echo "Hello, Cloud Storage!" > test.txt
-
-# バケットにアップロード
-gsutil cp test.txt gs://${DEVELOPER_ID}-travel-agent-dev/
-
-# アップロードされたファイルを確認
-gsutil ls gs://${DEVELOPER_ID}-travel-agent-dev/
-
-# クリーンアップ
-rm test.txt
-gsutil rm gs://${DEVELOPER_ID}-travel-agent-dev/test.txt
-```
-
-## クリーンアップ
-
-リソースを削除する場合：
-
-```bash
-cd infrastructure/terraform
-terraform workspace select dev-${DEVELOPER_ID}
-terraform destroy -var-file=environments/development-${DEVELOPER_ID}.tfvars
-```
-
-## トラブルシューティング
-
-エラーが発生した場合は、[setup-development.md](./setup-development.md) のトラブルシューティングセクションを参照してください。
-
-## 次のステップ
-
-- バックエンドアプリケーションから個人用バケットを使用する設定を行ってください
-- 詳細な手順は [setup-development.md](./setup-development.md) を参照してください

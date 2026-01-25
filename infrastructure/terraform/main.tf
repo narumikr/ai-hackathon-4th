@@ -13,8 +13,6 @@ locals {
   workspace = terraform.workspace
   
   # 環境ごとの設定
-  # 開発環境では、ワークスペース名が "development" 以外の場合もサポート
-  # 例: "development", "dev-alice", "dev-bob" など
   is_production = local.workspace == "production"
   is_development = !local.is_production
   
@@ -78,73 +76,3 @@ module "cloud_storage" {
   domain       = var.production_domain
   labels       = local.common_labels
 }
-
-# Artifact Registryモジュール（本番環境のみ）
-# - Dockerイメージレジストリ
-# module "artifact_registry" {
-#   source = "./modules/artifact-registry"
-#   count  = local.workspace == "production" ? 1 : 0
-#   
-#   project_id = local.current_env.project_id
-#   region     = local.current_env.region
-#   labels     = local.common_labels
-# }
-
-# Secret Managerモジュール（本番環境のみ）
-# - データベースパスワード管理
-# module "secret_manager" {
-#   source = "./modules/secret-manager"
-#   count  = local.workspace == "production" ? 1 : 0
-#   
-#   project_id  = local.current_env.project_id
-#   environment = local.workspace
-# }
-
-# Cloud SQLモジュール（本番環境のみ）
-# - PostgreSQL 16データベース
-# module "cloud_sql" {
-#   source = "./modules/cloud-sql"
-#   count  = local.workspace == "production" ? 1 : 0
-#   
-#   project_id    = local.current_env.project_id
-#   region        = local.current_env.region
-#   environment   = local.workspace
-#   db_password   = local.workspace == "production" ? module.secret_manager[0].db_password : ""
-#   labels        = local.common_labels
-# }
-
-# IAMモジュール（本番環境のみ）
-# - サービスアカウントと権限管理
-# module "iam" {
-#   source = "./modules/iam"
-#   count  = local.workspace == "production" ? 1 : 0
-#   
-#   project_id                    = local.current_env.project_id
-#   project_number                = data.google_project.current.number
-#   environment                   = local.workspace
-#   storage_bucket_name           = local.workspace == "production" ? module.cloud_storage[0].production_bucket_name : ""
-#   secret_id                     = local.workspace == "production" ? module.secret_manager[0].db_password_secret_id : ""
-#   artifact_registry_repository  = local.workspace == "production" ? module.artifact_registry[0].repository_name : ""
-#   artifact_registry_location    = local.current_env.region
-#   github_repository             = var.github_repository
-#   github_workload_identity_pool = var.github_workload_identity_pool
-# }
-
-# Cloud Runモジュール（本番環境のみ）
-# - バックエンドAPIサービス
-# module "cloud_run" {
-#   source = "./modules/cloud-run"
-#   count  = local.workspace == "production" ? 1 : 0
-#   
-#   project_id              = local.current_env.project_id
-#   region                  = local.current_env.region
-#   environment             = local.workspace
-#   service_account_email   = local.workspace == "production" ? module.iam[0].backend_service_account_email : ""
-#   storage_bucket_name     = local.workspace == "production" ? module.cloud_storage[0].production_bucket_name : ""
-#   database_host           = local.workspace == "production" ? module.cloud_sql[0].public_ip_address : ""
-#   database_name           = local.workspace == "production" ? module.cloud_sql[0].database_name : ""
-#   database_user           = local.workspace == "production" ? module.cloud_sql[0].database_user : ""
-#   secret_id               = local.workspace == "production" ? module.secret_manager[0].db_password_secret_id : ""
-#   artifact_registry_url   = local.workspace == "production" ? module.artifact_registry[0].repository_url : ""
-#   labels                  = local.common_labels
-# }

@@ -1,11 +1,3 @@
-# Development Environment Variables Template
-# 
-# このファイルをコピーして個人用の開発環境設定を作成してください:
-#   cp development-template.tfvars development-YOUR-NAME.tfvars
-# 
-# 注意: development-*.tfvars ファイルは .gitignore に追加されており、
-#       個人の設定情報がGitにコミットされることはありません。
-
 # 開発環境のGCPプロジェクトID
 dev_project_id = "your-dev-project-id"
 

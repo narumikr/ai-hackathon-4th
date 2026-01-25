@@ -169,10 +169,10 @@ infrastructure/
 │   │       └── outputs.tf
 │   │
 │   └── environments/
-│       ├── development-template.tfvars  # 開発環境用テンプレート
-│       ├── development-alice.tfvars     # Alice用開発環境（例）
-│       ├── development-bob.tfvars       # Bob用開発環境（例）
-│       └── production.tfvars            # 本番環境用変数
+│       ├── dev-template.tfvars  # 開発環境用テンプレート
+│       ├── dev-alice.tfvars     # Alice用開発環境（例）
+│       ├── dev-bob.tfvars       # Bob用開発環境（例）
+│       └── production.tfvars    # 本番環境用変数
 │
 ├── docker/                     # ローカル開発用Docker設定
 │   └── docker-compose.yml
@@ -818,7 +818,7 @@ variable "github_workload_identity_pool" {
 ### 開発環境用変数ファイルテンプレート
 
 ```hcl
-# environments/development-template.tfvars
+# environments/dev-template.tfvars
 
 # 開発環境のGCPプロジェクトID
 dev_project_id = "your-dev-project-id"

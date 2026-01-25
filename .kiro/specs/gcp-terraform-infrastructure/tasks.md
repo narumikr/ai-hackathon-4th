@@ -33,7 +33,7 @@
 
 - [x] 1.6 変数値のサンプルファイルを作成する
   - `infrastructure/terraform/terraform.tfvars.example`を作成
-  - `infrastructure/terraform/environments/development-template.tfvars`を作成
+  - `infrastructure/terraform/environments/dev-template.tfvars`を作成
   - `infrastructure/terraform/environments/production.tfvars`を作成（実際の値は含めない）
   - **Validates: Requirements 14.3**
 
