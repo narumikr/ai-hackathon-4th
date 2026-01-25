@@ -61,17 +61,17 @@ data "google_project" "current" {
 # Cloud Storageモジュール
 # - development: 開発者個人用バケット
 # - production: アップロードファイル用バケット
-# module "cloud_storage" {
-#   source = "./modules/cloud-storage"
-#   count  = 1
-#   
-#   environment   = local.workspace
-#   project_id    = local.current_env.project_id
-#   region        = local.current_env.region
-#   developer_id  = var.developer_id
-#   domain        = var.production_domain
-#   labels        = local.common_labels
-# }
+module "cloud_storage" {
+  source = "./modules/cloud-storage"
+  count  = 1
+  
+  environment  = local.workspace
+  project_id   = local.current_env.project_id
+  region       = local.current_env.region
+  developer_id = var.developer_id
+  domain       = var.production_domain
+  labels       = local.common_labels
+}
 
 # Artifact Registryモジュール（本番環境のみ）
 # - Dockerイメージレジストリ
