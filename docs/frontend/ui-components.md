@@ -11,6 +11,28 @@
 - **アクセシビリティ**: WCAG 2.1 AA準拠
 - **TypeScript**: 型安全性の確保
 - **レスポンシブ**: モバイルファースト対応
+- **適切な責任分離**: 汎用コンポーネントと機能固有コンポーネントの明確な分離
+
+## コンポーネント組織化の原則
+
+### 汎用 vs 機能固有の判断基準
+
+**汎用UIコンポーネント（`components/ui/`）として実装すべきもの**:
+- 3つ以上の異なる機能・ページで使用される
+- ビジネスロジックを含まない純粋なUIコンポーネント
+- プロパティによって動作をカスタマイズできる
+- デザインシステムの一部として統一性を保つ必要がある
+
+**機能固有コンポーネント（`components/features/`）として実装すべきもの**:
+- 特定の機能・ページでのみ使用される
+- その機能固有のビジネスロジックを含む
+- 特定のデータ構造や状態管理に依存する
+- 汎用コンポーネントを組み合わせて構築される複合コンポーネント
+
+### 実装時の注意点
+- 機能固有コンポーネントは汎用UIコンポーネントを積極的に活用する
+- 将来的に他の機能でも使用される可能性がある場合は、汎用化を検討する
+- コンポーネントが肥大化した場合は、より小さな汎用コンポーネントに分割できないか検討する
 
 ## コンポーネント一覧
 
@@ -258,7 +280,7 @@
 
 ```
 frontend/src/components/
-├── ui/                          # 基本UIコンポーネント
+├── ui/                          # 基本UIコンポーネント（汎用・再利用可能）
 │   ├── Button.tsx
 │   ├── TextField.tsx
 │   ├── TextArea.tsx
@@ -274,11 +296,49 @@ frontend/src/components/
 │   ├── LoadingSpinner.tsx
 │   ├── Tooltip.tsx
 │   └── index.ts                 # エクスポート用
-└── layout/                      # レイアウトコンポーネント
-    ├── Header.tsx
-    ├── Breadcrumb.tsx
-    └── index.ts                 # エクスポート用
+├── layout/                      # レイアウトコンポーネント
+│   ├── Header.tsx
+│   ├── Breadcrumb.tsx
+│   └── index.ts                 # エクスポート用
+└── features/                    # 機能固有コンポーネント
+    ├── reflection/              # 振り返り機能専用コンポーネント
+    │   ├── ReflectionViewer.tsx
+    │   ├── SpotAdder.tsx
+    │   ├── SpotReflectionForm.tsx
+    │   └── index.ts
+    ├── travel/                  # 旅行計画機能専用コンポーネント
+    │   └── index.ts
+    └── guide/                   # ガイド機能専用コンポーネント
+        └── index.ts
 ```
+
+### コンポーネント配置ルール
+
+#### `components/ui/` - 汎用UIコンポーネント
+- **対象**: 複数の機能・ページで再利用される基本的なUIコンポーネント
+- **例**: Button, TextField, Modal, Card など
+- **特徴**: 
+  - ビジネスロジックを含まない
+  - プロパティで動作をカスタマイズ可能
+  - デザインシステムの一部として統一性を保つ
+
+#### `components/layout/` - レイアウトコンポーネント
+- **対象**: サイト全体の構造に関わるコンポーネント
+- **例**: Header, Footer, Sidebar, Breadcrumb など
+
+#### `components/features/` - 機能固有コンポーネント
+- **対象**: 特定の機能・ページでのみ使用されるコンポーネント
+- **例**: ReflectionViewer, SpotAdder, TravelPlanForm など
+- **特徴**:
+  - 特定のビジネスロジックを含む
+  - その機能でのみ使用される
+  - 汎用UIコンポーネントを組み合わせて構築
+
+#### 移行が必要なコンポーネント
+現在 `components/reflection/` に配置されている以下のコンポーネントは `components/features/reflection/` に移動する必要があります：
+- `ReflectionViewer.tsx` - 振り返り表示専用コンポーネント
+- `SpotAdder.tsx` - スポット追加専用コンポーネント  
+- `SpotReflectionForm.tsx` - スポット振り返りフォーム専用コンポーネント
 
 ## 型定義
 

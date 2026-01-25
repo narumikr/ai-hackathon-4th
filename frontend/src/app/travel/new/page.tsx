@@ -1,5 +1,6 @@
+'use client';
 import { Container } from '@/components/layout';
-import { Button, TextField } from '@/components/ui';
+import { Button, Emoji, TextField, Tooltip } from '@/components/ui';
 import {
   BUTTON_LABELS,
   FORM_LABELS,
@@ -9,10 +10,67 @@ import {
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   PLACEHOLDERS,
-  PLACEHOLDER_MESSAGES,
+  TOOLTIP_MESSAGES,
 } from '@/constants';
+import { useRouter } from 'next/navigation';
+import { useId, useState } from 'react';
 
 export default function TravelNewPage() {
+  const router = useRouter();
+  const componentId = useId();
+  const [title, setTitle] = useState('');
+  const [destination, setDestination] = useState('');
+  const [spots, setSpots] = useState([
+    { id: `${componentId}-spot-0`, name: '' },
+    { id: `${componentId}-spot-1`, name: '' },
+    { id: `${componentId}-spot-2`, name: '' },
+  ]);
+  const [spotIdCounter, setSpotIdCounter] = useState(3);
+
+  const handleSpotChange = (id: string, value: string) => {
+    const newSpots = spots.map(spot => (spot.id === id ? { ...spot, name: value } : spot));
+    setSpots(newSpots);
+  };
+
+  const handleAddSpot = () => {
+    const newId = `${componentId}-spot-${spotIdCounter}`;
+    setSpotIdCounter(spotIdCounter + 1);
+    setSpots([...spots, { id: newId, name: '' }]);
+  };
+
+  const handleRemoveSpot = (id: string) => {
+    const newSpots = spots.filter(spot => spot.id !== id);
+    setSpots(newSpots);
+  };
+
+  const [showTitleError, setShowTitleError] = useState(false);
+  const [showDestinationError, setShowDestinationError] = useState(false);
+
+  const handleCancel = () => {
+    router.push('/travel');
+  };
+
+  const handleCreate = () => {
+    let isValid = true;
+
+    if (!title.trim()) {
+      setShowTitleError(true);
+      isValid = false;
+    } else {
+      setShowTitleError(false);
+    }
+
+    if (!destination.trim()) {
+      setShowDestinationError(true);
+      isValid = false;
+    } else {
+      setShowDestinationError(false);
+    }
+
+    if (!isValid) return;
+    alert('作成ボタンが押されました（API未実装）');
+  };
+
   return (
     <div className="py-8">
       <Container variant="standard">
@@ -23,68 +81,94 @@ export default function TravelNewPage() {
           </div>
 
           <div className="rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={e => e.preventDefault()}>
               {/* 旅行タイトル */}
               <div>
-                <TextField
-                  label={FORM_LABELS.TRAVEL_TITLE}
-                  placeholder={PLACEHOLDERS.TRAVEL_TITLE}
-                  fullWidth
-                  required
-                />
+                <Tooltip
+                  content={TOOLTIP_MESSAGES.TITLE_REQUIRED}
+                  isOpen={showTitleError}
+                  position="top"
+                >
+                  <TextField
+                    label={FORM_LABELS.TRAVEL_TITLE}
+                    placeholder={PLACEHOLDERS.TRAVEL_TITLE}
+                    fullWidth
+                    required
+                    value={title}
+                    onChange={value => {
+                      setTitle(value);
+                      if (showTitleError) setShowTitleError(false);
+                    }}
+                  />
+                </Tooltip>
               </div>
 
               {/* 目的地 */}
               <div>
-                <TextField
-                  label={FORM_LABELS.DESTINATION}
-                  placeholder={PLACEHOLDERS.DESTINATION}
-                  helpText={HELP_TEXTS.DESTINATION}
-                  fullWidth
-                  required
-                />
+                <Tooltip
+                  content={TOOLTIP_MESSAGES.DESTINATION_REQUIRED}
+                  isOpen={showDestinationError}
+                  position="top"
+                >
+                  <TextField
+                    label={FORM_LABELS.DESTINATION}
+                    placeholder={PLACEHOLDERS.DESTINATION}
+                    helpText={HELP_TEXTS.DESTINATION}
+                    fullWidth
+                    required
+                    value={destination}
+                    onChange={value => {
+                      setDestination(value);
+                      if (showDestinationError) setShowDestinationError(false);
+                    }}
+                  />
+                </Tooltip>
               </div>
 
               {/* 観光スポット */}
               <div>
                 <div className="mb-2 block font-medium text-neutral-700 text-sm">
                   {FORM_LABELS.SPOTS}
-                  <span className="ml-1 text-danger">*</span>
                 </div>
                 <div className="space-y-3">
-                  <TextField placeholder={PLACEHOLDERS.SPOT_1} fullWidth />
-                  <TextField placeholder={PLACEHOLDERS.SPOT_2} fullWidth />
-                  <TextField placeholder={PLACEHOLDERS.SPOT_3} fullWidth />
+                  {spots.map(spot => (
+                    <div key={spot.id} className="flex gap-2">
+                      <div className="flex-1">
+                        <TextField
+                          placeholder={PLACEHOLDERS.SPOT_1}
+                          fullWidth
+                          value={spot.name}
+                          onChange={value => handleSpotChange(spot.id, value)}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleRemoveSpot(spot.id)}
+                        disabled={spots.length <= 1}
+                        title="Remove spot"
+                        type="button"
+                      >
+                        <Emoji symbol="🗑️" label="Delete" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
                 <p className="mt-2 text-neutral-500 text-sm">{HELP_TEXTS.SPOTS}</p>
               </div>
 
               {/* スポット追加ボタン */}
               <div>
-                <Button variant="ghost" fullWidth>
+                <Button variant="ghost" fullWidth type="button" onClick={handleAddSpot}>
                   {BUTTON_LABELS.ADD_SPOT}
                 </Button>
               </div>
 
-              {/* 地図選択エリア（プレースホルダー） */}
-              <div>
-                <div className="mb-2 block font-medium text-neutral-700 text-sm">
-                  {FORM_LABELS.SELECT_FROM_MAP}
-                </div>
-                <div className="flex h-64 items-center justify-center rounded-lg border-2 border-neutral-300 border-dashed bg-neutral-100">
-                  <div className="text-center">
-                    <div className="mb-2 text-4xl">🗺️</div>
-                    <p className="text-neutral-500">{PLACEHOLDER_MESSAGES.MAP_COMING_SOON}</p>
-                  </div>
-                </div>
-              </div>
-
               {/* アクションボタン */}
               <div className="flex gap-4 pt-4">
-                <Button variant="ghost" className="flex-1">
+                <Button variant="ghost" className="flex-1" onClick={handleCancel} type="button">
                   {BUTTON_LABELS.CANCEL}
                 </Button>
-                <Button variant="primary" className="flex-1">
+                <Button variant="primary" className="flex-1" onClick={handleCreate} type="button">
                   {BUTTON_LABELS.GENERATE_GUIDE}
                 </Button>
               </div>

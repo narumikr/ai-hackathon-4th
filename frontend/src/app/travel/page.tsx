@@ -20,8 +20,6 @@ export default function TravelListPage() {
     switch (status) {
       case 'planning':
         return STATUS_LABELS.PLANNING;
-      case 'traveling':
-        return STATUS_LABELS.TRAVELING;
       case 'completed':
         return STATUS_LABELS.COMPLETED;
     }
@@ -31,8 +29,6 @@ export default function TravelListPage() {
     switch (status) {
       case 'planning':
         return STATUS_COLORS.PLANNING;
-      case 'traveling':
-        return STATUS_COLORS.TRAVELING;
       case 'completed':
         return STATUS_COLORS.COMPLETED;
     }
@@ -54,7 +50,7 @@ export default function TravelListPage() {
         {!hasTravels ? (
           <div className="py-16 text-center">
             <div className="mb-4 text-6xl">
-              <Emoji symbol="🗺️" label={EMOJI_LABELS.MAP} />
+              <Emoji symbol="📚" label={EMOJI_LABELS.BOOK} />
             </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_TRAVELS}</p>
             <Link href="/travel/new">
@@ -96,7 +92,11 @@ export default function TravelListPage() {
                       {BUTTON_LABELS.VIEW_DETAILS}
                     </Button>
                   </Link>
-                  <Button variant="ghost">{BUTTON_LABELS.EDIT}</Button>
+                  {travel.status !== 'completed' && (
+                    <Link href={`/travel/${travel.id}/edit`}>
+                      <Button variant="ghost">{BUTTON_LABELS.EDIT}</Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}
