@@ -58,7 +58,7 @@ terraform workspace new development
 # 8. 変数ファイルを作成
 cp environments/dev-template.tfvars environments/dev-${DEVELOPER_ID}.tfvars
 
-# 8. 変数ファイルを編集（プロジェクトIDと開発者IDを置き換え）
+# 9. 変数ファイルを編集（プロジェクトIDと開発者IDを置き換え）
 cat > environments/dev-${DEVELOPER_ID}.tfvars <<EOF
 # 開発環境のGCPプロジェクトID
 dev_project_id = "${DEV_PROJECT_ID}"
@@ -73,10 +73,10 @@ github_repository             = ""
 github_workload_identity_pool = ""
 EOF
 
-# 9. プランを確認
+# 10. プランを確認
 terraform plan -var-file=environments/dev-${DEVELOPER_ID}.tfvars
 
-# 10. デプロイを実行
+# 11. デプロイを実行
 terraform apply -var-file=environments/dev-${DEVELOPER_ID}.tfvars
 ```
 
