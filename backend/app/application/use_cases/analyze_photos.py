@@ -1,7 +1,5 @@
 """写真分析ユースケース"""
 
-import json
-
 from app.application.dto.reflection_dto import ReflectionDTO
 from app.application.ports.ai_service import IAIService
 from app.application.use_cases.travel_plan_helpers import validate_required_str
@@ -86,16 +84,21 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
     return normalized
 
 
-def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
+_IMAGE_ANALYSIS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "detectedSpots": {"type": "array", "items": {"type": "string"}},
+        "historicalElements": {"type": "array", "items": {"type": "string"}},
+        "landmarks": {"type": "array", "items": {"type": "string"}},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    },
+    "required": ["detectedSpots", "historicalElements", "landmarks", "confidence"],
+    "additionalProperties": False,
+}
+
+
+def _parse_image_analysis_data(data: object, *, index: int) -> ImageAnalysis:
     """AIの画像分析レスポンスをパースする"""
-    if not response or not response.strip():
-        raise ValueError(f"photos[{index}].analysis response must be a non-empty string.")
-
-    try:
-        data = json.loads(response)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"photos[{index}].analysis response must be valid JSON.") from exc
-
     if not isinstance(data, dict):
         raise ValueError(f"photos[{index}].analysis response must be a JSON object.")
 
@@ -239,16 +242,17 @@ class AnalyzePhotosUseCase:
                 spot.name,
                 photo.get("userDescription"),
             )
-            analysis_text = await self._ai_service.analyze_image(
+            analysis_data = await self._ai_service.analyze_image_structured(
                 prompt=prompt,
                 image_uri=photo["url"],
+                response_schema=_IMAGE_ANALYSIS_SCHEMA,
                 system_instruction=(
-                    "JSONのみを返してください。"
+                    "レスポンススキーマに一致するJSONのみを返してください。"
                     "キー: detectedSpots, historicalElements, landmarks, confidence"
                 ),
                 temperature=0.0,
             )
-            analysis = _parse_image_analysis(analysis_text, index=index)
+            analysis = _parse_image_analysis_data(analysis_data, index=index)
 
             new_photos.append(
                 Photo(

@@ -151,6 +151,7 @@ class GeminiClient:
         tools: list[str] | None = None,
         temperature: float = 0.0,
         max_output_tokens: int = 8192,
+        images: list[str] | None = None,
         timeout: int = 60,
         max_retries: int = 3,
     ) -> dict[str, Any]:
@@ -163,6 +164,7 @@ class GeminiClient:
             tools: 使用するツールのリスト（構造化出力では未対応）
             temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨）
             max_output_tokens: 最大出力トークン数
+            images: 画像URIのリスト（オプション）
             timeout: タイムアウト秒数
             max_retries: 最大リトライ回数
 
@@ -186,13 +188,15 @@ class GeminiClient:
             response_json_schema=response_schema,
         )
 
+        contents = self._prepare_contents(prompt, images)
+
         # リトライ付きで生成を実行
         for attempt in range(max_retries):
             try:
                 response = await asyncio.wait_for(
                     self._client.models.generate_content(
                         model=self.model_name,
-                        contents=prompt,
+                        contents=contents,  # type: ignore[arg-type]
                         config=generation_config,
                     ),
                     timeout=timeout,
