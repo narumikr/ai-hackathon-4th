@@ -109,6 +109,11 @@ async def test_generate_reflection_pamphlet_use_case_updates_status_succeeded(
     assert plan is not None
     assert plan.reflection_generation_status == GenerationStatus.SUCCEEDED
 
+    saved_reflection = reflection_repository.find_by_plan_id(sample_travel_plan.id)
+    assert saved_reflection is not None
+    assert saved_reflection.pamphlet is not None
+    assert saved_reflection.pamphlet.travel_summary == dto.travel_summary
+
 
 @pytest.mark.asyncio
 async def test_generate_reflection_pamphlet_use_case_sets_failed_status_on_structured_error(

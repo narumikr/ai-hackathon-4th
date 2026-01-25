@@ -336,6 +336,7 @@ class GenerateReflectionPamphletUseCase:
 
             if user_notes is not None:
                 reflection.update_notes(user_notes)
+            reflection.update_pamphlet(pamphlet)
             saved_reflection = self._reflection_repository.save(reflection)
         except Exception:
             travel_plan.update_generation_statuses(reflection_status=GenerationStatus.FAILED)
