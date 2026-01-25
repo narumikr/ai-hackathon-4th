@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     if settings.google_application_credentials:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.google_application_credentials
-        print(f"Set GOOGLE_APPLICATION_CREDENTIALS: {settings.google_application_credentials}")
+        print("Set GOOGLE_APPLICATION_CREDENTIALS.")
 
     yield
     # 終了時の処理

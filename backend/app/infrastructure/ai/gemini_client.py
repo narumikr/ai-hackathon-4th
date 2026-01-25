@@ -4,19 +4,9 @@ import asyncio
 import json
 from typing import Any
 
-import vertexai
+from google import genai
 from google.api_core import exceptions as google_exceptions
-from vertexai.generative_models import (
-    GenerationConfig,
-    GenerativeModel,
-    Part,
-    Tool,
-)
-
-try:
-    from google.cloud.aiplatform_v1beta1 import Tool as GapicTool
-except ImportError:
-    GapicTool = None  # type: ignore[assignment]
+from google.genai import types
 
 from app.infrastructure.ai.exceptions import (
     AIServiceConnectionError,
@@ -28,8 +18,7 @@ from app.infrastructure.ai.exceptions import (
 class GeminiClient:
     """Vertex AI Gemini APIクライアント
 
-    テキスト生成、画像分析、
-    Function Calling、構造化出力などの機能を提供する
+    テキスト生成、画像分析、構造化出力などの機能を提供する
     """
 
     def __init__(
@@ -49,8 +38,13 @@ class GeminiClient:
         self.location = location
         self.model_name = model_name
 
-        # Vertex AIの初期化
-        vertexai.init(project=project_id, location=location)
+        # Vertex AI用のGoogle Gen AI SDKクライアント
+        self._client = genai.Client(
+            vertexai=True,
+            project=project_id,
+            location=location,
+            http_options=types.HttpOptions(api_version="v1"),
+        ).aio
 
     async def generate_content(
         self,
@@ -84,19 +78,15 @@ class GeminiClient:
             AIServiceQuotaExceededError: クォータ超過エラー
             AIServiceInvalidRequestError: 不正リクエストエラー
         """
-        # モデルの初期化
-        model = GenerativeModel(
-            model_name=self.model_name,
-            system_instruction=system_instruction,
-        )
-
         # ツールの設定
         model_tools = self._prepare_tools(tools) if tools else None
 
-        # GenerationConfigの作成
-        generation_config = GenerationConfig(
+        # GenerateContentConfigの作成
+        generation_config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
             temperature=temperature,
             max_output_tokens=max_output_tokens,
+            tools=model_tools,
         )
 
         # コンテンツの準備
@@ -106,10 +96,10 @@ class GeminiClient:
         for attempt in range(max_retries):
             try:
                 response = await asyncio.wait_for(
-                    model.generate_content_async(
+                    self._client.models.generate_content(
+                        model=self.model_name,
                         contents=contents,  # type: ignore[arg-type]
-                        tools=model_tools,
-                        generation_config=generation_config,
+                        config=generation_config,
                     ),
                     timeout=timeout,
                 )
@@ -170,7 +160,7 @@ class GeminiClient:
             prompt: 生成プロンプト
             response_schema: レスポンスのJSONスキーマ
             system_instruction: システム命令（オプション）
-            tools: 使用するツールのリスト（例: ["google_search"]）
+            tools: 使用するツールのリスト（構造化出力では未対応）
             temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨）
             max_output_tokens: 最大出力トークン数
             timeout: タイムアウト秒数
@@ -184,31 +174,26 @@ class GeminiClient:
             AIServiceQuotaExceededError: クォータ超過エラー
             AIServiceInvalidRequestError: 不正リクエストエラー
         """
-        # モデルの初期化
-        model = GenerativeModel(
-            model_name=self.model_name,
+        if tools:
+            raise AIServiceInvalidRequestError("Tools are not supported for structured output.")
+
+        # GenerateContentConfigの作成（JSON出力モード）
+        generation_config = types.GenerateContentConfig(
             system_instruction=system_instruction,
-        )
-
-        # ツールの設定
-        model_tools = self._prepare_tools(tools) if tools else None
-
-        # GenerationConfigの作成（JSON出力モード）
-        generation_config = GenerationConfig(
             temperature=temperature,
             max_output_tokens=max_output_tokens,
             response_mime_type="application/json",
-            response_schema=response_schema,
+            response_json_schema=response_schema,
         )
 
         # リトライ付きで生成を実行
         for attempt in range(max_retries):
             try:
                 response = await asyncio.wait_for(
-                    model.generate_content_async(
+                    self._client.models.generate_content(
+                        model=self.model_name,
                         contents=prompt,
-                        tools=model_tools,
-                        generation_config=generation_config,
+                        config=generation_config,
                     ),
                     timeout=timeout,
                 )
@@ -249,31 +234,28 @@ class GeminiClient:
 
         raise AIServiceConnectionError("Max retries exceeded")
 
-    def _prepare_tools(self, tool_names: list[str]) -> list[Tool]:
+    def _prepare_tools(self, tool_names: list[str]) -> list[types.Tool]:
         """ツールを準備する
 
         Args:
             tool_names: ツール名のリスト
 
         Returns:
-            list[Tool]: ツールオブジェクトのリスト
+            list[types.Tool]: ツールオブジェクトのリスト
         """
         tools = []
         for tool_name in tool_names:
             if tool_name == "google_search":
-                # Google Search統合
-                if GapicTool is None:
-                    raise AIServiceInvalidRequestError(
-                        "Google Search tool is not available. Please check google-cloud-aiplatform SDK version."
-                    )
-                tools.append(
-                    Tool._from_gapic(raw_tool=GapicTool(google_search=GapicTool.GoogleSearch()))
-                )
+                tools.append(types.Tool(google_search=types.GoogleSearch()))
                 continue
             raise AIServiceInvalidRequestError(f"Unsupported tool name: {tool_name}")
         return tools
 
-    def _prepare_contents(self, prompt: str, images: list[str] | None = None) -> list[Part] | str:
+    def _prepare_contents(
+        self,
+        prompt: str,
+        images: list[str] | None = None,
+    ) -> list[types.Part] | str:
         """コンテンツを準備する
 
         Args:
@@ -281,7 +263,7 @@ class GeminiClient:
             images: 画像URIのリスト（オプション）
 
         Returns:
-            list[Part] | str: コンテンツ（画像がある場合はPartのリスト、ない場合は文字列）
+            list[types.Part] | str: コンテンツ（画像がある場合はPartのリスト、ない場合は文字列）
         """
         if not images:
             return prompt
@@ -289,33 +271,16 @@ class GeminiClient:
         # 画像がある場合はPartのリストとして構築
         parts = []
         for image_uri in images:
-            parts.append(Part.from_uri(image_uri, mime_type="image/jpeg"))
-        parts.append(Part.from_text(prompt))
+            parts.append(types.Part.from_uri(file_uri=image_uri, mime_type="image/jpeg"))
+        parts.append(types.Part.from_text(text=prompt))
         return parts
 
     def _extract_text(self, response: Any) -> str:
-        """レスポンスからテキストを取り出す。
-
-        Vertex AIのSDKは複数partの.text取得に失敗するため、
-        partを明示的に連結する。
-        """
-        candidates = getattr(response, "candidates", None)
-        if not candidates:
-            raise AIServiceInvalidRequestError("Empty response candidates.")
-
-        candidate = candidates[0]
-        content = getattr(candidate, "content", None)
-        parts = getattr(content, "parts", None)
-        if not parts:
-            raise AIServiceInvalidRequestError("Empty response content parts.")
-
-        texts: list[str] = []
-        for part in parts:
-            text = getattr(part, "text", None)
-            if text is None:
-                raise AIServiceInvalidRequestError("Non-text part in response content.")
-            texts.append(text)
-        return "".join(texts)
+        """レスポンスからテキストを取り出す。"""
+        text = getattr(response, "text", None)
+        if text is None:
+            raise AIServiceInvalidRequestError("Empty response text.")
+        return text
 
     async def _exponential_backoff(self, attempt: int) -> None:
         """指数バックオフを実行する
