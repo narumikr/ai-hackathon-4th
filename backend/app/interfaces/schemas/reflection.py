@@ -117,7 +117,7 @@ class ReflectionResponse(BaseModel):
 class SpotReflectionResponse(BaseModel):
     """スポット振り返りレスポンス"""
 
-    spot_name: str = Field(..., alias="spotName")
+    spot_name: str = Field(..., alias="spotName", title="SpotName")
     reflection: str
 
     model_config = {"populate_by_name": True}
@@ -126,8 +126,16 @@ class SpotReflectionResponse(BaseModel):
 class ReflectionPamphletResponse(BaseModel):
     """振り返りパンフレットレスポンス"""
 
-    travel_summary: str = Field(..., alias="travelSummary")
-    spot_reflections: list[SpotReflectionResponse] = Field(..., alias="spotReflections")
-    next_trip_suggestions: list[str] = Field(..., alias="nextTripSuggestions")
+    travel_summary: str = Field(..., alias="travelSummary", title="TravelSummary")
+    spot_reflections: list[SpotReflectionResponse] = Field(
+        ...,
+        alias="spotReflections",
+        title="SpotReflections",
+    )
+    next_trip_suggestions: list[str] = Field(
+        ...,
+        alias="nextTripSuggestions",
+        title="NextTripSuggestions",
+    )
 
     model_config = {"populate_by_name": True}

@@ -625,21 +625,21 @@
         "properties": {
           "travelSummary": {
             "type": "string",
-            "title": "Travelsummary"
+            "title": "TravelSummary"
           },
           "spotReflections": {
             "items": {
               "$ref": "#/components/schemas/SpotReflectionResponse"
             },
             "type": "array",
-            "title": "Spotreflections"
+            "title": "SpotReflections"
           },
           "nextTripSuggestions": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Nexttripsuggestions"
+            "title": "NextTripSuggestions"
           }
         },
         "type": "object",
@@ -794,7 +794,7 @@
         "properties": {
           "spotName": {
             "type": "string",
-            "title": "Spotname"
+            "title": "SpotName"
           },
           "reflection": {
             "type": "string",
