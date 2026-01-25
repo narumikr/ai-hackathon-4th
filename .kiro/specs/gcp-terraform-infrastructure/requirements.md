@@ -47,7 +47,7 @@
 3. THE Development_Storage_Bucket SHALL enable versioning for data protection
 4. THE Development_Storage_Bucket SHALL configure lifecycle rules to automatically delete old objects after 30 days
 5. THE Development_Storage_Bucket SHALL set uniform bucket-level access for simplified permission management
-6. WHEN the bucket is destroyed, THE Terraform_Configuration SHALL prevent accidental deletion by requiring explicit confirmation
+6. Development_Environmentでは削除の容易さを優先し、明示的確認は不要（force_destroyを許可）とする
 
 ### 要件3: 本番環境のCloud Run構成（バックエンド）
 

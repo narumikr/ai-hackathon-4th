@@ -10,29 +10,37 @@
 # ワークスペース管理
 locals {
   # 現在のワークスペース名を取得
-  workspace = terraform.workspace
-  
+  workspace          = terraform.workspace
+  allowed_workspaces = ["development", "production"]
+  is_workspace_valid = contains(local.allowed_workspaces, local.workspace)
+  _workspace_guard   = local.is_workspace_valid ? true : error("Unsupported workspace: ${local.workspace}. Use development or production.")
+
   # 環境ごとの設定
-  is_production = local.workspace == "production"
-  is_development = !local.is_production
-  
+  is_production  = local.workspace == "production"
+  is_development = local.workspace == "development"
+
+  _dev_project_id_guard    = local.is_development && var.dev_project_id == "" ? error("dev_project_id is required in development workspace.") : true
+  _prod_project_id_guard   = local.is_production && var.prod_project_id == "" ? error("prod_project_id is required in production workspace.") : true
+  _developer_id_guard      = local.is_development && (var.developer_id == "" || !can(regex("^[a-z0-9-]+$", var.developer_id))) ? error("developer_id must be non-empty and match ^[a-z0-9-]+$ in development workspace.") : true
+  _production_domain_guard = local.is_production && var.production_domain == "" ? error("production_domain is required in production workspace.") : true
+
   env_config = {
     development = {
-      project_id = var.dev_project_id != "" ? var.dev_project_id : "PLEASE-SET-DEV-PROJECT-ID"
+      project_id = var.dev_project_id
       region     = var.region
       zone       = var.zone
     }
     production = {
-      project_id = var.prod_project_id != "" ? var.prod_project_id : "PLEASE-SET-PROD-PROJECT-ID"
+      project_id = var.prod_project_id
       region     = var.region
       zone       = var.zone
     }
   }
-  
+
   # 現在のワークスペースの設定を取得
-  # production以外は全てdevelopment設定を使用
+  # workspaceはdevelopment/productionのみ許可される
   current_env = local.is_production ? local.env_config["production"] : local.env_config["development"]
-  
+
   # 共通ラベル
   common_labels = {
     environment = local.workspace
@@ -68,7 +76,7 @@ data "google_project" "current" {
 module "cloud_storage" {
   source = "./modules/cloud-storage"
   count  = 1
-  
+
   environment  = local.is_production ? "production" : "development"
   project_id   = local.current_env.project_id
   region       = local.current_env.region
