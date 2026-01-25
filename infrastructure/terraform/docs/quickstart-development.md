@@ -44,17 +44,20 @@ gcloud services enable storage.googleapis.com
 gsutil mb -p ${DEV_PROJECT_ID} -l asia-northeast1 gs://${DEV_PROJECT_ID}-terraform-state
 gsutil versioning set on gs://${DEV_PROJECT_ID}-terraform-state
 
-# 4. backend.tfを編集（バケット名を置き換え）
+# 4. backend.tfを作成（開発環境用テンプレートをコピー）
 cd infrastructure/terraform
-sed -i.bak "s/YOUR-PROD-PROJECT-ID/${DEV_PROJECT_ID}/g" backend.tf
+cp backend-development.tf.example backend.tf
 
-# 5. Terraformを初期化
+# 5. backend.tfを編集（バケット名を置き換え）
+sed -i.bak "s/YOUR-DEV-PROJECT-ID/${DEV_PROJECT_ID}/g" backend.tf
+
+# 6. Terraformを初期化
 terraform init
 
-# 6. developmentワークスペースを作成
+# 7. developmentワークスペースを作成
 terraform workspace new development
 
-# 7. 変数ファイルを作成
+# 8. 変数ファイルを作成
 cp environments/development-template.tfvars environments/development-${DEVELOPER_ID}.tfvars
 
 # 8. 変数ファイルを編集（プロジェクトIDと開発者IDを置き換え）

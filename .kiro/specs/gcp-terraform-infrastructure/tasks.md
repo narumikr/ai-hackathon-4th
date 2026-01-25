@@ -242,7 +242,7 @@
 
 ### 10.1 開発環境（個人）セットアップドキュメント
 
-- [ ] 10.1.1 開発環境セットアップ手順書を作成する
+- [x] 10.1.1 開発環境セットアップ手順書を作成する
   - `infrastructure/terraform/docs/setup-development.md`を作成
   - 前提条件（Terraform、gcloud CLI）を記載
   - 開発用GCPプロジェクト作成手順を記載
@@ -254,7 +254,7 @@
   - 開発環境デプロイ手順を記載
   - **Validates: Requirements 14.1, 14.2, 14.3, 14.5**
 
-- [ ] 10.1.2 開発環境クイックスタートガイドを作成する
+- [x] 10.1.2 開発環境クイックスタートガイドを作成する
   - `infrastructure/terraform/docs/quickstart-development.md`を作成
   - 最小限の手順で個人用Storageを作成できるガイド
   - コマンドのコピー&ペーストで実行できる形式

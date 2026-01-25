@@ -96,23 +96,39 @@ gsutil versioning set on gs://YOUR-DEV-PROJECT-ID-terraform-state
 
 ## Terraformの初期化
 
-### 1. backend.tfを編集
+### 1. backend.tfを作成
+
+開発環境用のバックエンド設定ファイルを作成します。
+
+```bash
+cd infrastructure/terraform
+
+# 開発環境用のテンプレートをコピー
+cp backend-development.tf.example backend.tf
+```
+
+### 2. backend.tfを編集
 
 `infrastructure/terraform/backend.tf` を開き、バケット名を実際のプロジェクトIDに置き換えます。
 
 ```hcl
 terraform {
   backend "gcs" {
-    bucket = "YOUR-DEV-PROJECT-ID-terraform-state"  # ← ここを変更
+    bucket = "YOUR-DEV-PROJECT-ID-terraform-state"  # ← ここを実際のプロジェクトIDに変更
     prefix = "terraform/state"
   }
 }
 ```
 
-### 2. Terraformを初期化
+または、sedコマンドで一括置換：
 
 ```bash
-cd infrastructure/terraform
+sed -i.bak "s/YOUR-DEV-PROJECT-ID/実際のプロジェクトID/g" backend.tf
+```
+
+### 3. Terraformを初期化
+
+```bash
 terraform init
 ```
 
