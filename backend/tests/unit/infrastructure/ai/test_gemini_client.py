@@ -131,6 +131,39 @@ async def test_generate_structured_data_success():
 
 
 @pytest.mark.asyncio
+async def test_generate_structured_data_with_images_success():
+    """画像付きJSON構造化出力の成功ケース
+
+    前提条件: 画像URIとJSONスキーマを指定してSDKが正常なレスポンスを返す
+    検証項目: 画像付きの構造化データが返され、contentsが配列になること
+    """
+    expected_data = {"spot": "清水寺", "confidence": 0.95}
+    mock_response = _build_response_with_text(json.dumps(expected_data))
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "spot": {"type": "string"},
+            "confidence": {"type": "number"},
+        },
+    }
+    result = await gemini_client.generate_content_with_schema(
+        prompt="画像の観光スポットを特定してください",
+        response_schema=schema,
+        images=["gs://bucket/kyoto.jpg"],
+        temperature=0.0,
+    )
+
+    assert result == expected_data
+    mock_async_client.models.generate_content.assert_called_once()
+    contents = mock_async_client.models.generate_content.call_args.kwargs["contents"]
+    assert isinstance(contents, list)
+    assert len(contents) == 2
+
+
+@pytest.mark.asyncio
 async def test_handle_api_error():
     """APIエラーハンドリング
 
