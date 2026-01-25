@@ -54,8 +54,8 @@ sed -i.bak "s/YOUR-DEV-PROJECT-ID/${DEV_PROJECT_ID}/g" backend.tf
 # 6. Terraformを初期化
 terraform init
 
-# 7. developmentワークスペースを作成
-terraform workspace new development
+# 7. 個人用ワークスペースを作成
+terraform workspace new dev-${DEVELOPER_ID}
 
 # 8. 変数ファイルを作成
 cp environments/development-template.tfvars environments/development-${DEVELOPER_ID}.tfvars
@@ -92,6 +92,9 @@ gsutil ls
 
 # 出力例:
 # gs://your-name-travel-agent-dev/
+
+# Terraformの出力を確認
+terraform output
 ```
 
 ## 動作確認
@@ -119,7 +122,7 @@ gsutil rm gs://${DEVELOPER_ID}-travel-agent-dev/test.txt
 
 ```bash
 cd infrastructure/terraform
-terraform workspace select development
+terraform workspace select dev-${DEVELOPER_ID}
 terraform destroy -var-file=environments/development-${DEVELOPER_ID}.tfvars
 ```
 

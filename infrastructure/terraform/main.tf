@@ -13,21 +13,27 @@ locals {
   workspace = terraform.workspace
   
   # 環境ごとの設定
+  # 開発環境では、ワークスペース名が "development" 以外の場合もサポート
+  # 例: "development", "dev-alice", "dev-bob" など
+  is_production = local.workspace == "production"
+  is_development = !local.is_production
+  
   env_config = {
     development = {
-      project_id = var.dev_project_id
+      project_id = var.dev_project_id != "" ? var.dev_project_id : "PLEASE-SET-DEV-PROJECT-ID"
       region     = var.region
       zone       = var.zone
     }
     production = {
-      project_id = var.prod_project_id
+      project_id = var.prod_project_id != "" ? var.prod_project_id : "PLEASE-SET-PROD-PROJECT-ID"
       region     = var.region
       zone       = var.zone
     }
   }
   
   # 現在のワークスペースの設定を取得
-  current_env = local.env_config[local.workspace]
+  # production以外は全てdevelopment設定を使用
+  current_env = local.is_production ? local.env_config["production"] : local.env_config["development"]
   
   # 共通ラベル
   common_labels = {
@@ -65,7 +71,7 @@ module "cloud_storage" {
   source = "./modules/cloud-storage"
   count  = 1
   
-  environment  = local.workspace
+  environment  = local.is_production ? "production" : "development"
   project_id   = local.current_env.project_id
   region       = local.current_env.region
   developer_id = var.developer_id

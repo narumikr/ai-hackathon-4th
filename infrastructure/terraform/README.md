@@ -115,8 +115,8 @@ terraform workspace show
 ### 開発環境
 
 ```bash
-# developmentワークスペースに切り替え
-terraform workspace select development
+# 個人用ワークスペースに切り替え（例: dev-YOUR-NAME）
+terraform workspace select dev-YOUR-NAME
 
 # プランを確認
 terraform plan -var-file=environments/development-YOUR-NAME.tfvars

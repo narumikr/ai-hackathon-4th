@@ -68,7 +68,7 @@
 gcloud auth login
 
 # プロジェクトを設定
-gcloud config set project YOUR-DEV-PROJECT-ID
+gcloud config set project natural-ether-481906-c4
 ```
 
 ## APIの有効化
@@ -104,7 +104,7 @@ gsutil versioning set on gs://YOUR-DEV-PROJECT-ID-terraform-state
 cd infrastructure/terraform
 
 # 開発環境用のテンプレートをコピー
-cp backend-development.tf.example backend.tf
+cp backend-development.tf.example backend-kk.tf
 ```
 
 ### 2. backend.tfを編集
@@ -142,20 +142,25 @@ Terraform has been successfully initialized!
 
 開発環境用のワークスペースを作成します。
 
+**重要**: ワークスペース名は任意の名前を使用できます（例: `dev-alice`, `dev-bob`, `development`など）。`production`以外のワークスペース名は全て開発環境として扱われます。
+
 ```bash
-# developmentワークスペースを作成
-terraform workspace new development
+# 個人用のワークスペースを作成（例: dev-YOUR-NAME）
+terraform workspace new dev-$(whoami)
+
+# または、developmentという名前でも可
+# terraform workspace new development
 
 # ワークスペース一覧を確認
 terraform workspace list
 ```
 
-現在のワークスペースが `development` になっていることを確認してください。
+現在のワークスペースが作成したワークスペース名になっていることを確認してください。
 
 ```bash
 # 現在のワークスペースを確認
 terraform workspace show
-# 出力: development
+# 出力例: dev-alice
 ```
 
 ## 変数ファイルの作成
@@ -166,12 +171,12 @@ terraform workspace show
 
 ```bash
 cd infrastructure/terraform
-cp environments/development-template.tfvars environments/development-$(whoami).tfvars
+cp environments/development-template.tfvars environments/dev-YOUR-NAME.tfvars
 ```
 
 ### 2. 変数ファイルを編集
 
-`environments/development-YOUR-NAME.tfvars` を開き、以下の値を設定します：
+`environments/dev-YOUR-NAME.tfvars` を開き、以下の値を設定します：
 
 ```hcl
 # 開発環境のGCPプロジェクトID

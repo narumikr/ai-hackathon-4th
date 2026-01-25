@@ -1,0 +1,19 @@
+# Terraform State Management - Development Environment
+# 
+# このファイルは、開発環境のTerraformステートファイルを保存するバックエンドを設定します。
+# 
+# セットアップ手順:
+# 1. このファイルを backend.tf にコピー:
+#    cp backend-development.tf.example backend.tf
+# 2. YOUR-DEV-PROJECT-ID を実際の開発プロジェクトIDに置き換える
+# 3. ステート管理用のCloud Storageバケットを作成:
+#    gsutil mb -p YOUR-DEV-PROJECT-ID -l asia-northeast1 gs://YOUR-DEV-PROJECT-ID-terraform-state
+# 4. バージョニングを有効化:
+#    gsutil versioning set on gs://YOUR-DEV-PROJECT-ID-terraform-state
+
+terraform {
+  backend "gcs" {
+    bucket = "natural-ether-481906-c4-terraform-state"
+    prefix = "terraform/state"
+  }
+}
