@@ -84,6 +84,7 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
     return normalized
 
 
+# 画像分析の構造化出力スキーマ（検出スポット/歴史要素/ランドマーク/信頼度）。
 _IMAGE_ANALYSIS_SCHEMA = {
     "type": "object",
     "properties": {

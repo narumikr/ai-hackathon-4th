@@ -61,7 +61,7 @@ class FakeAIService(IAIService):
         system_instruction: str | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
-    ) -> dict[str, Any] | list[Any]:
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
     async def generate_structured_data(
