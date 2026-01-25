@@ -29,3 +29,34 @@ export interface ReflectionFormData {
   spots: ReflectionSpot[];
   overallComment: string;
 }
+
+export interface ImageAnalysisResponse {
+  detectedSpots: string[];
+  historicalElements: string[];
+  landmarks: string[];
+  confidence: number;
+}
+
+export interface ReflectionPhotoResponse {
+  id: string;
+  spotId: string;
+  url: string;
+  analysis: ImageAnalysisResponse;
+  userDescription?: string | null;
+}
+
+export interface ReflectionResponse {
+  id: string;
+  planId: string;
+  userId: string;
+  photos: ReflectionPhotoResponse[];
+  spotNotes: Record<string, string | null>;
+  userNotes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateReflectionRequest {
+  planId: string;
+  userId: string;
+  userNotes?: string | null;
+}
