@@ -1,6 +1,6 @@
 """旅行計画取得ユースケース"""
 
-from app.application.dto.reflection_dto import ReflectionDTO
+from app.application.dto.reflection_dto import ReflectionDTO, ReflectionPamphletDTO
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.dto.travel_plan_dto import TravelPlanDTO
 from app.application.use_cases.travel_plan_helpers import validate_required_str
@@ -57,15 +57,23 @@ class GetTravelPlanUseCase:
                 guide_data = TravelGuideDTO.from_entity(guide).__dict__
 
         reflection_data: dict | None = None
+        pamphlet_data: dict | None = None
         if self._reflection_repository is not None:
             reflection = self._reflection_repository.find_by_plan_id(plan_id)
             if reflection is not None:
                 reflection_data = ReflectionDTO.from_entity(reflection).__dict__
+                if reflection.pamphlet is not None:
+                    pamphlet_data = ReflectionPamphletDTO.from_pamphlet(
+                        reflection.pamphlet,
+                        reflection_id=reflection.id or "",
+                        plan_id=reflection.plan_id,
+                    ).__dict__
 
         return TravelPlanDTO.from_entity(
             travel_plan,
             guide=guide_data,
             reflection=reflection_data,
+            pamphlet=pamphlet_data,
         )
 
 

@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.infrastructure.persistence.database import get_db
-from app.infrastructure.persistence.models import TravelPlanModel
+from app.infrastructure.persistence.models import ReflectionModel, TravelPlanModel
 from main import app
 
 
@@ -166,6 +166,58 @@ def test_get_travel_plan(
     assert data["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
     assert data["guide"] is None
     assert data["reflection"] is None
+    assert data["pamphlet"] is None
+
+
+def test_get_travel_plan_returns_pamphlet(
+    api_client: TestClient,
+    db_session: Session,
+    sample_travel_plan: TravelPlanModel,
+):
+    """前提条件: パンフレット付きの振り返りが存在する
+    実行: GET /api/v1/travel-plans/{id}
+    検証: pamphletがレスポンスに含まれる
+    """
+    reflection = ReflectionModel(
+        plan_id=sample_travel_plan.id,
+        user_id=sample_travel_plan.user_id,
+        photos=[
+            {
+                "id": "photo_010",
+                "spotId": "spot-001",
+                "url": "https://example.com/photos/kiyomizu.jpg",
+                "analysis": {
+                    "detectedSpots": ["清水寺"],
+                    "historicalElements": ["清水の舞台"],
+                    "landmarks": ["清水寺本堂"],
+                    "confidence": 0.9,
+                },
+                "userDescription": "清水寺の舞台が印象的だった",
+            },
+        ],
+        spot_notes={"spot-001": "清水寺の舞台が印象的だった"},
+        user_notes="京都の寺院巡りは刺激的だった",
+        pamphlet={
+            "travel_summary": "京都の寺院巡りを満喫した。",
+            "spot_reflections": [
+                {"spotName": "清水寺", "reflection": "舞台の眺めが印象的だった。"},
+                {"spotName": "金閣寺", "reflection": "金色の輝きが美しかった。"},
+            ],
+            "next_trip_suggestions": ["奈良の寺院巡り"],
+        },
+    )
+    db_session.add(reflection)
+    db_session.commit()
+
+    response = api_client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["pamphlet"] is not None
+    assert data["pamphlet"]["travelSummary"] == "京都の寺院巡りを満喫した。"
+    assert data["pamphlet"]["spotReflections"][0]["spotName"] == "清水寺"
+    assert data["pamphlet"]["spotReflections"][0]["reflection"] == "舞台の眺めが印象的だった。"
+    assert data["pamphlet"]["nextTripSuggestions"] == ["奈良の寺院巡り"]
 
 
 def test_get_travel_plan_not_found(api_client: TestClient):

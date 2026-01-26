@@ -112,3 +112,30 @@ class ReflectionResponse(BaseModel):
     created_at: datetime = Field(..., alias="createdAt")
 
     model_config = {"populate_by_name": True}
+
+
+class SpotReflectionResponse(BaseModel):
+    """スポット振り返りレスポンス"""
+
+    spot_name: str = Field(..., alias="spotName", title="SpotName")
+    reflection: str
+
+    model_config = {"populate_by_name": True}
+
+
+class ReflectionPamphletResponse(BaseModel):
+    """振り返りパンフレットレスポンス"""
+
+    travel_summary: str = Field(..., alias="travelSummary", title="TravelSummary")
+    spot_reflections: list[SpotReflectionResponse] = Field(
+        ...,
+        alias="spotReflections",
+        title="SpotReflections",
+    )
+    next_trip_suggestions: list[str] = Field(
+        ...,
+        alias="nextTripSuggestions",
+        title="NextTripSuggestions",
+    )
+
+    model_config = {"populate_by_name": True}

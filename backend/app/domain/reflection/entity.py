@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from app.domain.reflection.value_objects import ImageAnalysis
+from app.domain.reflection.value_objects import ImageAnalysis, ReflectionPamphlet
 from app.domain.shared.entity import Entity
 
 
@@ -85,6 +85,7 @@ class Reflection(Entity):
         photos: list[Photo],
         user_notes: str | None = None,
         spot_notes: dict[str, str | None] | None = None,
+        pamphlet: ReflectionPamphlet | None = None,
         id: str | None = None,
         created_at: datetime | None = None,
     ):
@@ -96,6 +97,7 @@ class Reflection(Entity):
             photos: 写真リスト
             user_notes: ユーザーメモ
             spot_notes: スポットごとのメモ
+            pamphlet: 振り返りパンフレット
             id: 振り返りID（Noneの場合は新規）
             created_at: 作成日時（Noneの場合は現在時刻）
 
@@ -136,11 +138,15 @@ class Reflection(Entity):
                 raise ValueError("spot_notes value cannot be empty.")
             normalized_notes[spot_id] = note.strip() if isinstance(note, str) else None
 
+        if pamphlet is not None and not isinstance(pamphlet, ReflectionPamphlet):
+            raise ValueError("pamphlet must be a ReflectionPamphlet instance or None.")
+
         self._plan_id = plan_id
         self._user_id = user_id
         self._photos = photos
         self._user_notes = user_notes
         self._spot_notes = normalized_notes
+        self._pamphlet = pamphlet
         self._created_at = created_at or datetime.now(UTC)
 
     @property
@@ -172,6 +178,11 @@ class Reflection(Entity):
     def created_at(self) -> datetime:
         """作成日時"""
         return self._created_at
+
+    @property
+    def pamphlet(self) -> ReflectionPamphlet | None:
+        """振り返りパンフレット"""
+        return self._pamphlet
 
     def add_photo(self, photo: Photo) -> None:
         """写真を追加する
@@ -225,3 +236,16 @@ class Reflection(Entity):
             raise ValueError("spot_note cannot be empty.")
 
         self._spot_notes[spot_id] = note.strip()
+
+    def update_pamphlet(self, pamphlet: ReflectionPamphlet | None) -> None:
+        """パンフレットを更新する
+
+        Args:
+            pamphlet: パンフレット
+
+        Raises:
+            ValueError: パンフレットが不正な場合
+        """
+        if pamphlet is not None and not isinstance(pamphlet, ReflectionPamphlet):
+            raise ValueError("pamphlet must be a ReflectionPamphlet instance or None.")
+        self._pamphlet = pamphlet

@@ -183,6 +183,10 @@ class ReflectionModel(Base):
     # ユーザーメモ
     user_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # パンフレット（JSON型）
+    # 形式: {"travel_summary": str, "spot_reflections": List[{"spotName": str, "reflection": str}], "next_trip_suggestions": List[str]}
+    pamphlet: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
     # タイムスタンプ
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

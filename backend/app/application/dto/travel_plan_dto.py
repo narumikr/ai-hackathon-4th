@@ -23,6 +23,7 @@ class TravelPlanDTO:
     reflection_generation_status: str
     guide: dict | None
     reflection: dict | None
+    pamphlet: dict | None
     created_at: datetime
     updated_at: datetime
 
@@ -32,6 +33,7 @@ class TravelPlanDTO:
         *,
         guide: dict | None = None,
         reflection: dict | None = None,
+        pamphlet: dict | None = None,
     ) -> "TravelPlanDTO":
         """ドメインエンティティからDTOを生成する
 
@@ -60,6 +62,7 @@ class TravelPlanDTO:
             reflection_generation_status=entity.reflection_generation_status.value,
             guide=guide,
             reflection=reflection,
+            pamphlet=pamphlet,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
         )
