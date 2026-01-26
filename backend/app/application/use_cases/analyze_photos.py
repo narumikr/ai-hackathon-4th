@@ -1,5 +1,7 @@
 """写真分析ユースケース"""
 
+import logging
+
 from app.application.dto.reflection_dto import ReflectionDTO
 from app.application.ports.ai_service import IAIService
 from app.application.use_cases.travel_plan_helpers import validate_required_str
@@ -8,6 +10,8 @@ from app.domain.reflection.repository import IReflectionRepository
 from app.domain.reflection.value_objects import ImageAnalysis
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
+
+logger = logging.getLogger(__name__)
 
 
 def _require_str(value: object, field_name: str) -> str:
@@ -204,8 +208,16 @@ class AnalyzePhotosUseCase:
                         temperature=0.0,
                         tools=["google_search"],
                     )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning(
+                        "Image analysis with search tool failed; using initial analysis.",
+                        exc_info=exc,
+                        extra={
+                            "plan_id": plan_id,
+                            "photo_id": photo_id,
+                            "spot_id": spot_id,
+                        },
+                    )
             analysis = _parse_image_analysis(analysis_text, index=index)
 
             new_photos.append(
