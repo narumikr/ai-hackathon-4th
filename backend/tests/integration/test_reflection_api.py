@@ -56,6 +56,23 @@ class StubAIService(IAIService):
             "出典: 清水寺公式サイト https://www.kiyomizudera.or.jp/history/ 。"
         )
 
+    async def analyze_image_structured(
+        self,
+        prompt: str,
+        image_uri: str,
+        response_schema: dict,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict:
+        return {
+            "detectedSpots": ["清水寺"],
+            "historicalElements": ["清水の舞台"],
+            "landmarks": ["清水寺本堂"],
+            "confidence": 0.9,
+        }
+
     async def generate_structured_data(
         self,
         prompt: str,

@@ -82,6 +82,32 @@ class IAIService(ABC):
         pass
 
     @abstractmethod
+    async def analyze_image_structured(
+        self,
+        prompt: str,
+        image_uri: str,
+        response_schema: dict[str, Any],
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict[str, Any]:
+        """画像分析の構造化データを生成する
+
+        Args:
+            prompt: 画像に対する質問・指示
+            image_uri: 画像のURI（GCS URIまたはHTTPS URL）
+            response_schema: レスポンスのJSONスキーマ
+            system_instruction: システム命令（オプション）
+            temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨、Noneの場合は0.0を使用）
+            max_output_tokens: 最大出力トークン数（Noneの場合は実装のデフォルト値を使用）
+
+        Returns:
+            dict[str, Any]: スキーマに従った構造化データ
+        """
+        pass
+
+    @abstractmethod
     async def generate_structured_data(
         self,
         prompt: str,

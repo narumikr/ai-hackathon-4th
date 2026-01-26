@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from typing import Any
 
 from app.application.dto.travel_guide_dto import TravelGuideDTO
@@ -272,9 +273,10 @@ class GenerateTravelGuideUseCase:
                 raise ValueError("historical_info must be a non-empty string.")
 
             guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
+            response_schema = _build_travel_guide_schema(plan_spot_names)
             structured = await self._ai_service.generate_structured_data(
                 prompt=guide_prompt,
-                response_schema=_TRAVEL_GUIDE_SCHEMA,
+                response_schema=response_schema,
                 system_instruction=(
                     "レスポンススキーマに正確に一致するJSONを返してください。"
                     "説明文のフィールドは日本語で記述してください。"
@@ -342,6 +344,22 @@ def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) ->
         "旅行計画:\n"
         f"- 目的地: {travel_plan.destination}\n"
         f"- 観光スポット:\n{spots_text}\n"
+        "注意: spotName/relatedSpots は上記の観光スポット名と完全一致させてください。省略や別名は禁止です。\n"
         "歴史情報:\n"
         f"{historical_info}\n"
     )
+
+
+def _build_travel_guide_schema(spot_names: list[str]) -> dict[str, Any]:
+    """旅行ガイド生成用のスキーマをスポット名で制約する"""
+    schema = copy.deepcopy(_TRAVEL_GUIDE_SCHEMA)
+    timeline_items = schema["properties"]["timeline"]["items"]
+    related_spots = timeline_items["properties"]["relatedSpots"]["items"]
+    related_spots["enum"] = spot_names
+
+    spot_details_items = schema["properties"]["spotDetails"]["items"]
+    spot_details_items["properties"]["spotName"]["enum"] = spot_names
+
+    checkpoints_items = schema["properties"]["checkpoints"]["items"]
+    checkpoints_items["properties"]["spotName"]["enum"] = spot_names
+    return schema

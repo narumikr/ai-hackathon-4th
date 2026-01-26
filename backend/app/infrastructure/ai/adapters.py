@@ -127,6 +127,41 @@ class GeminiAIService(IAIService):
             timeout=self.default_timeout_seconds,
         )
 
+    async def analyze_image_structured(
+        self,
+        prompt: str,
+        image_uri: str,
+        response_schema: dict[str, Any],
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict[str, Any]:
+        """画像分析の構造化データを生成する
+
+        Args:
+            prompt: 画像に対する質問・指示
+            image_uri: 画像のURI（GCS URIまたはHTTPS URL）
+            response_schema: レスポンスのJSONスキーマ
+            system_instruction: システム命令（オプション）
+            temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨、Noneの場合は0.0を使用）
+            max_output_tokens: 最大出力トークン数（Noneの場合は設定値を使用）
+
+        Returns:
+            dict[str, Any]: スキーマに従った構造化データ
+        """
+        return await self.client.generate_content_with_schema(
+            prompt=prompt,
+            response_schema=response_schema,
+            system_instruction=system_instruction,
+            temperature=temperature if temperature is not None else 0.0,
+            max_output_tokens=max_output_tokens
+            if max_output_tokens is not None
+            else self.default_max_output_tokens,
+            images=[image_uri],
+            timeout=self.default_timeout_seconds,
+        )
+
     async def generate_structured_data(
         self,
         prompt: str,
