@@ -52,7 +52,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画一覧を取得",
-        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanResponse]: 旅行計画リスト",
+        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanListResponse]: 旅行計画リスト",
         "operationId": "list_travel_plans_api_v1_travel_plans_get",
         "parameters": [
           {
@@ -941,11 +941,11 @@
           },
           "guideGenerationStatus": {
             "type": "string",
-            "title": "Guidegenerationstatus"
+            "title": "Guide Generation Status"
           },
           "reflectionGenerationStatus": {
             "type": "string",
-            "title": "Reflectiongenerationstatus"
+            "title": "Reflection Generation Status"
           }
         },
         "type": "object",

@@ -126,19 +126,7 @@ def list_travel_plans(
     use_case = ListTravelPlansUseCase(repository)
     try:
         dtos = use_case.execute(user_id=user_id)
-        return [
-            TravelPlanListResponse.model_validate(
-                {
-                    "id": dto.id,
-                    "title": dto.title,
-                    "destination": dto.destination,
-                    "status": dto.status,
-                    "guideGenerationStatus": dto.guide_generation_status,
-                    "reflectionGenerationStatus": dto.reflection_generation_status,
-                }
-            )
-            for dto in dtos
-        ]
+        return [TravelPlanListResponse.from_dto(dto) for dto in dtos]
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
