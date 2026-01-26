@@ -17,6 +17,7 @@ from app.infrastructure.repositories.travel_guide_repository import TravelGuideR
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.interfaces.schemas.travel_plan import (
     CreateTravelPlanRequest,
+    TravelPlanListResponse,
     TravelPlanResponse,
     UpdateTravelPlanRequest,
 )
@@ -106,13 +107,13 @@ def create_travel_plan(
 
 @router.get(
     "",
-    response_model=list[TravelPlanResponse],
+    response_model=list[TravelPlanListResponse],
     summary="旅行計画一覧を取得",
 )
 def list_travel_plans(
     user_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
-) -> list[TravelPlanResponse]:
+) -> list[TravelPlanListResponse]:
     """ユーザーの旅行計画一覧を取得する
 
     Args:
@@ -125,7 +126,19 @@ def list_travel_plans(
     use_case = ListTravelPlansUseCase(repository)
     try:
         dtos = use_case.execute(user_id=user_id)
-        return [TravelPlanResponse(**dto.__dict__) for dto in dtos]
+        return [
+            TravelPlanListResponse.model_validate(
+                {
+                    "id": dto.id,
+                    "title": dto.title,
+                    "destination": dto.destination,
+                    "status": dto.status,
+                    "guideGenerationStatus": dto.guide_generation_status,
+                    "reflectionGenerationStatus": dto.reflection_generation_status,
+                }
+            )
+            for dto in dtos
+        ]
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

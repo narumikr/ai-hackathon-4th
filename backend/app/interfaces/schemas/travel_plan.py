@@ -70,6 +70,19 @@ class UpdateTravelPlanRequest(BaseModel):
         return value
 
 
+class TravelPlanListResponse(BaseModel):
+    """旅行計画一覧レスポンス"""
+
+    id: str
+    title: str
+    destination: str
+    status: str
+    guide_generation_status: str = Field(..., alias="guideGenerationStatus")
+    reflection_generation_status: str = Field(..., alias="reflectionGenerationStatus")
+
+    model_config = {"populate_by_name": True}
+
+
 class TravelPlanResponse(BaseModel):
     """旅行計画レスポンス"""
 

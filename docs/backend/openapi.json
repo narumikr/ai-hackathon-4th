@@ -73,7 +73,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TravelPlanResponse"
+                    "$ref": "#/components/schemas/TravelPlanListResponse"
                   },
                   "title": "Response List Travel Plans Api V1 Travel Plans Get"
                 }
@@ -920,6 +920,45 @@
         ],
         "title": "TravelGuideResponse",
         "description": "旅行ガイドレスポンス"
+      },
+      "TravelPlanListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "destination": {
+            "type": "string",
+            "title": "Destination"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "guideGenerationStatus": {
+            "type": "string",
+            "title": "Guidegenerationstatus"
+          },
+          "reflectionGenerationStatus": {
+            "type": "string",
+            "title": "Reflectiongenerationstatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "destination",
+          "status",
+          "guideGenerationStatus",
+          "reflectionGenerationStatus"
+        ],
+        "title": "TravelPlanListResponse",
+        "description": "旅行計画一覧レスポンス"
       },
       "TravelPlanResponse": {
         "properties": {

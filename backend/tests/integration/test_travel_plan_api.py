@@ -253,7 +253,19 @@ def test_list_travel_plans(
     data = response.json()
     assert isinstance(data, list)
     assert len(data) >= 1
+    expected_keys = {
+        "id",
+        "title",
+        "destination",
+        "status",
+        "guideGenerationStatus",
+        "reflectionGenerationStatus",
+    }
+    assert set(data[0].keys()) == expected_keys
     assert data[0]["id"] == sample_travel_plan.id
+    assert data[0]["title"] == sample_travel_plan.title
+    assert data[0]["destination"] == sample_travel_plan.destination
+    assert data[0]["status"] == sample_travel_plan.status
     assert data[0]["guideGenerationStatus"] == sample_travel_plan.guide_generation_status
     assert data[0]["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
 
