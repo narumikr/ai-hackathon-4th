@@ -54,6 +54,18 @@ class FakeAIService(IAIService):
     ) -> str:
         raise NotImplementedError
 
+    async def analyze_image_structured(
+        self,
+        prompt: str,
+        image_uri: str,
+        response_schema: dict[str, Any],
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict[str, Any]:
+        raise NotImplementedError
+
     async def generate_structured_data(
         self,
         prompt: str,
