@@ -14,6 +14,7 @@ from app.infrastructure.persistence.models import (  # noqa: F401
     ReflectionModel,
     TravelGuideModel,
     TravelPlanModel,
+    TravelPlanSpotModel,
 )
 
 # this is the Alembic Config object, which provides
