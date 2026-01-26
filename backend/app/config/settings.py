@@ -55,7 +55,7 @@ class Settings(DatabaseSettings):
     gcs_bucket_name: str | None = None  # GCSバケット名（本番環境用）
 
     # Gemini設定
-    gemini_model_name: str = "gemini-3-flash"
+    gemini_model_name: str = "gemini-2.5-flash"
     gemini_temperature: float = 0.7
     gemini_max_output_tokens: int = 8192
     gemini_timeout_seconds: int = 60
