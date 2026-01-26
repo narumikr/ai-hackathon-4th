@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 
+@lru_cache(maxsize=128)
 def load_template(template_name: str) -> str:
     """テンプレートファイルを読み込む。"""
     if not isinstance(template_name, str) or not template_name.strip():
