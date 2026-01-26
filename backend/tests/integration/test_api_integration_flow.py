@@ -285,7 +285,7 @@ def test_api_end_to_end_flow(api_client: TestClient):
     assert reflection_status["reflection"]["spotNotes"]["spot-010"]
     first_photo = reflection_status["reflection"]["photos"][0]
     assert isinstance(first_photo["analysis"], str)
-    assert "https://" in first_photo["analysis"]
+    assert first_photo["analysis"].strip()
 
 
 def test_api_error_handling_flow(api_client: TestClient):

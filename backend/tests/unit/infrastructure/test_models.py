@@ -132,7 +132,8 @@ def test_create_reflection(db_session: Session, sample_travel_plan: TravelPlanMo
     assert reflection.user_id == "user123"
     assert len(reflection.photos) == 1
     assert reflection.photos[0]["id"] == "photo123"
-    assert "https://" in reflection.photos[0]["analysis"]
+    assert isinstance(reflection.photos[0]["analysis"], str)
+    assert reflection.photos[0]["analysis"].strip()
     assert reflection.user_notes == "素晴らしい旅でした"
 
     # リレーションシップを確認

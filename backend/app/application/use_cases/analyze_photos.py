@@ -65,8 +65,8 @@ def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
 
 
 def _analysis_needs_search(text: str) -> bool:
-    """検索が必要か判定する"""
-    return "http://" not in text and "https://" not in text
+    """補助的に検索を使うか判定する"""
+    return "http://" not in text and "https://" not in text and "出典" not in text
 
 
 def _build_image_analysis_prompt(
@@ -81,7 +81,7 @@ def _build_image_analysis_prompt(
     return (
         "次の旅行先と観光スポット情報を参考に、画像に写っている内容から、"
         "歴史情報の説明文を日本語で作成してください。\n"
-        "説明文には必ず出典名とURLを文中に含めてください。\n"
+        "説明文には可能であれば出典名やURLを文中に含めてください。\n"
         "出力は文章のみで、段落ごとに改行してください。\n"
         f"旅行先: {destination}\n"
         "観光スポット:\n"
@@ -188,7 +188,7 @@ class AnalyzePhotosUseCase:
                 prompt=prompt,
                 image_uri=photo["url"],
                 system_instruction=(
-                    "説明文は日本語で作成してください。必ず出典名とURLを文中に含めてください。"
+                    "説明文は日本語で作成してください。可能であれば出典名やURLを文中に含めてください。"
                 ),
                 temperature=0.0,
             )
@@ -199,7 +199,7 @@ class AnalyzePhotosUseCase:
                         image_uri=photo["url"],
                         system_instruction=(
                             "説明文は日本語で作成してください。"
-                            "必ず出典名とURLを文中に含めてください。"
+                            "可能であれば出典名やURLを文中に含めてください。"
                         ),
                         temperature=0.0,
                         tools=["google_search"],
