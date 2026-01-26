@@ -27,6 +27,7 @@ export type {
   TouristSpot,
   CreateTravelPlanRequest,
   UpdateTravelPlanRequest,
+  TravelPlanListResponse,
   TravelPlanResponse,
 } from './travel';
 

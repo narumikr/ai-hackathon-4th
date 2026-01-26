@@ -31,6 +31,15 @@ export interface UpdateTravelPlanRequest {
   status?: TravelPlanStatus | null;
 }
 
+export interface TravelPlanListResponse {
+  id: string;
+  title: string;
+  destination: string;
+  status: TravelPlanStatus;
+  guideGenerationStatus: GenerationStatus;
+  reflectionGenerationStatus: GenerationStatus;
+}
+
 export interface TravelPlanResponse {
   id: string;
   userId: string;

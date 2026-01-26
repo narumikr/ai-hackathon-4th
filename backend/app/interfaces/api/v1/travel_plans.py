@@ -121,7 +121,7 @@ def list_travel_plans(
         repository: TravelPlanRepository
 
     Returns:
-        list[TravelPlanResponse]: 旅行計画リスト
+        list[TravelPlanListResponse]: 旅行計画リスト
     """
     use_case = ListTravelPlansUseCase(repository)
     try:
