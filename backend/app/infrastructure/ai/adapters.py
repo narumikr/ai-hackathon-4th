@@ -98,6 +98,7 @@ class GeminiAIService(IAIService):
         image_uri: str,
         *,
         system_instruction: str | None = None,
+        tools: list[str] | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> str:
@@ -107,6 +108,7 @@ class GeminiAIService(IAIService):
             prompt: 画像に対する質問・指示
             image_uri: 画像のURI（GCS URIまたはHTTPS URL）
             system_instruction: システム命令（オプション）
+            tools: 使用するツールのリスト（オプション）
             temperature: 生成の多様性を制御するパラメータ（0.0-2.0、Noneの場合は設定値を使用）
             max_output_tokens: 最大出力トークン数（Noneの場合は設定値を使用）
 
@@ -116,6 +118,7 @@ class GeminiAIService(IAIService):
         return await self.client.generate_content(
             prompt=prompt,
             system_instruction=system_instruction,
+            tools=tools,
             images=[image_uri],
             temperature=temperature if temperature is not None else self.default_temperature,
             max_output_tokens=max_output_tokens

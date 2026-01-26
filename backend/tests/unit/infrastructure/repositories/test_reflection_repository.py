@@ -20,10 +20,8 @@ def test_save_new_reflection(db_session: Session, sample_travel_plan: TravelPlan
         spot_id="spot-001",
         url="https://example.com/photos/todaiji.jpg",
         analysis=ImageAnalysis(
-            detected_spots=["東大寺"],
-            historical_elements=["大仏殿", "南大門"],
-            landmarks=["奈良の大仏"],
-            confidence=0.98,
+            description="東大寺の大仏殿は奈良時代の寺院建築として知られる。"
+            "出典: 東大寺公式サイト https://www.todaiji.or.jp/contents/ 。",
         ),
         user_description="奈良の大仏の迫力に圧倒されました",
     )
@@ -146,7 +144,7 @@ def test_delete_not_found(db_session: Session):
 
 
 def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel_plan: TravelPlanModel):
-    """検証: ImageAnalysisの全フィールドが正しく保存・復元される"""
+    """検証: ImageAnalysisの説明文が正しく保存・復元される"""
     # Arrange
     repository = ReflectionRepository(db_session)
     photo1 = Photo(
@@ -154,10 +152,9 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
         spot_id="spot-001",
         url="https://example.com/photos/osaka_castle.jpg",
         analysis=ImageAnalysis(
-            detected_spots=["大阪城"],
-            historical_elements=["天守閣", "石垣", "堀"],
-            landmarks=["大阪城天守閣"],
-            confidence=0.92,
+            description="大阪城天守閣は豊臣秀吉ゆかりの城として知られ、"
+            "石垣や堀が歴史的特徴となっている。"
+            "出典: 大阪城公式サイト https://www.osakacastle.net/ 。",
         ),
         user_description="大阪城の壮大さに感動",
     )
@@ -166,10 +163,9 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
         spot_id="spot-001",
         url="https://example.com/photos/osaka_moat.jpg",
         analysis=ImageAnalysis(
-            detected_spots=["大阪城"],
-            historical_elements=["堀", "石垣"],
-            landmarks=[],
-            confidence=0.85,
+            description="大阪城の堀と石垣は防御構造として重要で、"
+            "当時の築城技術を示している。"
+            "出典: 大阪城公式サイト https://www.osakacastle.net/ 。",
         ),
         user_description="堀と石垣の美しさ",
     )
@@ -195,10 +191,7 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
     assert retrieved_photo1.spot_id == "spot-001"
     assert retrieved_photo1.url == "https://example.com/photos/osaka_castle.jpg"
     assert retrieved_photo1.user_description == "大阪城の壮大さに感動"
-    assert retrieved_photo1.analysis.detected_spots == ("大阪城",)
-    assert retrieved_photo1.analysis.historical_elements == ("天守閣", "石垣", "堀")
-    assert retrieved_photo1.analysis.landmarks == ("大阪城天守閣",)
-    assert retrieved_photo1.analysis.confidence == 0.92
+    assert "https://www.osakacastle.net/" in retrieved_photo1.analysis.description
 
     # photo2の検証
     retrieved_photo2 = retrieved.photos[1]
@@ -206,10 +199,7 @@ def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel
     assert retrieved_photo2.spot_id == "spot-001"
     assert retrieved_photo2.url == "https://example.com/photos/osaka_moat.jpg"
     assert retrieved_photo2.user_description == "堀と石垣の美しさ"
-    assert retrieved_photo2.analysis.detected_spots == ("大阪城",)
-    assert retrieved_photo2.analysis.historical_elements == ("堀", "石垣")
-    assert retrieved_photo2.analysis.landmarks == ()
-    assert retrieved_photo2.analysis.confidence == 0.85
+    assert "https://www.osakacastle.net/" in retrieved_photo2.analysis.description
 
 
 def test_save_update_not_found(db_session: Session):
@@ -221,10 +211,7 @@ def test_save_update_not_found(db_session: Session):
         spot_id="spot-001",
         url="https://example.com/test.jpg",
         analysis=ImageAnalysis(
-            detected_spots=["テスト"],
-            historical_elements=[],
-            landmarks=[],
-            confidence=0.5,
+            description="テスト用の歴史的説明文。出典: テスト https://example.com/test-source 。",
         ),
     )
     reflection = Reflection(

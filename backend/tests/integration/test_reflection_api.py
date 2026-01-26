@@ -1,6 +1,5 @@
 """Reflection API統合テスト"""
 
-import json
 import time
 
 import pytest
@@ -47,16 +46,14 @@ class StubAIService(IAIService):
         image_uri: str,
         *,
         system_instruction: str | None = None,
+        tools: list[str] | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> str:
-        return json.dumps(
-            {
-                "detectedSpots": ["清水寺"],
-                "historicalElements": ["清水の舞台"],
-                "landmarks": ["清水寺本堂"],
-                "confidence": 0.9,
-            }
+        return (
+            "清水寺の舞台は断崖に張り出した懸造りで知られ、"
+            "境内の歴史的景観の中心となっている。"
+            "出典: 清水寺公式サイト https://www.kiyomizudera.or.jp/history/ 。"
         )
 
     async def generate_structured_data(

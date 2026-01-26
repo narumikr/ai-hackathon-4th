@@ -44,7 +44,6 @@ export type {
   PhotoData,
   ReflectionSpot,
   ReflectionFormData,
-  ImageAnalysisResponse,
   ReflectionPhotoResponse,
   ReflectionResponse,
   CreateReflectionRequest,

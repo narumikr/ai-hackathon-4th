@@ -110,12 +110,11 @@ def test_create_reflection(db_session: Session, sample_travel_plan: TravelPlanMo
                 "id": "photo123",
                 "spotId": "spot-001",
                 "url": "https://example.com/photo.jpg",
-                "analysis": {
-                    "detectedSpots": ["京都タワー"],
-                    "historicalElements": ["タワー"],
-                    "landmarks": ["京都タワー"],
-                    "confidence": 0.9,
-                },
+                "analysis": (
+                    "京都タワーは京都駅前に建つ展望塔で、"
+                    "京都の街並みを一望できる。"
+                    "出典: 京都タワー公式サイト https://www.kyoto-tower.jp/ 。"
+                ),
                 "userDescription": "京都駅から見たタワー",
             }
         ],
@@ -133,7 +132,7 @@ def test_create_reflection(db_session: Session, sample_travel_plan: TravelPlanMo
     assert reflection.user_id == "user123"
     assert len(reflection.photos) == 1
     assert reflection.photos[0]["id"] == "photo123"
-    assert reflection.photos[0]["analysis"]["confidence"] == 0.9
+    assert "https://" in reflection.photos[0]["analysis"]
     assert reflection.user_notes == "素晴らしい旅でした"
 
     # リレーションシップを確認

@@ -77,24 +77,13 @@ class CreateReflectionRequest(BaseModel):
         return value
 
 
-class ImageAnalysisResponse(BaseModel):
-    """画像分析レスポンス"""
-
-    detected_spots: list[str] = Field(..., alias="detectedSpots")
-    historical_elements: list[str] = Field(..., alias="historicalElements")
-    landmarks: list[str]
-    confidence: float
-
-    model_config = {"populate_by_name": True}
-
-
 class ReflectionPhotoResponse(BaseModel):
     """振り返り写真レスポンス"""
 
     id: str
     spot_id: str = Field(..., alias="spotId")
     url: str
-    analysis: ImageAnalysisResponse
+    analysis: str
     user_description: str | None = Field(None, alias="userDescription")
 
     model_config = {"populate_by_name": True}

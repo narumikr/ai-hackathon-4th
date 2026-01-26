@@ -173,7 +173,7 @@ class ReflectionModel(Base):
     user_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 
     # 写真（JSON型）
-    # 形式: List[{"id": str, "spotId": str, "url": str, "analysis": {"detectedSpots": List[str], "historicalElements": List[str], "landmarks": List[str], "confidence": float}, "userDescription": str}]
+    # 形式: List[{"id": str, "spotId": str, "url": str, "analysis": str, "userDescription": str}]
     photos: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
     # スポットごとのメモ（JSON型）
