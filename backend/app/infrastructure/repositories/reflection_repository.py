@@ -170,10 +170,8 @@ class ReflectionRepository(IReflectionRepository):
 
         name_to_id: dict[str, str] = {}
         for spot in plan.spots or []:
-            if not isinstance(spot, dict):
-                continue
-            name = spot.get("name")
-            spot_id_value = spot.get("id")
+            name = getattr(spot, "name", None)
+            spot_id_value = getattr(spot, "id", None)
             if isinstance(name, str) and name.strip() and isinstance(spot_id_value, str):
                 name_to_id[name.strip()] = spot_id_value.strip()
 

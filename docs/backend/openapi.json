@@ -941,8 +941,7 @@
           },
           "spots": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/TouristSpotSchema"
             },
             "type": "array",
             "title": "Spots"

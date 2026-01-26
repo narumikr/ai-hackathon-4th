@@ -26,7 +26,6 @@ def upgrade() -> None:
     sa.Column('user_id', sa.String(length=255), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('destination', sa.String(length=255), nullable=False),
-    sa.Column('spots', sa.JSON(), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('guide_generation_status', sa.String(length=50), nullable=False),
     sa.Column('reflection_generation_status', sa.String(length=50), nullable=False),
@@ -37,6 +36,20 @@ def upgrade() -> None:
     op.create_index(op.f('ix_travel_plans_status'), 'travel_plans', ['status'], unique=False)
     op.create_index(op.f('ix_travel_plans_user_id'), 'travel_plans', ['user_id'], unique=False)
     op.create_index('ix_travel_plans_user_id_status', 'travel_plans', ['user_id', 'status'], unique=False)
+    op.create_table('travel_plan_spots',
+    sa.Column('id', sa.String(length=36), nullable=False),
+    sa.Column('plan_id', sa.String(length=36), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('user_notes', sa.Text(), nullable=True),
+    sa.Column('sort_order', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['plan_id'], ['travel_plans.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_travel_plan_spots_plan_id'), 'travel_plan_spots', ['plan_id'], unique=False)
+    op.create_index('ix_travel_plan_spots_plan_id_sort_order', 'travel_plan_spots', ['plan_id', 'sort_order'], unique=False)
     op.create_table('reflections',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('plan_id', sa.String(length=36), nullable=False),
@@ -76,6 +89,9 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_reflections_user_id'), table_name='reflections')
     op.drop_index(op.f('ix_reflections_plan_id'), table_name='reflections')
     op.drop_table('reflections')
+    op.drop_index('ix_travel_plan_spots_plan_id_sort_order', table_name='travel_plan_spots')
+    op.drop_index(op.f('ix_travel_plan_spots_plan_id'), table_name='travel_plan_spots')
+    op.drop_table('travel_plan_spots')
     op.drop_index('ix_travel_plans_user_id_status', table_name='travel_plans')
     op.drop_index(op.f('ix_travel_plans_user_id'), table_name='travel_plans')
     op.drop_index(op.f('ix_travel_plans_status'), table_name='travel_plans')

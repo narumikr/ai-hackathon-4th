@@ -77,7 +77,7 @@ class TravelPlanResponse(BaseModel):
     user_id: str = Field(..., alias="userId")
     title: str
     destination: str
-    spots: list[dict]
+    spots: list[TouristSpotSchema]
     status: str
     guide_generation_status: str = Field(..., alias="guideGenerationStatus")
     reflection_generation_status: str = Field(..., alias="reflectionGenerationStatus")

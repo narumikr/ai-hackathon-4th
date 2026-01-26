@@ -9,6 +9,7 @@ from app.infrastructure.persistence.models import (
     ReflectionModel,
     TravelGuideModel,
     TravelPlanModel,
+    TravelPlanSpotModel,
 )
 
 # テスト用データベースURL
@@ -61,22 +62,24 @@ def sample_travel_plan(db_session: Session) -> TravelPlanModel:
         user_id="test_user_001",
         title="京都歴史ツアー",
         destination="京都",
-        spots=[
-            {
-                "id": "spot-001",
-                "name": "清水寺",
-                "description": "京都を代表する寺院",
-                "userNotes": "早朝訪問予定",
-            },
-            {
-                "id": "spot-002",
-                "name": "金閣寺",
-                "description": "金色に輝く舎利殿",
-                "userNotes": "午後に訪問",
-            },
-        ],
         status="planning",
     )
+    travel_plan.spots = [
+        TravelPlanSpotModel(
+            id="spot-001",
+            name="清水寺",
+            description="京都を代表する寺院",
+            user_notes="早朝訪問予定",
+            sort_order=0,
+        ),
+        TravelPlanSpotModel(
+            id="spot-002",
+            name="金閣寺",
+            description="金色に輝く舎利殿",
+            user_notes="午後に訪問",
+            sort_order=1,
+        ),
+    ]
     db_session.add(travel_plan)
     db_session.commit()
     db_session.refresh(travel_plan)
