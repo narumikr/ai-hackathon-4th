@@ -1,0 +1,7 @@
+次の旅行先と観光スポット情報を参考に、画像に写っている観光スポットや歴史的要素を特定してください。
+旅行先: {destination}
+観光スポット:
+- {spot_name}
+{description_text}出力はJSONのみで返してください。
+必須キー: detectedSpots, historicalElements, landmarks, confidence
+detectedSpots/historicalElements/landmarksは文字列の配列、confidenceは0から1の数値です。

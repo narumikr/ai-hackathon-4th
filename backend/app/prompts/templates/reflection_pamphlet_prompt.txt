@@ -1,0 +1,30 @@
+以下の旅行前情報と旅行後情報を統合し、振り返りパンフレットを作成してください。
+出力はJSONスキーマに準拠した内容のみを返してください。
+
+旅行前情報:
+- 旅行タイトル: {travel_title}
+- 旅行先: {destination}
+観光スポット:
+{spots_text}
+
+旅行ガイド概要:
+{guide_overview}
+
+年表:
+{timeline_text}
+
+スポット詳細:
+{spot_detail_text}
+
+チェックポイント:
+{checkpoint_text}
+
+旅行後情報:
+写真分析:
+{photo_text}
+
+ユーザーの総合感想:
+{user_notes_text}
+
+スポットごとの感想:
+{spot_notes_text}

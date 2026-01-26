@@ -8,6 +8,7 @@ from app.domain.reflection.repository import IReflectionRepository
 from app.domain.reflection.value_objects import ImageAnalysis
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
+from app.prompts import render_template
 
 
 def _require_str(value: object, field_name: str) -> str:
@@ -97,6 +98,9 @@ _IMAGE_ANALYSIS_SCHEMA = {
     "additionalProperties": False,
 }
 
+_IMAGE_ANALYSIS_PROMPT_TEMPLATE = "image_analysis_prompt.txt"
+_IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE = "image_analysis_system_instruction.txt"
+
 
 def _parse_image_analysis_data(data: object, *, index: int) -> ImageAnalysis:
     """AIの画像分析レスポンスをパースする"""
@@ -137,15 +141,11 @@ def _build_image_analysis_prompt(
     description_text = ""
     if user_description:
         description_text = f"ユーザーの補足説明: {user_description}\n"
-    return (
-        "次の旅行先と観光スポット情報を参考に、画像に写っている観光スポットや歴史的要素を特定してください。\n"
-        f"旅行先: {destination}\n"
-        "観光スポット:\n"
-        f"- {spot_name}\n"
-        f"{description_text}"
-        "出力はJSONのみで返してください。\n"
-        "必須キー: detectedSpots, historicalElements, landmarks, confidence\n"
-        "detectedSpots/historicalElements/landmarksは文字列の配列、confidenceは0から1の数値です。\n"
+    return render_template(
+        _IMAGE_ANALYSIS_PROMPT_TEMPLATE,
+        destination=destination,
+        spot_name=spot_name,
+        description_text=description_text,
     )
 
 
@@ -247,10 +247,7 @@ class AnalyzePhotosUseCase:
                 prompt=prompt,
                 image_uri=photo["url"],
                 response_schema=_IMAGE_ANALYSIS_SCHEMA,
-                system_instruction=(
-                    "レスポンススキーマに一致するJSONのみを返してください。"
-                    "キー: detectedSpots, historicalElements, landmarks, confidence"
-                ),
+                system_instruction=render_template(_IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE),
                 temperature=0.0,
             )
             analysis = _parse_image_analysis_data(analysis_data, index=index)
