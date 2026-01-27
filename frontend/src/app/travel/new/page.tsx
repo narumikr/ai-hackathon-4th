@@ -86,7 +86,7 @@ export default function TravelNewPage() {
         .filter(spot => spot.name.trim())
         .map(spot => ({ name: spot.name.trim() }));
 
-      const response = await apiClient.createTravelPlan({
+      await apiClient.createTravelPlan({
         request: {
           userId,
           title: title.trim(),

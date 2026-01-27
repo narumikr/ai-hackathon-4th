@@ -133,7 +133,8 @@ export default function TravelListPage() {
                     {LABELS.SPOTS_COUNT}
                   </span>
                   <span>
-                    <Emoji symbol="📅" label={EMOJI_LABELS.CALENDAR} /> {formatDate(travel.createdAt)}
+                    <Emoji symbol="📅" label={EMOJI_LABELS.CALENDAR} />{' '}
+                    {formatDate(travel.createdAt)}
                   </span>
                 </div>
 
