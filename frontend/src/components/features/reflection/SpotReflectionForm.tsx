@@ -1,10 +1,10 @@
 'use client';
 
 import { TextArea } from '@/components/ui';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 import { BUTTON_LABELS, FORM_LABELS, HELP_TEXTS, PLACEHOLDERS, STATUS_LABELS } from '@/constants';
 import type { PhotoData, ReflectionSpot } from '@/types/reflection';
 import type React from 'react';
-import { ImageUploader } from '../ui/ImageUploader';
 
 interface SpotReflectionFormProps {
   spot: ReflectionSpot;

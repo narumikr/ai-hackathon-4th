@@ -1,8 +1,7 @@
 'use client';
 
+import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
-import { SpotAdder } from '@/components/reflection/SpotAdder';
-import { SpotReflectionForm } from '@/components/reflection/SpotReflectionForm';
 import { Button, TextArea } from '@/components/ui';
 import {
   BUTTON_LABELS,
