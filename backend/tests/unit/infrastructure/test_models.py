@@ -10,6 +10,7 @@ from app.infrastructure.persistence.models import (
     ReflectionModel,
     TravelGuideModel,
     TravelPlanModel,
+    TravelPlanSpotModel,
 )
 
 
@@ -20,15 +21,16 @@ def test_create_travel_plan(db_session: Session):
         user_id="user123",
         title="奈良歴史ツアー",
         destination="奈良",
-        spots=[
-            {
-                "name": "東大寺",
-                "description": "大仏殿",
-                "userNotes": "午前中に訪問",
-            }
-        ],
         status="planning",
     )
+    travel_plan.spots = [
+        TravelPlanSpotModel(
+            name="東大寺",
+            description="大仏殿",
+            user_notes="午前中に訪問",
+            sort_order=0,
+        )
+    ]
     db_session.add(travel_plan)
     db_session.commit()
     db_session.refresh(travel_plan)
@@ -41,7 +43,7 @@ def test_create_travel_plan(db_session: Session):
     assert travel_plan.title == "奈良歴史ツアー"
     assert travel_plan.destination == "奈良"
     assert len(travel_plan.spots) == 1
-    assert travel_plan.spots[0]["name"] == "東大寺"
+    assert travel_plan.spots[0].name == "東大寺"
     assert travel_plan.status == "planning"
     assert travel_plan.guide_generation_status == "not_started"
     assert travel_plan.reflection_generation_status == "not_started"
@@ -142,40 +144,40 @@ def test_create_reflection(db_session: Session, sample_travel_plan: TravelPlanMo
 
 
 def test_json_fields(db_session: Session):
-    """JSON型フィールドの格納・取得をテストする."""
-    # 複雑なJSON構造を持つTravelPlanを作成
-    complex_spots = [
-        {
-            "name": "スポット1",
-            "description": "詳細な説明",
-            "userNotes": "メモ",
-        },
-        {
-            "name": "スポット2",
-        },
-    ]
-
+    """スポットの格納・取得をテストする."""
     travel_plan = TravelPlanModel(
         user_id="user456",
         title="テストプラン",
         destination="テスト地",
-        spots=complex_spots,
         status="planning",
     )
+    travel_plan.spots = [
+        TravelPlanSpotModel(
+            name="スポット1",
+            description="詳細な説明",
+            user_notes="メモ",
+            sort_order=0,
+        ),
+        TravelPlanSpotModel(
+            name="スポット2",
+            sort_order=1,
+        ),
+    ]
     db_session.add(travel_plan)
     db_session.commit()
     db_session.refresh(travel_plan)
 
-    # JSONデータが正しく保存・取得できることを確認
+    # スポットデータが正しく保存・取得できることを確認
     assert len(travel_plan.spots) == 2
-    assert travel_plan.spots[0]["name"] == "スポット1"
-    assert travel_plan.spots[1]["name"] == "スポット2"
+    assert travel_plan.spots[0].name == "スポット1"
+    assert travel_plan.spots[1].name == "スポット2"
     # オプショナルフィールドが存在しない場合でもエラーにならないことを確認
-    assert "description" not in travel_plan.spots[1]
+    assert travel_plan.spots[1].description is None
 
 
 def test_cascade_delete(db_session: Session, sample_travel_plan: TravelPlanModel):
     """カスケード削除の動作を確認する."""
+    spot_ids = [spot.id for spot in sample_travel_plan.spots]
     # TravelGuideと振り返りを作成
     travel_guide = TravelGuideModel(
         plan_id=sample_travel_plan.id,
@@ -204,6 +206,8 @@ def test_cascade_delete(db_session: Session, sample_travel_plan: TravelPlanModel
     # TravelGuideと振り返りも削除されていることを確認
     assert db_session.get(TravelGuideModel, guide_id) is None
     assert db_session.get(ReflectionModel, reflection_id) is None
+    for spot_id in spot_ids:
+        assert db_session.get(TravelPlanSpotModel, spot_id) is None
 
 
 def test_unique_constraints(

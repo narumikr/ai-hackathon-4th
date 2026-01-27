@@ -12,7 +12,6 @@ export interface Location {
 export interface TouristSpot {
   id?: string | null;
   name: string;
-  location: Location;
   description?: string | null;
   userNotes?: string | null;
 }

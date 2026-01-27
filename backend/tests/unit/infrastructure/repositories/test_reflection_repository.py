@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.domain.reflection.entity import Photo, Reflection
-from app.domain.reflection.value_objects import ImageAnalysis
+from app.domain.reflection.value_objects import ImageAnalysis, ReflectionPamphlet
 from app.infrastructure.persistence.models import ReflectionModel, TravelPlanModel
 from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 
@@ -43,6 +43,46 @@ def test_save_new_reflection(db_session: Session, sample_travel_plan: TravelPlan
     assert len(saved.photos) == 1
     assert saved.photos[0].id == "photo_nara_001"
     assert saved.created_at is not None
+
+
+def test_save_reflection_with_pamphlet(db_session: Session, sample_travel_plan: TravelPlanModel):
+    """前提: パンフレット付きの振り返りを作成する
+    検証: パンフレットが保存され、復元できる
+    """
+    repository = ReflectionRepository(db_session)
+    photo = Photo(
+        id="photo_tokyo_001",
+        spot_id="spot-001",
+        url="https://example.com/photos/tokyo_castle.jpg",
+        analysis=ImageAnalysis(
+            description="江戸城の写真。天守台が写っており、江戸城跡の特徴的な石垣が確認できる。"
+        ),
+        user_description="江戸城跡の広さに驚いた",
+    )
+    pamphlet = ReflectionPamphlet(
+        travel_summary="江戸の歴史を感じる旅だった。",
+        spot_reflections=[
+            {"spot_name": "江戸城", "reflection": "石垣の壮大さが印象的だった。"}
+        ],
+        next_trip_suggestions=["日光東照宮を巡る旅"],
+    )
+    reflection = Reflection(
+        id=None,
+        plan_id=sample_travel_plan.id,
+        user_id="test_user_004",
+        photos=[photo],
+        user_notes="江戸の面影が残る旅だった",
+        pamphlet=pamphlet,
+    )
+
+    saved = repository.save(reflection)
+    retrieved = repository.find_by_id(saved.id)
+
+    assert retrieved is not None
+    assert retrieved.pamphlet is not None
+    assert retrieved.pamphlet.travel_summary == "江戸の歴史を感じる旅だった。"
+    assert retrieved.pamphlet.spot_reflections[0]["spot_name"] == "江戸城"
+    assert retrieved.pamphlet.next_trip_suggestions == ("日光東照宮を巡る旅",)
 
 
 def test_save_update_reflection(db_session: Session, sample_reflection: ReflectionModel):

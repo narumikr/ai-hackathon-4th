@@ -11,7 +11,7 @@ from app.application.ports.ai_service import IAIService
 from app.application.use_cases.generate_travel_guide import GenerateTravelGuideUseCase
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.value_objects import GenerationStatus
-from app.infrastructure.persistence.models import TravelPlanModel
+from app.infrastructure.persistence.models import TravelPlanModel, TravelPlanSpotModel
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 
@@ -233,22 +233,24 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
         user_id="test_user_002",
         title="重複スポットテスト",
         destination="京都",
-        spots=[
-            {
-                "id": "spot-dup-001",
-                "name": "清水寺",
-                "description": "重複テスト用",
-                "userNotes": "1回目",
-            },
-            {
-                "id": "spot-dup-002",
-                "name": "清水寺",
-                "description": "重複テスト用",
-                "userNotes": "2回目",
-            },
-        ],
         status="planning",
     )
+    duplicate_plan.spots = [
+        TravelPlanSpotModel(
+            id="spot-dup-001",
+            name="清水寺",
+            description="重複テスト用",
+            user_notes="1回目",
+            sort_order=0,
+        ),
+        TravelPlanSpotModel(
+            id="spot-dup-002",
+            name="清水寺",
+            description="重複テスト用",
+            user_notes="2回目",
+            sort_order=1,
+        ),
+    ]
     db_session.add(duplicate_plan)
     db_session.commit()
     db_session.refresh(duplicate_plan)

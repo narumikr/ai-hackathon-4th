@@ -23,7 +23,6 @@ export type {
 export type {
   TravelPlanStatus,
   GenerationStatus,
-  Location,
   TouristSpot,
   CreateTravelPlanRequest,
   UpdateTravelPlanRequest,

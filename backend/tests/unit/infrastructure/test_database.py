@@ -22,9 +22,10 @@ def test_base_metadata():
     """Baseのメタデータが正しく設定されていることを確認する."""
     assert Base.metadata is not None
 
-    # 3つのテーブルが定義されていることを確認
+    # 4つのテーブルが定義されていることを確認
     table_names = [table.name for table in Base.metadata.tables.values()]
     assert "travel_plans" in table_names
+    assert "travel_plan_spots" in table_names
     assert "travel_guides" in table_names
     assert "reflections" in table_names
 
@@ -35,5 +36,6 @@ def test_database_tables_exist(test_engine):
     table_names = inspector.get_table_names()
 
     assert "travel_plans" in table_names
+    assert "travel_plan_spots" in table_names
     assert "travel_guides" in table_names
     assert "reflections" in table_names

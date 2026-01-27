@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.persistence.database import Base
@@ -25,10 +25,6 @@ class TravelPlanModel(Base):
     user_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     destination: Mapped[str] = mapped_column(String(255), nullable=False)
-
-    # 観光スポット（JSON型）
-    # 形式: List[{"id": str, "name": str, "description": str, "userNotes": str}]
-    spots: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
     # ステータス
     status: Mapped[str] = mapped_column(
@@ -62,6 +58,12 @@ class TravelPlanModel(Base):
     )
 
     # リレーションシップ
+    spots: Mapped[list["TravelPlanSpotModel"]] = relationship(
+        "TravelPlanSpotModel",
+        back_populates="plan",
+        cascade="all, delete-orphan",
+        order_by="TravelPlanSpotModel.sort_order",
+    )
     guide: Mapped["TravelGuideModel | None"] = relationship(
         "TravelGuideModel",
         back_populates="plan",
@@ -86,6 +88,59 @@ class TravelPlanModel(Base):
             f"destination={self.destination}, "
             f"status={self.status})>"
         )
+
+
+class TravelPlanSpotModel(Base):
+    """旅行計画の観光スポットモデル."""
+
+    __tablename__ = "travel_plan_spots"
+
+    # 主キー
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
+
+    # 外部キー
+    plan_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("travel_plans.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # 観光スポット情報
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    user_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # タイムスタンプ
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now(UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now(UTC),
+        onupdate=datetime.now(UTC),
+    )
+
+    # リレーションシップ
+    plan: Mapped["TravelPlanModel"] = relationship(
+        "TravelPlanModel",
+        back_populates="spots",
+    )
+
+    # インデックス
+    __table_args__ = (Index("ix_travel_plan_spots_plan_id_sort_order", "plan_id", "sort_order"),)
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return f"<TravelPlanSpotModel(id={self.id}, plan_id={self.plan_id}, name={self.name})>"
 
 
 class TravelGuideModel(Base):
@@ -182,6 +237,10 @@ class ReflectionModel(Base):
 
     # ユーザーメモ
     user_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # パンフレット（JSON型）
+    # 形式: {"travel_summary": str, "spot_reflections": List[{"spotName": str, "reflection": str}], "next_trip_suggestions": List[str]}
+    pamphlet: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # タイムスタンプ
     created_at: Mapped[datetime] = mapped_column(

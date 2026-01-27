@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus, PlanStatus
-from app.infrastructure.persistence.models import TravelPlanModel
+from app.infrastructure.persistence.models import TravelPlanModel, TravelPlanSpotModel
 
 
 class TravelPlanRepository(ITravelPlanRepository):
@@ -45,7 +45,7 @@ class TravelPlanRepository(ITravelPlanRepository):
                 user_id=travel_plan.user_id,
                 title=travel_plan.title,
                 destination=travel_plan.destination,
-                spots=self._spots_to_dict(travel_plan.spots),
+                spots=self._spots_to_models(travel_plan.spots),
                 status=travel_plan.status.value,
                 guide_generation_status=travel_plan.guide_generation_status.value,
                 reflection_generation_status=travel_plan.reflection_generation_status.value,
@@ -59,7 +59,7 @@ class TravelPlanRepository(ITravelPlanRepository):
 
             model.title = travel_plan.title
             model.destination = travel_plan.destination
-            model.spots = self._spots_to_dict(travel_plan.spots)
+            model.spots = self._spots_to_models(travel_plan.spots)
             model.status = travel_plan.status.value
             model.guide_generation_status = travel_plan.guide_generation_status.value
             model.reflection_generation_status = travel_plan.reflection_generation_status.value
@@ -122,19 +122,19 @@ class TravelPlanRepository(ITravelPlanRepository):
         Returns:
             TravelPlan: ドメインエンティティ
         """
-        # JSON型のspotsを値オブジェクトに変換
+        # テーブルのspotsを値オブジェクトに変換
         spots = []
         for spot in model.spots:
-            spot_id = spot.get("id")
+            spot_id = spot.id
             if spot_id is None or not str(spot_id).strip():
                 raise ValueError("TouristSpot.id is required in persistence data.")
 
             spots.append(
                 TouristSpot(
                     id=str(spot_id),
-                    name=spot["name"],
-                    description=spot.get("description"),
-                    user_notes=spot.get("userNotes"),
+                    name=spot.name,
+                    description=spot.description,
+                    user_notes=spot.user_notes,
                 )
             )
 
@@ -151,21 +151,22 @@ class TravelPlanRepository(ITravelPlanRepository):
             updated_at=model.updated_at,
         )
 
-    def _spots_to_dict(self, spots: list[TouristSpot]) -> list[dict]:
-        """TouristSpot → 辞書変換（JSON型で保存するため）.
+    def _spots_to_models(self, spots: list[TouristSpot]) -> list[TravelPlanSpotModel]:
+        """TouristSpot → SQLAlchemyモデル変換.
 
         Args:
             spots: TouristSpotリスト
 
         Returns:
-            list[dict]: 辞書のリスト
+            list[TravelPlanSpotModel]: TravelPlanSpotModelリスト
         """
         return [
-            {
-                "id": spot.id,
-                "name": spot.name,
-                "description": spot.description,
-                "userNotes": spot.user_notes,
-            }
-            for spot in spots
+            TravelPlanSpotModel(
+                id=spot.id,
+                name=spot.name,
+                description=spot.description,
+                user_notes=spot.user_notes,
+                sort_order=index,
+            )
+            for index, spot in enumerate(spots)
         ]

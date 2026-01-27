@@ -583,6 +583,36 @@
         "title": "HistoricalEventSchema",
         "description": "歴史イベントスキーマ"
       },
+      "ReflectionPamphletResponse": {
+        "properties": {
+          "travelSummary": {
+            "type": "string",
+            "title": "TravelSummary"
+          },
+          "spotReflections": {
+            "items": {
+              "$ref": "#/components/schemas/SpotReflectionResponse"
+            },
+            "type": "array",
+            "title": "SpotReflections"
+          },
+          "nextTripSuggestions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "NextTripSuggestions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "travelSummary",
+          "spotReflections",
+          "nextTripSuggestions"
+        ],
+        "title": "ReflectionPamphletResponse",
+        "description": "振り返りパンフレットレスポンス"
+      },
       "ReflectionPhotoResponse": {
         "properties": {
           "id": {
@@ -723,6 +753,25 @@
         "title": "SpotDetailSchema",
         "description": "スポット詳細スキーマ"
       },
+      "SpotReflectionResponse": {
+        "properties": {
+          "spotName": {
+            "type": "string",
+            "title": "SpotName"
+          },
+          "reflection": {
+            "type": "string",
+            "title": "Reflection"
+          }
+        },
+        "type": "object",
+        "required": [
+          "spotName",
+          "reflection"
+        ],
+        "title": "SpotReflectionResponse",
+        "description": "スポット振り返りレスポンス"
+      },
       "TouristSpotSchema": {
         "properties": {
           "id": {
@@ -855,8 +904,7 @@
           },
           "spots": {
             "items": {
-              "additionalProperties": true,
-              "type": "object"
+              "$ref": "#/components/schemas/TouristSpotSchema"
             },
             "type": "array",
             "title": "Spots"
@@ -897,6 +945,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ReflectionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pamphlet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReflectionPamphletResponse"
               },
               {
                 "type": "null"
