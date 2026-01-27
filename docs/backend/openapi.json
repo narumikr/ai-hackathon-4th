@@ -583,44 +583,6 @@
         "title": "HistoricalEventSchema",
         "description": "歴史イベントスキーマ"
       },
-      "ImageAnalysisResponse": {
-        "properties": {
-          "detectedSpots": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Detectedspots"
-          },
-          "historicalElements": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Historicalelements"
-          },
-          "landmarks": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Landmarks"
-          },
-          "confidence": {
-            "type": "number",
-            "title": "Confidence"
-          }
-        },
-        "type": "object",
-        "required": [
-          "detectedSpots",
-          "historicalElements",
-          "landmarks",
-          "confidence"
-        ],
-        "title": "ImageAnalysisResponse",
-        "description": "画像分析レスポンス"
-      },
       "ReflectionPamphletResponse": {
         "properties": {
           "travelSummary": {
@@ -666,7 +628,8 @@
             "title": "Url"
           },
           "analysis": {
-            "$ref": "#/components/schemas/ImageAnalysisResponse"
+            "type": "string",
+            "title": "Analysis"
           },
           "userDescription": {
             "anyOf": [
