@@ -15,14 +15,14 @@ import {
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse, TravelPlanStatus } from '@/types';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function TravelListPage() {
   const [travels, setTravels] = useState<TravelPlanResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTravels = async () => {
+  const fetchTravels = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -40,11 +40,11 @@ export default function TravelListPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTravels();
-  }, []);
+  }, [fetchTravels]);
 
   const hasTravels = travels.length > 0;
 
@@ -157,8 +157,8 @@ export default function TravelListPage() {
                       </Button>
                     </Link>
                   )}
-                  {travel.status !== 'completed' && (
-                    travel.guideGenerationStatus === 'processing' ? (
+                  {travel.status !== 'completed' &&
+                    (travel.guideGenerationStatus === 'processing' ? (
                       <Button variant="ghost" disabled>
                         {BUTTON_LABELS.EDIT}
                       </Button>
@@ -166,8 +166,7 @@ export default function TravelListPage() {
                       <Link href={`/travel/${travel.id}/edit`}>
                         <Button variant="ghost">{BUTTON_LABELS.EDIT}</Button>
                       </Link>
-                    )
-                  )}
+                    ))}
                 </div>
               </div>
             ))}

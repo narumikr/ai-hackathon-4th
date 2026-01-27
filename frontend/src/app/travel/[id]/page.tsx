@@ -2,13 +2,7 @@
 
 import { Container } from '@/components/layout';
 import { Button, Emoji, Modal } from '@/components/ui';
-import {
-  BUTTON_LABELS,
-  EMOJI_LABELS,
-  LABELS,
-  MESSAGES,
-  SECTION_TITLES,
-} from '@/constants';
+import { BUTTON_LABELS, EMOJI_LABELS, LABELS, MESSAGES, SECTION_TITLES } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
@@ -178,7 +172,10 @@ export default function TravelGuidePage() {
           ) : (
             <div className="space-y-4">
               {travel.spots.map((spot, index) => (
-                <div key={spot.id || index} className="border-neutral-200 border-b pb-4 last:border-b-0">
+                <div
+                  key={spot.id || index}
+                  className="border-neutral-200 border-b pb-4 last:border-b-0"
+                >
                   <div className="flex items-center gap-3">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-primary-950 text-sm">
                       {index + 1}
@@ -263,12 +260,14 @@ export default function TravelGuidePage() {
                       {spot.highlights && spot.highlights.length > 0 && (
                         <div>
                           <h4 className="mb-2 font-semibold text-neutral-700 text-sm">
-                            <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} />{' '}
-                            ハイライト
+                            <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} /> ハイライト
                           </h4>
                           <ul className="space-y-1">
                             {spot.highlights.map((highlight: string, idx: number) => (
-                              <li key={idx} className="text-neutral-700">
+                              <li
+                                key={`${spot.spotName}-highlight-${idx}`}
+                                className="text-neutral-700"
+                              >
                                 {highlight}
                               </li>
                             ))}
