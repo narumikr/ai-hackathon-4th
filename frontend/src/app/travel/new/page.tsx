@@ -7,11 +7,13 @@ import {
   HELP_TEXTS,
   HINTS,
   LABELS,
+  MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   PLACEHOLDERS,
   TOOLTIP_MESSAGES,
 } from '@/constants';
+import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 
@@ -45,12 +47,14 @@ export default function TravelNewPage() {
 
   const [showTitleError, setShowTitleError] = useState(false);
   const [showDestinationError, setShowDestinationError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCancel = () => {
     router.push('/travel');
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     let isValid = true;
 
     if (!title.trim()) {
@@ -68,7 +72,38 @@ export default function TravelNewPage() {
     }
 
     if (!isValid) return;
-    alert('作成ボタンが押されました（API未実装）');
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const apiClient = createApiClientFromEnv();
+      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
+      const userId = 'demo-user';
+
+      // スポットリストを整形（空の値を除外）
+      const filteredSpots = spots
+        .filter(spot => spot.name.trim())
+        .map(spot => ({ name: spot.name.trim() }));
+
+      const response = await apiClient.createTravelPlan({
+        request: {
+          userId,
+          title: title.trim(),
+          destination: destination.trim(),
+          spots: filteredSpots.length > 0 ? filteredSpots : undefined,
+        },
+      });
+
+      // 作成成功後、旅行一覧ページにリダイレクト
+      router.push('/travel');
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError.message || MESSAGES.ERROR);
+      console.error('Failed to create travel plan:', apiError);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -81,6 +116,13 @@ export default function TravelNewPage() {
           </div>
 
           <div className="rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
+            {/* エラーメッセージ */}
+            {error && (
+              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+            )}
+
             <form className="space-y-6" onSubmit={e => e.preventDefault()}>
               {/* 旅行タイトル */}
               <div>
@@ -165,11 +207,23 @@ export default function TravelNewPage() {
 
               {/* アクションボタン */}
               <div className="flex gap-4 pt-4">
-                <Button variant="ghost" className="flex-1" onClick={handleCancel} type="button">
+                <Button
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={handleCancel}
+                  type="button"
+                  disabled={isSubmitting}
+                >
                   {BUTTON_LABELS.CANCEL}
                 </Button>
-                <Button variant="primary" className="flex-1" onClick={handleCreate} type="button">
-                  {BUTTON_LABELS.GENERATE_GUIDE}
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={handleCreate}
+                  type="button"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? MESSAGES.LOADING : BUTTON_LABELS.GENERATE_GUIDE}
                 </Button>
               </div>
             </form>
