@@ -22,27 +22,27 @@ export default function TravelListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchTravels = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const apiClient = createApiClientFromEnv();
+      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
+      const userId = 'demo-user';
+
+      const response = await apiClient.listTravelPlans({ userId });
+      setTravels(response);
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError.message || MESSAGES.ERROR);
+      console.error('Failed to fetch travel plans:', apiError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchTravels = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const apiClient = createApiClientFromEnv();
-        // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-        const userId = 'demo-user';
-
-        const response = await apiClient.listTravelPlans({ userId });
-        setTravels(response);
-      } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plans:', apiError);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchTravels();
   }, []);
 
@@ -83,9 +83,14 @@ export default function TravelListPage() {
             <h1 className="mb-2 font-bold text-3xl text-neutral-900">{PAGE_TITLES.TRAVEL_LIST}</h1>
             <p className="text-neutral-600">{PAGE_DESCRIPTIONS.TRAVEL_LIST}</p>
           </div>
-          <Link href="/travel/new">
-            <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={fetchTravels} disabled={isLoading}>
+              {isLoading ? MESSAGES.LOADING : '一覧を更新'}
+            </Button>
+            <Link href="/travel/new">
+              <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
+            </Link>
+          </div>
         </div>
 
         {error && (
