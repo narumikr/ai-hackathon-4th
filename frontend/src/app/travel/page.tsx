@@ -144,15 +144,29 @@ export default function TravelListPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Link href={`/travel/${travel.id}`} className="flex-1">
-                    <Button variant="primary" fullWidth>
-                      {BUTTON_LABELS.VIEW_DETAILS}
-                    </Button>
-                  </Link>
-                  {travel.status !== 'completed' && (
-                    <Link href={`/travel/${travel.id}/edit`}>
-                      <Button variant="ghost">{BUTTON_LABELS.EDIT}</Button>
+                  {travel.guideGenerationStatus === 'processing' ? (
+                    <div className="flex-1">
+                      <Button variant="primary" fullWidth disabled>
+                        生成中...
+                      </Button>
+                    </div>
+                  ) : (
+                    <Link href={`/travel/${travel.id}`} className="flex-1">
+                      <Button variant="primary" fullWidth>
+                        {BUTTON_LABELS.VIEW_DETAILS}
+                      </Button>
                     </Link>
+                  )}
+                  {travel.status !== 'completed' && (
+                    travel.guideGenerationStatus === 'processing' ? (
+                      <Button variant="ghost" disabled>
+                        {BUTTON_LABELS.EDIT}
+                      </Button>
+                    ) : (
+                      <Link href={`/travel/${travel.id}/edit`}>
+                        <Button variant="ghost">{BUTTON_LABELS.EDIT}</Button>
+                      </Link>
+                    )
                   )}
                 </div>
               </div>
