@@ -30,18 +30,11 @@ export interface ReflectionFormData {
   overallComment: string;
 }
 
-export interface ImageAnalysisResponse {
-  detectedSpots: string[];
-  historicalElements: string[];
-  landmarks: string[];
-  confidence: number;
-}
-
 export interface ReflectionPhotoResponse {
   id: string;
   spotId: string;
   url: string;
-  analysis: ImageAnalysisResponse;
+  analysis: string;
   userDescription?: string | null;
 }
 

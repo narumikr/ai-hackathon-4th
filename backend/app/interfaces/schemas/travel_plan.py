@@ -1,12 +1,16 @@
 """TravelPlan API スキーマ"""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.domain.travel_plan.value_objects import PlanStatus
 from app.interfaces.schemas.reflection import ReflectionPamphletResponse, ReflectionResponse
 from app.interfaces.schemas.travel_guide import TravelGuideResponse
+
+if TYPE_CHECKING:
+    from app.application.dto.travel_plan_dto import TravelPlanDTO
 
 
 class TouristSpotSchema(BaseModel):
@@ -68,6 +72,39 @@ class UpdateTravelPlanRequest(BaseModel):
         except ValueError as exc:
             raise ValueError("invalid status") from exc
         return value
+
+
+class TravelPlanListResponse(BaseModel):
+    """旅行計画一覧レスポンス"""
+
+    id: str
+    title: str
+    destination: str
+    status: str
+    guide_generation_status: str = Field(
+        ...,
+        alias="guideGenerationStatus",
+        title="Guide Generation Status",
+    )
+    reflection_generation_status: str = Field(
+        ...,
+        alias="reflectionGenerationStatus",
+        title="Reflection Generation Status",
+    )
+
+    model_config = {"populate_by_name": True}
+
+    @classmethod
+    def from_dto(cls, dto: "TravelPlanDTO") -> "TravelPlanListResponse":
+        """DTOから一覧レスポンスを生成する"""
+        return cls(
+            id=dto.id,
+            title=dto.title,
+            destination=dto.destination,
+            status=dto.status,
+            guideGenerationStatus=dto.guide_generation_status,
+            reflectionGenerationStatus=dto.reflection_generation_status,
+        )
 
 
 class TravelPlanResponse(BaseModel):
