@@ -2,6 +2,7 @@ import type { GenerateTravelGuideRequest } from '@/types/guide';
 import type { CreateReflectionRequest } from '@/types/reflection';
 import type {
   CreateTravelPlanRequest,
+  TravelPlanListResponse,
   TravelPlanResponse,
   UpdateTravelPlanRequest,
 } from '@/types/travel';
@@ -76,7 +77,7 @@ export type ApiClient = {
   listTravelPlans: (params: {
     userId: string;
     signal?: AbortSignal;
-  }) => Promise<TravelPlanResponse[]>;
+  }) => Promise<TravelPlanListResponse[]>;
   getTravelPlan: (params: {
     planId: string;
     signal?: AbortSignal;
@@ -274,7 +275,7 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
   return {
     listTravelPlans: async ({ userId, signal }) => {
       assertNonEmpty(userId, 'userId');
-      return request<TravelPlanResponse[]>({
+      return request<TravelPlanListResponse[]>({
         method: 'GET',
         path: '/travel-plans',
         query: { user_id: userId },

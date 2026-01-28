@@ -126,6 +126,7 @@ async def test_analyze_image(gemini_service, mock_gemini_client):
     mock_gemini_client.generate_content.assert_called_once_with(
         prompt="この画像について説明してください",
         system_instruction="画像分析AI",
+        tools=None,
         images=["gs://bucket/image.jpg"],
         temperature=0.7,
         max_output_tokens=1024,

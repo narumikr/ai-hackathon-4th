@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis import strategies as st
 
 from app.domain.reflection.entity import Photo, Reflection
@@ -38,40 +38,14 @@ def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.Searc
 
 
 @st.composite
-def _image_analysis_inputs(
-    draw: st.DrawFn,
-) -> tuple[list[str], list[str], list[str], float]:
-    """ImageAnalysis用の入力データを生成するStrategy
-
-    Hypothesis Composite Strategy: 複数の値を組み合わせて複雑なデータ構造を生成
+def _analysis_text(draw: st.DrawFn) -> str:
+    """ImageAnalysis用の説明文を生成するStrategy
 
     ImageAnalysis値オブジェクトのバリデーション要件に適合:
-    - 各リストは空でも可（allow_empty=True）
-    - ただし、3つのリスト全てが空になることは許可されない
-    - confidence: 0 ≤ confidence ≤ 1
-    - NaN/Infinityは不正値として除外
-
-    Args:
-        draw: Hypothesisの描画関数
-
-    Returns:
-        (detected_spots, historical_elements, landmarks, confidence)のタプル
+    - 非空の文字列
     """
-    # 各リストは0〜5個の要素を持つ（空リストも許可）
-    detected_spots = draw(
-        st.lists(_non_empty_printable_text(max_size=40), min_size=0, max_size=5)
-    )
-    historical_elements = draw(
-        st.lists(_non_empty_printable_text(max_size=40), min_size=0, max_size=5)
-    )
-    landmarks = draw(st.lists(_non_empty_printable_text(max_size=40), min_size=0, max_size=5))
-    # 少なくとも1つのリストに要素が含まれることを保証
-    assume(detected_spots or historical_elements or landmarks)
-    # confidence: 0から1の範囲の浮動小数点数
-    confidence = draw(
-        st.floats(min_value=0, max_value=1, allow_nan=False, allow_infinity=False)
-    )
-    return detected_spots, historical_elements, landmarks, confidence
+    body = draw(_non_empty_printable_text(max_size=120))
+    return f"{body} 出典: https://example.com/source"
 
 
 @st.composite
@@ -105,13 +79,7 @@ def _photo_list(draw: st.DrawFn) -> list[Photo]:
     photos: list[Photo] = []
     for photo_id in photo_ids:
         # 各写真に対してImageAnalysisを生成
-        detected_spots, historical_elements, landmarks, confidence = draw(_image_analysis_inputs())
-        analysis = ImageAnalysis(
-            detected_spots=detected_spots,
-            historical_elements=historical_elements,
-            landmarks=landmarks,
-            confidence=confidence,
-        )
+        analysis = ImageAnalysis(description=draw(_analysis_text()))
         photos.append(
             Photo(
                 id=photo_id,
@@ -167,53 +135,33 @@ def _spot_reflections(draw: st.DrawFn) -> list[SpotReflection]:
 @given(
     photo_id=_non_empty_printable_text(max_size=40),
     url=_non_empty_printable_text(max_size=120),
-    analysis_data=_image_analysis_inputs(),
+    analysis_text=_analysis_text(),
 )
 def test_reflection_property_image_analysis_execution(
     photo_id: str,
     url: str,
-    analysis_data: tuple[list[str], list[str], list[str], float],
+    analysis_text: str,
 ) -> None:
     """Property 10: Image analysis executionを検証する
 
     前提条件:
-    - 有効なphoto_id、url、分析データが生成される
-    - 分析データには少なくとも1つの検出結果（detected_spots/historical_elements/landmarks）が含まれる
-    - confidenceは0〜1の範囲の浮動小数点数
+    - 有効なphoto_id、url、説明文が生成される
 
     検証項目:
     - ImageAnalysisが正しく生成される
     - PhotoにImageAnalysisが正しく格納される
-    - 各フィールド（detected_spots, historical_elements, landmarks）がタプルに変換されて保持される
-    - 少なくとも1つの分析結果が存在する
+    - 説明文が保持される
     """
-    # 入力データの取得
-    detected_spots, historical_elements, landmarks, confidence = analysis_data
-
     # 実行: ImageAnalysis作成
-    analysis = ImageAnalysis(
-        detected_spots=detected_spots,
-        historical_elements=historical_elements,
-        landmarks=landmarks,
-        confidence=confidence,
-    )
+    analysis = ImageAnalysis(description=analysis_text)
     # 実行: Photo作成
     photo = Photo(id=photo_id, spot_id="spot-001", url=url, analysis=analysis)
 
     # 検証1: ImageAnalysisが正しく格納される
     assert photo.analysis == analysis
 
-    # 検証2: detected_spotsがタプルに変換されて保持される
-    assert analysis.detected_spots == tuple(detected_spots)
-
-    # 検証3: historical_elementsがタプルに変換されて保持される
-    assert analysis.historical_elements == tuple(historical_elements)
-
-    # 検証4: landmarksがタプルに変換されて保持される
-    assert analysis.landmarks == tuple(landmarks)
-
-    # 検証5: 少なくとも1つの分析結果が存在する
-    assert analysis.detected_spots or analysis.historical_elements or analysis.landmarks
+    # 検証2: 説明文が保持される
+    assert analysis.description == analysis_text.strip()
 
 
 @given(

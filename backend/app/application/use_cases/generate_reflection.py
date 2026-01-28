@@ -144,9 +144,7 @@ def _build_reflection_prompt(
         [
             (
                 f"- url: {photo['url']}\n"
-                f"  detectedSpots: {', '.join(photo['analysis']['detectedSpots'])}\n"
-                f"  historicalElements: {', '.join(photo['analysis']['historicalElements'])}\n"
-                f"  landmarks: {', '.join(photo['analysis']['landmarks'])}\n"
+                f"  analysis: {photo['analysis']}\n"
                 f"  userDescription: {photo.get('userDescription') or 'なし'}"
             )
             for photo in photos

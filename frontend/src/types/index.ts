@@ -26,6 +26,7 @@ export type {
   TouristSpot,
   CreateTravelPlanRequest,
   UpdateTravelPlanRequest,
+  TravelPlanListResponse,
   TravelPlanResponse,
 } from './travel';
 
@@ -43,7 +44,6 @@ export type {
   PhotoData,
   ReflectionSpot,
   ReflectionFormData,
-  ImageAnalysisResponse,
   ReflectionPhotoResponse,
   ReflectionResponse,
   CreateReflectionRequest,
