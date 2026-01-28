@@ -5,7 +5,6 @@ import { Button, Emoji } from '@/components/ui';
 import {
   BUTTON_LABELS,
   EMOJI_LABELS,
-  LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
@@ -13,12 +12,12 @@ import {
   STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
-import type { TravelPlanResponse, TravelPlanStatus } from '@/types';
+import type { TravelPlanListResponse, TravelPlanStatus } from '@/types';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function TravelListPage() {
-  const [travels, setTravels] = useState<TravelPlanResponse[]>([]);
+  const [travels, setTravels] = useState<TravelPlanListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,15 +63,6 @@ export default function TravelListPage() {
       case 'completed':
         return STATUS_COLORS.COMPLETED;
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
   };
 
   return (
@@ -124,17 +114,6 @@ export default function TravelListPage() {
                     className={`rounded-full px-3 py-1 font-medium text-xs ${getStatusColor(travel.status)}`}
                   >
                     {getStatusLabel(travel.status)}
-                  </span>
-                </div>
-
-                <div className="mb-4 flex items-center gap-4 text-neutral-600 text-sm">
-                  <span>
-                    <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {travel.spots.length}
-                    {LABELS.SPOTS_COUNT}
-                  </span>
-                  <span>
-                    <Emoji symbol="📅" label={EMOJI_LABELS.CALENDAR} />{' '}
-                    {formatDate(travel.createdAt)}
                   </span>
                 </div>
 
