@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from urllib.parse import quote_plus
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,9 +37,14 @@ class DatabaseSettings(BaseSettings):
         if all(
             [self.database_host, self.database_name, self.database_user, self.database_password]
         ):
+            assert self.database_user is not None
+            assert self.database_password is not None
+            assert self.database_name is not None
+            user = quote_plus(self.database_user)
+            password = quote_plus(self.database_password)
+            database_name = quote_plus(self.database_name)
             self.database_url = (
-                f"postgresql://{self.database_user}:{self.database_password}"
-                f"@{self.database_host}/{self.database_name}"
+                f"postgresql://{user}:{password}@{self.database_host}/{database_name}"
             )
             return self
 

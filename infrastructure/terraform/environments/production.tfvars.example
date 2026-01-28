@@ -11,5 +11,8 @@ developer_id   = ""
 region = "asia-northeast1"
 zone   = "asia-northeast1-a"
 
+# 本番ドメイン（未指定時はCORSを全許可）
+production_domain = ""
+
 # コストセンター
 cost_center = "historical-travel-agent"

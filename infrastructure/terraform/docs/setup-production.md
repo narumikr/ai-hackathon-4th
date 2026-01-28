@@ -45,7 +45,7 @@ docker --version
 
 ```bash
 # プロジェクトIDを環境変数に設定
-export PROD_PROJECT_ID="your-project-id"
+export PROD_PROJECT_ID="natural-ether-481906-c4"
 export PROJECT_ID="${PROD_PROJECT_ID}"
 ```
 
@@ -178,6 +178,9 @@ developer_id   = ""
 region = "asia-northeast1"
 zone   = "asia-northeast1-a"
 
+# 本番ドメイン（未指定時はCORSを全許可）
+production_domain = ""
+
 # コストセンター
 cost_center = "historical-travel-agent"
 ```
@@ -250,13 +253,7 @@ cd ../infrastructure/terraform
 terraform apply -var-file=environments/production.tfvars -target=module.cloud_run
 ```
 
-### 1. フロントエンドディレクトリに移動
-
-```bash
-cd ../../frontend
-```
-
-### 2. 環境変数ファイルの作成
+### 1. 環境変数ファイルの作成
 
 ```bash
 # バックエンドURLを取得
@@ -272,20 +269,20 @@ NEXT_TELEMETRY_DISABLED=1
 EOF
 ```
 
-### 3. Dockerイメージをビルド
+### 2. Dockerイメージをビルド
 
 ```bash
 # Cloud Run用にlinux/amd64プラットフォームでビルド
 docker build --platform linux/amd64 -t asia-northeast1-docker.pkg.dev/${PROJECT_ID}/travel-agent/frontend:latest .
 ```
 
-### 4. Artifact Registryにプッシュ
+### 3. Artifact Registryにプッシュ
 
 ```bash
 docker push asia-northeast1-docker.pkg.dev/${PROJECT_ID}/travel-agent/frontend:latest
 ```
 
-### 5. イメージが正しくプッシュされたか確認
+### 4. イメージが正しくプッシュされたか確認
 
 ```bash
 gcloud artifacts docker images list asia-northeast1-docker.pkg.dev/${PROJECT_ID}/travel-agent
@@ -299,7 +296,7 @@ asia-northeast1-docker.pkg.dev/your-project-id/travel-agent/backend   sha256:xxx
 asia-northeast1-docker.pkg.dev/your-project-id/travel-agent/frontend  sha256:xxxxx  2024-01-27 12:00:00  2024-01-27 12:00:00
 ```
 
-### 6. Terraformディレクトリに戻る
+### 5. Terraformディレクトリに戻る
 
 ```bash
 cd ../infrastructure/terraform
@@ -335,17 +332,7 @@ terraform apply -var-file=environments/production.tfvars
 
 ## 動作確認
 
-### 1. デプロイされたURLの確認
-
-```bash
-# バックエンドURLを取得
-terraform output backend_url
-
-# フロントエンドURLを取得
-terraform output frontend_url
-```
-
-### 2. バックエンドのヘルスチェック
+### 1. バックエンドのヘルスチェック
 
 ```bash
 # バックエンドURLを取得
@@ -361,7 +348,7 @@ curl ${BACKEND_URL}/health
 {"status":"ok"}
 ```
 
-### 3. フロントエンドの動作確認
+### 2. フロントエンドの動作確認
 
 ```bash
 # フロントエンドURLを取得

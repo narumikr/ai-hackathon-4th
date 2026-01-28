@@ -33,6 +33,13 @@ variable "developer_id" {
   default     = ""
 }
 
+# 本番ドメイン
+variable "production_domain" {
+  description = "本番環境のドメイン名"
+  type        = string
+  default     = ""
+}
+
 # コストセンター
 variable "cost_center" {
   description = "コストセンターのラベル値"

@@ -19,9 +19,9 @@ locals {
   is_production  = local.workspace == "production"
   is_development = local.workspace == "development"
 
-  _dev_project_id_guard  = local.is_development && var.dev_project_id == "" ? error("dev_project_id is required in development workspace.") : true
-  _prod_project_id_guard = local.is_production && var.prod_project_id == "" ? error("prod_project_id is required in production workspace.") : true
-  _developer_id_guard    = local.is_development && (var.developer_id == "" || !can(regex("^[a-z0-9-]+$", var.developer_id))) ? error("developer_id must be non-empty and match ^[a-z0-9-]+$ in development workspace.") : true
+  _dev_project_id_guard    = local.is_development && var.dev_project_id == "" ? error("dev_project_id is required in development workspace.") : true
+  _prod_project_id_guard   = local.is_production && var.prod_project_id == "" ? error("prod_project_id is required in production workspace.") : true
+  _developer_id_guard      = local.is_development && (var.developer_id == "" || !can(regex("^[a-z0-9-]+$", var.developer_id))) ? error("developer_id must be non-empty and match ^[a-z0-9-]+$ in development workspace.") : true
 
   env_config = {
     development = {
@@ -80,6 +80,7 @@ module "cloud_storage" {
   project_id   = local.current_env.project_id
   region       = local.current_env.region
   developer_id = var.developer_id
+  domain       = var.production_domain
   labels       = local.common_labels
 }
 

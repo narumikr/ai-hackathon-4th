@@ -64,9 +64,9 @@ resource "google_storage_bucket" "production" {
     }
   }
 
-  # CORS設定（本番ドメインからのアクセス許可）
+  # CORS設定（本番ドメイン指定時はそのドメインのみ許可、未指定時は全許可）
   cors {
-    origin          = ["https://${var.domain}"]
+    origin          = var.domain != "" ? ["https://${var.domain}"] : ["*"]
     method          = ["GET", "POST", "PUT", "DELETE"]
     response_header = ["*"]
     max_age_seconds = 3600
