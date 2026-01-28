@@ -15,7 +15,8 @@ import {
   PLACEHOLDERS,
   SECTION_TITLES,
 } from '@/constants';
-import { sampleGuide, sampleTravels } from '@/data';
+import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import type { TravelPlanResponse } from '@/types';
 import type { ReflectionSpot } from '@/types/reflection';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -26,42 +27,64 @@ export default function ReflectionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
 
-  // クライアントサイドでデータ取得（本来はサーバーでfetchしてpropsで渡すか、SWR/React Queryを使う）
-  const travel = sampleTravels.find(t => t.id === id);
-
-  // ステート初期化
+  const [travel, setTravel] = useState<TravelPlanResponse | null>(null);
   const [spots, setSpots] = useState<ReflectionSpot[]>([]);
   const [overallComment, setOverallComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!travel) return;
+    const fetchTravelPlan = async () => {
+      if (!id) return;
 
-    // 初期データのロード
-    // 既存の振り返りがある場合はそれをロード（閲覧モード用だが今回は編集も考慮）
-    // 今回は簡易的に「未完了」の場合はガイドからスポットを生成、「完了」の場合はサンプルからロードと分岐
+      setIsLoading(true);
+      setError(null);
 
-    if (travel.hasReflection) {
-      router.push(`/reflection/${id}/view`);
-      return;
-    }
-    // 新規作成時：ガイドからスポットリストを生成
-    // データ構造上、travel.idとguide.idが一致しない場合もあるが、ここではsampleGuideを使う
-    const guide = sampleGuide;
+      try {
+        const apiClient = createApiClientFromEnv();
+        const response = await apiClient.getTravelPlan({ planId: id });
+        setTravel(response);
 
-    const initialSpots: ReflectionSpot[] = guide.spots.map(s => ({
-      id: s.id,
-      name: s.name,
-      photos: [],
-      comment: '',
-      isAdded: false,
-    }));
-    setSpots(initialSpots);
-    setIsLoading(false);
-  }, [travel, id, router]);
+        // 既に振り返りがある場合は閲覧ページにリダイレクト
+        if (response.reflection) {
+          router.push(`/reflection/${id}/view`);
+          return;
+        }
 
-  if (!travel) {
-    return <div className="py-20 text-center">{MESSAGES.TRAVEL_NOT_FOUND}</div>;
+        // スポットリストを初期化
+        const initialSpots: ReflectionSpot[] = response.spots.map(s => ({
+          id: s.id || `spot-${s.name}`,
+          name: s.name,
+          photos: [],
+          comment: '',
+          isAdded: false,
+        }));
+        setSpots(initialSpots);
+      } catch (err) {
+        const apiError = toApiError(err);
+        setError(apiError.message || MESSAGES.ERROR);
+        console.error('Failed to fetch travel plan:', apiError);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTravelPlan();
+  }, [id, router]);
+
+  if (!travel && !isLoading) {
+    return (
+      <div className="py-8">
+        <Container>
+          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
+            {error || MESSAGES.TRAVEL_NOT_FOUND}
+          </div>
+          <Link href="/reflection">
+            <Button>{BUTTON_LABELS.BACK}</Button>
+          </Link>
+        </Container>
+      </div>
+    );
   }
 
   if (isLoading) {
@@ -110,15 +133,17 @@ export default function ReflectionDetailPage() {
           </div>
 
           {/* 旅行情報 */}
-          <div className="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
-            <h2 className="mb-1 font-semibold text-lg text-neutral-900">{travel.title}</h2>
-            <div className="flex gap-4 text-neutral-600 text-sm">
-              <span>
-                {LABELS.COMPLETED_DATE} {travel.completedAt}
-              </span>
-              <span>{travel.destination}</span>
+          {travel && (
+            <div className="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
+              <h2 className="mb-1 font-semibold text-lg text-neutral-900">{travel.title}</h2>
+              <div className="flex gap-4 text-neutral-600 text-sm">
+                <span>
+                  {LABELS.COMPLETED_DATE} {new Date(travel.updatedAt).toLocaleDateString('ja-JP')}
+                </span>
+                <span>{travel.destination}</span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* スポットごとの振り返り */}
           <div className="mb-8 space-y-6">
