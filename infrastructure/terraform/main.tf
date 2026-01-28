@@ -19,10 +19,9 @@ locals {
   is_production  = local.workspace == "production"
   is_development = local.workspace == "development"
 
-  _dev_project_id_guard    = local.is_development && var.dev_project_id == "" ? error("dev_project_id is required in development workspace.") : true
-  _prod_project_id_guard   = local.is_production && var.prod_project_id == "" ? error("prod_project_id is required in production workspace.") : true
-  _developer_id_guard      = local.is_development && (var.developer_id == "" || !can(regex("^[a-z0-9-]+$", var.developer_id))) ? error("developer_id must be non-empty and match ^[a-z0-9-]+$ in development workspace.") : true
-  _production_domain_guard = local.is_production && var.production_domain == "" ? error("production_domain is required in production workspace.") : true
+  _dev_project_id_guard  = local.is_development && var.dev_project_id == "" ? error("dev_project_id is required in development workspace.") : true
+  _prod_project_id_guard = local.is_production && var.prod_project_id == "" ? error("prod_project_id is required in production workspace.") : true
+  _developer_id_guard    = local.is_development && (var.developer_id == "" || !can(regex("^[a-z0-9-]+$", var.developer_id))) ? error("developer_id must be non-empty and match ^[a-z0-9-]+$ in development workspace.") : true
 
   env_config = {
     development = {
@@ -81,6 +80,117 @@ module "cloud_storage" {
   project_id   = local.current_env.project_id
   region       = local.current_env.region
   developer_id = var.developer_id
-  domain       = var.production_domain
   labels       = local.common_labels
+}
+
+# Artifact Registryモジュール
+# - production: Dockerイメージ用リポジトリ
+module "artifact_registry" {
+  source = "./modules/artifact-registry"
+  count  = 1
+
+  environment    = local.is_production ? "production" : "development"
+  project_id     = local.current_env.project_id
+  project_number = data.google_project.current.number
+  region         = local.current_env.region
+  labels         = local.common_labels
+}
+
+# Secret Managerモジュール
+# - production: データベースパスワードなどの機密情報
+module "secret_manager" {
+  source = "./modules/secret-manager"
+  count  = 1
+
+  environment = local.is_production ? "production" : "development"
+  project_id  = local.current_env.project_id
+  labels      = local.common_labels
+}
+
+# Cloud SQLモジュール
+# - production: PostgreSQLデータベース
+module "cloud_sql" {
+  source = "./modules/cloud-sql"
+  count  = 1
+
+  environment = local.is_production ? "production" : "development"
+  project_id  = local.current_env.project_id
+  region      = local.current_env.region
+  db_password = local.is_production ? module.secret_manager[0].db_password : ""
+  labels      = local.common_labels
+
+  # Secret Managerモジュールに依存
+  depends_on = [module.secret_manager]
+}
+
+# IAMモジュール
+# - production: サービスアカウントと権限管理
+module "iam" {
+  source = "./modules/iam"
+  count  = 1
+
+  environment                     = local.is_production ? "production" : "development"
+  project_id                      = local.current_env.project_id
+  project_number                  = data.google_project.current.number
+  region                          = local.current_env.region
+  storage_bucket_name             = local.is_production ? module.cloud_storage[0].bucket_name : ""
+  db_password_secret_id           = local.is_production ? module.secret_manager[0].db_password_secret_id : ""
+  artifact_registry_repository_id = local.is_production ? module.artifact_registry[0].repository_id : ""
+
+  # 他のモジュールに依存
+  depends_on = [
+    module.cloud_storage,
+    module.secret_manager,
+    module.artifact_registry
+  ]
+}
+
+# Cloud Runモジュール
+# - production: FastAPIバックエンドアプリケーション
+module "cloud_run" {
+  source = "./modules/cloud-run"
+  count  = 1
+
+  environment           = local.is_production ? "production" : "development"
+  project_id            = local.current_env.project_id
+  region                = local.current_env.region
+  container_image       = local.is_production ? "${local.current_env.region}-docker.pkg.dev/${local.current_env.project_id}/${module.artifact_registry[0].repository_id}/backend:latest" : ""
+  storage_bucket_name   = local.is_production ? module.cloud_storage[0].bucket_name : ""
+  database_host         = local.is_production ? module.cloud_sql[0].public_ip_address : ""
+  database_name         = local.is_production ? module.cloud_sql[0].database_name : ""
+  database_user         = local.is_production ? module.cloud_sql[0].database_user : ""
+  db_password_secret_id = local.is_production ? module.secret_manager[0].db_password_secret_id : ""
+  service_account_email = local.is_production ? module.iam[0].backend_service_account_email : ""
+  labels                = local.common_labels
+
+  # 他のモジュールに依存
+  depends_on = [
+    module.cloud_storage,
+    module.cloud_sql,
+    module.secret_manager,
+    module.artifact_registry,
+    module.iam
+  ]
+}
+
+# Cloud Run Frontendモジュール
+# - production: Next.jsフロントエンドアプリケーション
+module "cloud_run_frontend" {
+  source = "./modules/cloud-run-frontend"
+  count  = 1
+
+  environment           = local.is_production ? "production" : "development"
+  project_id            = local.current_env.project_id
+  region                = local.current_env.region
+  container_image       = local.is_production ? "${local.current_env.region}-docker.pkg.dev/${local.current_env.project_id}/${module.artifact_registry[0].repository_id}/frontend:latest" : ""
+  backend_service_url   = local.is_production ? module.cloud_run[0].service_url : ""
+  service_account_email = local.is_production ? module.iam[0].frontend_service_account_email : ""
+  labels                = local.common_labels
+
+  # 他のモジュールに依存
+  depends_on = [
+    module.artifact_registry,
+    module.iam,
+    module.cloud_run
+  ]
 }

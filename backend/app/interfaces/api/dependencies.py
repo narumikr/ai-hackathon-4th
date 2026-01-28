@@ -45,8 +45,15 @@ def get_ai_service() -> IAIService:
 
     Returns:
         IAIService: AIサービス実装
+
+    Raises:
+        ValueError: GOOGLE_CLOUD_PROJECTが設定されていない場合
     """
     settings = get_settings()
+
+    if not settings.google_cloud_project:
+        raise ValueError("GOOGLE_CLOUD_PROJECT environment variable is required for AI service")
+
     gemini_client = GeminiClient(
         project_id=settings.google_cloud_project,
         location=settings.google_cloud_location,

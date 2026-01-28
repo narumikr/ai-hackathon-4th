@@ -33,26 +33,6 @@ variable "developer_id" {
   default     = ""
 }
 
-# 本番ドメイン
-variable "production_domain" {
-  description = "本番環境のドメイン名"
-  type        = string
-  default     = ""
-}
-
-# GitHub設定
-variable "github_repository" {
-  description = "GitHubリポジトリ（owner/repo形式）"
-  type        = string
-  default     = ""
-}
-
-variable "github_workload_identity_pool" {
-  description = "GitHub用Workload Identity Pool名"
-  type        = string
-  default     = ""
-}
-
 # コストセンター
 variable "cost_center" {
   description = "コストセンターのラベル値"
