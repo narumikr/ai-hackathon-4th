@@ -1,0 +1,1 @@
+レスポンススキーマに一致するJSONのみを返してください。キー: detectedSpots, historicalElements, landmarks, confidence

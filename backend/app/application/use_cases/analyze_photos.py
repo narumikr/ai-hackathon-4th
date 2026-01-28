@@ -10,6 +10,7 @@ from app.domain.reflection.repository import IReflectionRepository
 from app.domain.reflection.value_objects import ImageAnalysis
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
+from app.prompts import render_template
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,10 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
     return normalized
 
 
+_IMAGE_ANALYSIS_PROMPT_TEMPLATE = "image_analysis_prompt.txt"
+_IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE = "image_analysis_system_instruction.txt"
+
+
 def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
     """AIの画像分析レスポンスをパースする"""
     if not response or not response.strip():
@@ -82,15 +87,11 @@ def _build_image_analysis_prompt(
     description_text = ""
     if user_description:
         description_text = f"ユーザーの補足説明: {user_description}\n"
-    return (
-        "次の旅行先と観光スポット情報を参考に、画像に写っている内容から、"
-        "歴史情報の説明文を日本語で作成してください。\n"
-        "説明文には可能であれば出典名やURLを文中に含めてください。\n"
-        "出力は文章のみで、段落ごとに改行してください。\n"
-        f"旅行先: {destination}\n"
-        "観光スポット:\n"
-        f"- {spot_name}\n"
-        f"{description_text}"
+    return render_template(
+        _IMAGE_ANALYSIS_PROMPT_TEMPLATE,
+        destination=destination,
+        spot_name=spot_name,
+        description_text=description_text,
     )
 
 
@@ -191,9 +192,7 @@ class AnalyzePhotosUseCase:
             analysis_text = await self._ai_service.analyze_image(
                 prompt=prompt,
                 image_uri=photo["url"],
-                system_instruction=(
-                    "説明文は日本語で作成してください。可能であれば出典名やURLを文中に含めてください。"
-                ),
+                system_instruction=render_template(_IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE),
                 temperature=0.0,
             )
             if _analysis_needs_search(analysis_text):
