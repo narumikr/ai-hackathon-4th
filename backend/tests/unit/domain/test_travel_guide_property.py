@@ -321,7 +321,9 @@ def test_travel_guide_property_rejects_invalid_timeline_related_spots(data: Trav
     invalid_timeline = timeline + [invalid_event]
 
     # 検証: 存在しないspot_nameを参照するrelated_spotsはInvalidTravelGuideErrorを発生させる
-    with pytest.raises(InvalidTravelGuideError, match="timeline related_spots not found"):
+    with pytest.raises(
+        InvalidTravelGuideError, match="timeline related_spots contains unsupported names"
+    ):
         composer.compose(
             plan_id=plan_id,
             overview=overview,

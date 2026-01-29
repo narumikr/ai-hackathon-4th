@@ -127,6 +127,72 @@ def _structured_guide_payload() -> dict[str, Any]:
     }
 
 
+def _structured_guide_payload_with_recommendations() -> dict[str, Any]:
+    return {
+        "overview": "京都の主要寺院に加えて城郭も巡る旅行ガイド。",
+        "timeline": [
+            {
+                "year": 794,
+                "event": "平安京遷都",
+                "significance": "京都の歴史的発展の起点となる出来事。",
+                "relatedSpots": ["京都"],
+            },
+            {
+                "year": 1603,
+                "event": "二条城の築城",
+                "significance": "江戸幕府の権威を示す城郭の建立。",
+                "relatedSpots": ["二条城"],
+            },
+            {
+                "year": 778,
+                "event": "清水寺創建",
+                "significance": "奈良時代から続く歴史的寺院の始まり。",
+                "relatedSpots": ["清水寺"],
+            },
+        ],
+        "spotDetails": [
+            {
+                "spotName": "清水寺",
+                "historicalBackground": "奈良時代末期に創建された古刹。",
+                "highlights": ["清水の舞台", "音羽の滝"],
+                "recommendedVisitTime": "早朝",
+                "historicalSignificance": "平安京遷都以前の歴史を持つ。",
+            },
+            {
+                "spotName": "金閣寺",
+                "historicalBackground": "足利義満の別荘として建立された寺院。",
+                "highlights": ["金箔の舎利殿", "鏡湖池"],
+                "recommendedVisitTime": "午後",
+                "historicalSignificance": "室町文化の象徴。",
+            },
+            {
+                "spotName": "二条城",
+                "historicalBackground": "徳川家康が上洛時の居城として築城。",
+                "highlights": ["二の丸御殿", "唐門"],
+                "recommendedVisitTime": "午前",
+                "historicalSignificance": "武家政権の権威を示す城郭。",
+            },
+        ],
+        "checkpoints": [
+            {
+                "spotName": "清水寺",
+                "checkpoints": ["清水の舞台の高さを確認", "音羽の滝の由来を学ぶ"],
+                "historicalContext": "断崖に建つ舞台は江戸時代の信仰文化を示す。",
+            },
+            {
+                "spotName": "金閣寺",
+                "checkpoints": ["金箔装飾の意味を学ぶ", "庭園の構成を確認"],
+                "historicalContext": "将軍文化が色濃く反映された空間構成。",
+            },
+            {
+                "spotName": "二条城",
+                "checkpoints": ["二の丸御殿の障壁画を観察", "鴬張りの廊下を体験"],
+                "historicalContext": "江戸幕府の権威を示す空間構成。",
+            },
+        ],
+    }
+
+
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_creates_guide(
     db_session: Session, sample_travel_plan
@@ -165,6 +231,38 @@ async def test_generate_travel_guide_use_case_creates_guide(
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
     assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_allows_recommended_spots(
+    db_session: Session, sample_travel_plan
+) -> None:
+    """前提条件: 旅行計画とおすすめスポットを含む構造化データ。
+    実行: 旅行ガイドを生成する。
+    検証: 追加スポットと目的地全体の年表イベントが保持される。
+    """
+    # 前提条件: 旅行計画とおすすめスポットを含む構造化データ。
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        historical_info="京都全体とおすすめスポットの歴史情報。",
+        structured_data=_structured_guide_payload_with_recommendations(),
+    )
+
+    # 実行: 旅行ガイドを生成する。
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    dto = await use_case.execute(plan_id=sample_travel_plan.id)
+
+    # 検証: 追加スポットと目的地全体の年表イベントが保持される。
+    spot_names = {detail["spotName"] for detail in dto.spot_details}
+    assert "二条城" in spot_names
+    assert "清水寺" in spot_names
+    assert "金閣寺" in spot_names
+    assert any("京都" in event["relatedSpots"] for event in dto.timeline)
 
 
 @pytest.mark.asyncio
