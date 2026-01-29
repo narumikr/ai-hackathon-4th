@@ -1,22 +1,53 @@
+'use client';
+
 import { Container } from '@/components/layout';
 import { Button, Emoji } from '@/components/ui';
 import {
   BUTTON_LABELS,
   EMOJI_LABELS,
-  LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/constants';
-import { type TravelStatus, sampleTravels } from '@/data';
+import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import type { TravelPlanListResponse, TravelPlanStatus } from '@/types';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function TravelListPage() {
-  const hasTravels = sampleTravels.length > 0;
+  const [travels, setTravels] = useState<TravelPlanListResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getStatusLabel = (status: TravelStatus) => {
+  useEffect(() => {
+    const fetchTravels = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const apiClient = createApiClientFromEnv();
+        // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
+        const userId = 'demo-user';
+
+        const response = await apiClient.listTravelPlans({ userId });
+        setTravels(response);
+      } catch (err) {
+        const apiError = toApiError(err);
+        setError(apiError.message || MESSAGES.ERROR);
+        console.error('Failed to fetch travel plans:', apiError);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTravels();
+  }, []);
+
+  const hasTravels = travels.length > 0;
+
+  const getStatusLabel = (status: TravelPlanStatus) => {
     switch (status) {
       case 'planning':
         return STATUS_LABELS.PLANNING;
@@ -25,7 +56,7 @@ export default function TravelListPage() {
     }
   };
 
-  const getStatusColor = (status: TravelStatus) => {
+  const getStatusColor = (status: TravelPlanStatus) => {
     switch (status) {
       case 'planning':
         return STATUS_COLORS.PLANNING;
@@ -47,7 +78,17 @@ export default function TravelListPage() {
           </Link>
         </div>
 
-        {!hasTravels ? (
+        {error && (
+          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
+            {error}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <p className="text-neutral-600">{MESSAGES.LOADING}</p>
+          </div>
+        ) : !hasTravels ? (
           <div className="py-16 text-center">
             <div className="mb-4 text-6xl">
               <Emoji symbol="📚" label={EMOJI_LABELS.BOOK} />
@@ -59,7 +100,7 @@ export default function TravelListPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {sampleTravels.map(travel => (
+            {travels.map(travel => (
               <div
                 key={travel.id}
                 className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
@@ -73,16 +114,6 @@ export default function TravelListPage() {
                     className={`rounded-full px-3 py-1 font-medium text-xs ${getStatusColor(travel.status)}`}
                   >
                     {getStatusLabel(travel.status)}
-                  </span>
-                </div>
-
-                <div className="mb-4 flex items-center gap-4 text-neutral-600 text-sm">
-                  <span>
-                    <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {travel.spotsCount}
-                    {LABELS.SPOTS_COUNT}
-                  </span>
-                  <span>
-                    <Emoji symbol="📅" label={EMOJI_LABELS.CALENDAR} /> {travel.createdAt}
                   </span>
                 </div>
 
