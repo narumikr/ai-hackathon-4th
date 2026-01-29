@@ -81,7 +81,7 @@ class FakeAIService(IAIService):
 
 def _structured_guide_payload() -> dict[str, Any]:
     return {
-        "overview": "京都の代表的な寺院を巡りながら歴史の流れを学ぶ旅行ガイド。",
+        "overview": "京都の代表的な寺院を巡りながら歴史の流れを学ぶ旅行ガイドです。清水寺と金閣寺を中心に、時代ごとの文化や人々の営みを辿り、現地での体験を通じて理解を深められる内容にまとめています。宗教と政治の背景、町の成り立ちや景観の変化にも触れ、旅全体のテーマと学びをはっきり示します。",
         "timeline": [
             {
                 "year": 778,
@@ -129,7 +129,7 @@ def _structured_guide_payload() -> dict[str, Any]:
 
 def _structured_guide_payload_with_recommendations() -> dict[str, Any]:
     return {
-        "overview": "京都の主要寺院に加えて城郭も巡る旅行ガイド。",
+        "overview": "京都の主要寺院に加えて城郭も巡る旅行ガイドです。寺院文化と武家文化の両面から京都の歴史を俯瞰できるように構成し、各スポットの関係性と時代背景を示しながら、学びのポイントを丁寧に整理しています。宗教施設と城郭の役割の違いを比較し、旅行のハイライトと体験価値が伝わる内容にしています。",
         "timeline": [
             {
                 "year": 794,
@@ -263,6 +263,40 @@ async def test_generate_travel_guide_use_case_allows_recommended_spots(
     assert "清水寺" in spot_names
     assert "金閣寺" in spot_names
     assert any("京都" in event["relatedSpots"] for event in dto.timeline)
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rejects_short_overview(
+    db_session: Session, sample_travel_plan
+) -> None:
+    """前提条件: overviewが最小文字数を満たさない構造化データ。
+    実行: 旅行ガイドを生成する。
+    検証: ValueErrorが発生し、生成ステータスがFAILEDになる。
+    """
+    # 前提条件: overviewが最小文字数を満たさない構造化データ。
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    short_overview_payload = {
+        **_structured_guide_payload(),
+        "overview": "短い概要。",
+    }
+    ai_service = FakeAIService(
+        historical_info="京都の歴史情報を検索結果から取得。",
+        structured_data=short_overview_payload,
+    )
+
+    # 実行 & 検証: ValueErrorが発生する。
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    with pytest.raises(ValueError, match="overview must be at least"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
 
 
 @pytest.mark.asyncio

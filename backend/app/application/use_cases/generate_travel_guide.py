@@ -94,6 +94,12 @@ def _require_str(value: object, field_name: str) -> str:
     return value.strip()
 
 
+def _require_min_length(value: str, field_name: str, min_length: int) -> None:
+    """文字列の最小長を検証する"""
+    if len(value) < min_length:
+        raise ValueError(f"{field_name} must be at least {min_length} characters.")
+
+
 def _require_list(value: object, field_name: str) -> list[Any]:
     """必須の配列フィールドを検証する"""
     if not isinstance(value, list) or not value:
@@ -291,6 +297,7 @@ class GenerateTravelGuideUseCase:
                 raise ValueError("structured response must be a dict.")
 
             overview = _require_str(structured.get("overview"), "overview")
+            _require_min_length(overview, "overview", 100)
             timeline_items = _require_list(structured.get("timeline"), "timeline")
             spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
             checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
