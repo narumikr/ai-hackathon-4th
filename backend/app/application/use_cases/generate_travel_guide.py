@@ -306,16 +306,17 @@ class GenerateTravelGuideUseCase:
             spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
             spot_detail_name_set = {detail.spot_name for detail in spot_details}
             checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
-            allowed_related_spots = spot_detail_name_set | {travel_plan.destination}
-            timeline = _build_timeline(timeline_items, allowed_related_spots)
+            allowed_related_spots_for_timeline = spot_detail_name_set | {travel_plan.destination}
+            timeline = _build_timeline(timeline_items, allowed_related_spots_for_timeline)
 
+            allowed_related_spots_for_compose = {travel_plan.destination}
             generated_guide = self._composer.compose(
                 plan_id=travel_plan.id,
                 overview=overview,
                 timeline=timeline,
                 spot_details=spot_details,
                 checkpoints=checkpoints,
-                allowed_related_spots={travel_plan.destination},
+                allowed_related_spots=allowed_related_spots_for_compose,
             )
 
             existing = self._guide_repository.find_by_plan_id(travel_plan.id)
