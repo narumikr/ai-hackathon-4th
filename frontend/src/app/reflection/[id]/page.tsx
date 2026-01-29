@@ -31,6 +31,7 @@ export default function ReflectionDetailPage() {
   const [overallComment, setOverallComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchTravelPlan = async () => {
@@ -91,6 +92,7 @@ export default function ReflectionDetailPage() {
   }
 
   const handleSpotUpdate = (spotId: string, updates: Partial<ReflectionSpot>) => {
+    // ローカル状態を更新
     setSpots(prev => prev.map(s => (s.id === spotId ? { ...s, ...updates } : s)));
   };
 
@@ -109,11 +111,73 @@ export default function ReflectionDetailPage() {
     setSpots(prev => prev.filter(s => s.id !== spotId));
   };
 
-  const handleSubmit = () => {
-    // TODO: 実際の実装ではここでAPIリクエストを送信し、
-    // 成功時に適切なUIフィードバック（トースト表示や画面遷移など）を行う
-    alert(MESSAGES.REFLECTION_GENERATED);
+  const handleSubmit = async () => {
+    if (!travel || !id) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const apiClient = createApiClientFromEnv();
+      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
+      const userId = 'demo-user';
+
+      // 1. 各スポットの写真をアップロード
+      for (const spot of spots) {
+        const files = spot.photos
+          .filter(photo => photo.file !== undefined)
+          .map(photo => photo.file as File);
+
+        // 写真がある場合のみアップロード
+        if (files.length > 0) {
+          await apiClient.uploadSpotReflection({
+            planId: id,
+            userId,
+            spotId: spot.id,
+            spotNote: spot.comment,
+            files,
+          });
+          console.log(`Photos uploaded for spot: ${spot.name}`);
+        }
+      }
+
+      // 2. 振り返り生成APIを呼び出す
+      await apiClient.createReflection({
+        request: {
+          planId: id,
+          userId,
+          userNotes: overallComment || undefined,
+        },
+      });
+
+      // 3. 成功後、振り返り一覧ページにリダイレクト
+      router.push('/reflection');
+    } catch (err) {
+      const apiError = toApiError(err);
+      console.error('Failed to create reflection:', apiError);
+      alert(`振り返りの作成に失敗しました: ${apiError.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (!travel && !isLoading) {
+    return (
+      <div className="py-8">
+        <Container>
+          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
+            {error || MESSAGES.TRAVEL_NOT_FOUND}
+          </div>
+          <Link href="/reflection">
+            <Button>{BUTTON_LABELS.BACK}</Button>
+          </Link>
+        </Container>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <div className="py-20 text-center">{MESSAGES.LOADING}</div>;
+  }
 
   return (
     <div className="py-8">
@@ -183,12 +247,18 @@ export default function ReflectionDetailPage() {
           {/* アクションボタン */}
           <div className="flex flex-col gap-4 sm:flex-row">
             <Link href="/reflection" className="flex-1">
-              <Button variant="ghost" size="lg" fullWidth>
+              <Button variant="ghost" size="lg" fullWidth disabled={isSubmitting}>
                 {BUTTON_LABELS.CANCEL}
               </Button>
             </Link>
-            <Button variant="primary" size="lg" className="flex-1" onClick={handleSubmit}>
-              {BUTTON_LABELS.GENERATE_REFLECTION}
+            <Button
+              variant="primary"
+              size="lg"
+              className="flex-1"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? '作成中...' : BUTTON_LABELS.GENERATE_REFLECTION}
             </Button>
           </div>
 

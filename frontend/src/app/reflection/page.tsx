@@ -13,12 +13,12 @@ import {
   STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
-import type { TravelPlanResponse } from '@/types';
+import type { TravelPlanListResponse } from '@/types';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function ReflectionListPage() {
-  const [travels, setTravels] = useState<TravelPlanResponse[]>([]);
+  const [travels, setTravels] = useState<TravelPlanListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,15 +49,6 @@ export default function ReflectionListPage() {
   }, []);
 
   const hasTravels = travels.length > 0;
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
 
   return (
     <div className="py-8">
@@ -92,7 +83,7 @@ export default function ReflectionListPage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {travels.map(travel => {
-              const hasReflection = travel.reflection !== null && travel.reflection !== undefined;
+              const hasReflection = travel.reflectionGenerationStatus === 'succeeded';
 
               return (
                 <div
@@ -115,20 +106,6 @@ export default function ReflectionListPage() {
                       )}
                     </div>
                     <p className="text-neutral-500 text-sm">{travel.destination}</p>
-                  </div>
-
-                  <div className="mb-4 flex items-center gap-4 text-neutral-600 text-sm">
-                    <span>
-                      <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} /> {LABELS.COMPLETED_DATE}{' '}
-                      {formatDate(travel.updatedAt)}
-                    </span>
-                    {travel.reflection?.photos && travel.reflection.photos.length > 0 && (
-                      <span>
-                        <Emoji symbol="📸" label={EMOJI_LABELS.CAMERA} />{' '}
-                        {travel.reflection.photos.length}
-                        {LABELS.PHOTOS_COUNT}
-                      </span>
-                    )}
                   </div>
 
                   <div className="flex gap-2">
