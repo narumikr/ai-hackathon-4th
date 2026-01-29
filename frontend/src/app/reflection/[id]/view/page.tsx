@@ -1,7 +1,7 @@
 'use client';
 
+import { ReflectionViewer } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
-import { ReflectionViewer } from '@/components/reflection/ReflectionViewer';
 import { Button } from '@/components/ui';
 import { BUTTON_LABELS, MESSAGES, PAGE_TITLES } from '@/constants';
 import { sampleReflectionContents, sampleTravels } from '@/data';
