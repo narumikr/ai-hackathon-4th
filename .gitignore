@@ -54,6 +54,7 @@ out/
 backend/.env
 backend/.env.local
 frontend/.env.local
+frontend/.env.production
 
 # IDE
 .vscode/
@@ -80,10 +81,12 @@ infrastructure/terraform/*.tfstate
 infrastructure/terraform/*.tfstate.backup
 infrastructure/terraform/.terraform.lock.hcl
 infrastructure/terraform/terraform.tfvars
+infrastructure/terraform/backend.tf
 infrastructure/terraform/backend-*.tfbackend
 !infrastructure/terraform/backend-template.tfbackend
 infrastructure/terraform/environments/dev-*.tfvars
 !infrastructure/terraform/environments/dev-template.tfvars
+infrastructure/terraform/environments/production.tfvars
 
 # Google Cloud
 service-account-key.json

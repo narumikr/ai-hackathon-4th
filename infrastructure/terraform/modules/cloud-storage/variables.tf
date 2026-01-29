@@ -22,7 +22,7 @@ variable "developer_id" {
 }
 
 variable "domain" {
-  description = "本番環境のドメイン名（CORS設定に使用）"
+  description = "本番環境のドメイン名（CORS設定に使用、未指定時は全許可）"
   type        = string
   default     = ""
 }
