@@ -1,0 +1,48 @@
+# 依存関係
+node_modules/
+.pnp
+.pnp.js
+
+# ビルド出力
+.next/
+out/
+build/
+dist/
+
+# テスト
+coverage/
+.nyc_output/
+
+# 環境変数
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ログ
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# その他
+README.md
+*.md
+.eslintrc.json
+.prettierrc

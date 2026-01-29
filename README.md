@@ -102,13 +102,44 @@
 ## アーキテクチャ（実装品質と拡張性）
 
 ### システム構成
-```
-[アーキテクチャ図やシステム構成図を記載]
-```
 
-### 技術スタック
-
-<!-- TODO 設計書がマージされたら追記する -->
+```mermaid
+graph TB
+    subgraph "GCP Project: Travel Agent (production)"
+        subgraph "Artifact Registry"
+            AR[travel-agent repository]
+            AR_BACKEND[backend:latest]
+            AR_FRONTEND[frontend:latest]
+        end
+        
+        subgraph "Cloud Run Services"
+            BACKEND[Backend Service<br/>FastAPI]
+            FRONTEND[Frontend Service<br/>Next.js]
+        end
+        
+        subgraph "IAM"
+            SA_BACKEND[Backend Service Account]
+            SA_FRONTEND[Frontend Service Account]
+        end
+        
+        subgraph "Other Resources"
+            SQL[(Cloud SQL)]
+            GCS[Cloud Storage]
+            SM[Secret Manager]
+        end
+    end
+    
+    AR_BACKEND --> BACKEND
+    AR_FRONTEND --> FRONTEND
+    SA_BACKEND --> BACKEND
+    SA_FRONTEND --> FRONTEND
+    BACKEND --> SQL
+    BACKEND --> GCS
+    BACKEND --> SM
+    FRONTEND -.API呼び出し.-> BACKEND
+    
+    USER[ユーザー] --> FRONTEND
+```
 
 ### 前提条件
 - **開発環境**:
@@ -322,11 +353,6 @@ CI/CDワークフローの詳細な設計・仕様・トラブルシューティ
 
 📖 **[CI/CDワークフロー設計書](docs/actions/ci-workflow-design.md)**
 
-### デプロイ
-```bash
-# Google Cloudへのデプロイ
-[デプロイコマンドを記載]
-```
 
 ## デモ
 

@@ -67,10 +67,7 @@ dev_project_id = "${DEV_PROJECT_ID}"
 developer_id = "${DEVELOPER_ID}"
 
 # 以下の変数は開発環境では使用されません
-prod_project_id               = ""
-production_domain             = ""
-github_repository             = ""
-github_workload_identity_pool = ""
+prod_project_id = ""
 EOF
 
 # 10. プランを確認

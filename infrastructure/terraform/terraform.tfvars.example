@@ -20,15 +20,10 @@ region = "asia-northeast1"
 zone   = "asia-northeast1-a"
 
 # 開発者の識別子（開発環境用）
-# 例: "alice", "bob", "dev-team-member-1"
 developer_id = "your-name"
 
-# 本番ドメイン
-production_domain = "your-domain.com"
-
-# GitHub設定
-github_repository             = "your-org/your-repo"
-github_workload_identity_pool = "github-pool"
+# 本番ドメイン（未指定時はCORSを全許可）
+production_domain = ""
 
 # コストセンター
 cost_center = "historical-travel-agent"
