@@ -38,12 +38,7 @@ class ReflectionDTO:
                     "id": photo.id,
                     "spotId": photo.spot_id,
                     "url": photo.url,
-                    "analysis": {
-                        "detectedSpots": list(photo.analysis.detected_spots),
-                        "historicalElements": list(photo.analysis.historical_elements),
-                        "landmarks": list(photo.analysis.landmarks),
-                        "confidence": photo.analysis.confidence,
-                    },
+                    "analysis": photo.analysis.description,
                     "userDescription": photo.user_description,
                 }
                 for photo in entity.photos
