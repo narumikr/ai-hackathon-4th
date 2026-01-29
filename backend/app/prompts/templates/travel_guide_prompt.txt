@@ -1,0 +1,8 @@
+以下の旅行計画と歴史情報から旅行ガイドを生成してください。
+旅行計画:
+- 目的地: {destination}
+- 観光スポット:
+{spots_text}
+注意: spotName/relatedSpots は上記の観光スポット名と完全一致させてください。省略や別名は禁止です。
+歴史情報:
+{historical_info}

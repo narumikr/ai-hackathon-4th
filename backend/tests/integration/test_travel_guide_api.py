@@ -43,6 +43,7 @@ class StubAIService(IAIService):
         image_uri: str,
         *,
         system_instruction: str | None = None,
+        tools: list[str] | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> str:

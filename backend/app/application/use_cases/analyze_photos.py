@@ -1,5 +1,7 @@
 """写真分析ユースケース"""
 
+import logging
+
 from app.application.dto.reflection_dto import ReflectionDTO
 from app.application.ports.ai_service import IAIService
 from app.application.use_cases.travel_plan_helpers import validate_required_str
@@ -8,6 +10,9 @@ from app.domain.reflection.repository import IReflectionRepository
 from app.domain.reflection.value_objects import ImageAnalysis
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
+from app.prompts import render_template
+
+logger = logging.getLogger(__name__)
 
 
 def _require_str(value: object, field_name: str) -> str:
@@ -15,34 +20,6 @@ def _require_str(value: object, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} is required and must be a non-empty string.")
     return value.strip()
-
-
-def _require_list(value: object, field_name: str) -> list:
-    """必須の配列フィールドを検証する"""
-    if not isinstance(value, list):
-        raise ValueError(f"{field_name} must be a list.")
-    return value
-
-
-def _require_str_list(value: object, field_name: str) -> tuple[str, ...]:
-    """文字列リストを検証する（空リストは許可）"""
-    raw_items = _require_list(value, field_name)
-    items: list[str] = []
-    for index, item in enumerate(raw_items):
-        if not isinstance(item, str) or not item.strip():
-            raise ValueError(f"{field_name}[{index}] must be a non-empty string.")
-        items.append(item.strip())
-    return tuple(items)
-
-
-def _require_confidence(value: object, field_name: str) -> float:
-    """信頼度の数値フィールドを検証する"""
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"{field_name} must be a number.")
-    confidence = float(value)
-    if not 0 <= confidence <= 1:
-        raise ValueError(f"{field_name} must be between 0 and 1.")
-    return confidence
 
 
 def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
@@ -84,48 +61,21 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
     return normalized
 
 
-# 画像分析の構造化出力スキーマ（検出スポット/歴史要素/ランドマーク/信頼度）。
-_IMAGE_ANALYSIS_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "detectedSpots": {"type": "array", "items": {"type": "string"}},
-        "historicalElements": {"type": "array", "items": {"type": "string"}},
-        "landmarks": {"type": "array", "items": {"type": "string"}},
-        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-    },
-    "required": ["detectedSpots", "historicalElements", "landmarks", "confidence"],
-    "additionalProperties": False,
-}
+_IMAGE_ANALYSIS_PROMPT_TEMPLATE = "image_analysis_prompt.txt"
+_IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE = "image_analysis_system_instruction.txt"
 
 
-def _parse_image_analysis_data(data: object, *, index: int) -> ImageAnalysis:
+def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
     """AIの画像分析レスポンスをパースする"""
-    if not isinstance(data, dict):
-        raise ValueError(f"photos[{index}].analysis response must be a JSON object.")
+    if not response or not response.strip():
+        raise ValueError(f"photos[{index}].analysis response must be a non-empty string.")
 
-    detected_spots = _require_str_list(
-        data.get("detectedSpots"),
-        f"photos[{index}].analysis.detectedSpots",
-    )
-    historical_elements = _require_str_list(
-        data.get("historicalElements"),
-        f"photos[{index}].analysis.historicalElements",
-    )
-    landmarks = _require_str_list(
-        data.get("landmarks"),
-        f"photos[{index}].analysis.landmarks",
-    )
-    confidence = _require_confidence(
-        data.get("confidence"),
-        f"photos[{index}].analysis.confidence",
-    )
+    return ImageAnalysis(description=response)
 
-    return ImageAnalysis(
-        detected_spots=detected_spots,
-        historical_elements=historical_elements,
-        landmarks=landmarks,
-        confidence=confidence,
-    )
+
+def _analysis_needs_search(text: str) -> bool:
+    """補助的に検索を使うか判定する"""
+    return "http://" not in text and "https://" not in text and "出典" not in text
 
 
 def _build_image_analysis_prompt(
@@ -137,15 +87,11 @@ def _build_image_analysis_prompt(
     description_text = ""
     if user_description:
         description_text = f"ユーザーの補足説明: {user_description}\n"
-    return (
-        "次の旅行先と観光スポット情報を参考に、画像に写っている観光スポットや歴史的要素を特定してください。\n"
-        f"旅行先: {destination}\n"
-        "観光スポット:\n"
-        f"- {spot_name}\n"
-        f"{description_text}"
-        "出力はJSONのみで返してください。\n"
-        "必須キー: detectedSpots, historicalElements, landmarks, confidence\n"
-        "detectedSpots/historicalElements/landmarksは文字列の配列、confidenceは0から1の数値です。\n"
+    return render_template(
+        _IMAGE_ANALYSIS_PROMPT_TEMPLATE,
+        destination=destination,
+        spot_name=spot_name,
+        description_text=description_text,
     )
 
 
@@ -243,17 +189,35 @@ class AnalyzePhotosUseCase:
                 spot.name,
                 photo.get("userDescription"),
             )
-            analysis_data = await self._ai_service.analyze_image_structured(
+            analysis_text = await self._ai_service.analyze_image(
                 prompt=prompt,
                 image_uri=photo["url"],
-                response_schema=_IMAGE_ANALYSIS_SCHEMA,
-                system_instruction=(
-                    "レスポンススキーマに一致するJSONのみを返してください。"
-                    "キー: detectedSpots, historicalElements, landmarks, confidence"
-                ),
+                system_instruction=render_template(_IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE),
                 temperature=0.0,
             )
-            analysis = _parse_image_analysis_data(analysis_data, index=index)
+            if _analysis_needs_search(analysis_text):
+                try:
+                    analysis_text = await self._ai_service.analyze_image(
+                        prompt=prompt,
+                        image_uri=photo["url"],
+                        system_instruction=(
+                            "説明文は日本語で作成してください。"
+                            "可能であれば出典名やURLを文中に含めてください。"
+                        ),
+                        temperature=0.0,
+                        tools=["google_search"],
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Image analysis with search tool failed; using initial analysis.",
+                        exc_info=exc,
+                        extra={
+                            "plan_id": plan_id,
+                            "photo_id": photo_id,
+                            "spot_id": spot_id,
+                        },
+                    )
+            analysis = _parse_image_analysis(analysis_text, index=index)
 
             new_photos.append(
                 Photo(

@@ -16,6 +16,7 @@ from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
+from app.prompts import render_template
 
 _REFLECTION_PAMPHLET_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -41,6 +42,9 @@ _REFLECTION_PAMPHLET_SCHEMA: dict[str, Any] = {
     },
     "required": ["travelSummary", "spotReflections", "nextTripSuggestions"],
 }
+
+_REFLECTION_PROMPT_TEMPLATE = "reflection_pamphlet_prompt.txt"
+_REFLECTION_SYSTEM_INSTRUCTION_TEMPLATE = "reflection_pamphlet_system_instruction.txt"
 
 
 def _require_str(value: object, field_name: str) -> str:
@@ -140,39 +144,25 @@ def _build_reflection_prompt(
         [
             (
                 f"- url: {photo['url']}\n"
-                f"  detectedSpots: {', '.join(photo['analysis']['detectedSpots'])}\n"
-                f"  historicalElements: {', '.join(photo['analysis']['historicalElements'])}\n"
-                f"  landmarks: {', '.join(photo['analysis']['landmarks'])}\n"
+                f"  analysis: {photo['analysis']}\n"
                 f"  userDescription: {photo.get('userDescription') or 'なし'}"
             )
             for photo in photos
         ]
     )
 
-    return (
-        "以下の旅行前情報と旅行後情報を統合し、振り返りパンフレットを作成してください。\n"
-        "出力はJSONスキーマに準拠した内容のみを返してください。\n\n"
-        "旅行前情報:\n"
-        f"- 旅行タイトル: {travel_title}\n"
-        f"- 旅行先: {destination}\n"
-        "観光スポット:\n"
-        f"{spots_text}\n\n"
-        "旅行ガイド概要:\n"
-        f"{guide_overview}\n\n"
-        "年表:\n"
-        f"{timeline_text}\n\n"
-        "スポット詳細:\n"
-        f"{spot_detail_text}\n\n"
-        "チェックポイント:\n"
-        f"{checkpoint_text}\n\n"
-        "旅行後情報:\n"
-        "写真分析:\n"
-        f"{photo_text}\n\n"
-        "ユーザーの総合感想:\n"
-        f"{user_notes_text}\n"
-        "\n"
-        "スポットごとの感想:\n"
-        f"{spot_notes_text}\n"
+    return render_template(
+        _REFLECTION_PROMPT_TEMPLATE,
+        travel_title=travel_title,
+        destination=destination,
+        spots_text=spots_text,
+        guide_overview=guide_overview,
+        timeline_text=timeline_text,
+        spot_detail_text=spot_detail_text,
+        checkpoint_text=checkpoint_text,
+        photo_text=photo_text,
+        user_notes_text=user_notes_text,
+        spot_notes_text=spot_notes_text,
     )
 
 
@@ -307,10 +297,7 @@ class GenerateReflectionPamphletUseCase:
             structured = await self._ai_service.generate_structured_data(
                 prompt=prompt,
                 response_schema=_REFLECTION_PAMPHLET_SCHEMA,
-                system_instruction=(
-                    "レスポンスはJSONのみで、スキーマに厳密に一致させてください。"
-                    "説明文などの文章は日本語で出力してください。"
-                ),
+                system_instruction=render_template(_REFLECTION_SYSTEM_INSTRUCTION_TEMPLATE),
             )
             if not isinstance(structured, dict):
                 raise ValueError("structured response must be a dict.")

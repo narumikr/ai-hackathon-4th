@@ -19,6 +19,7 @@ from app.domain.travel_plan.entity import TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
+from app.prompts import render_template
 
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -75,6 +76,11 @@ _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     },
     "required": ["overview", "timeline", "spotDetails", "checkpoints"],
 }
+
+_HISTORICAL_PROMPT_TEMPLATE = "travel_guide_historical_prompt.txt"
+_TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
+_HISTORICAL_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_historical_system_instruction.txt"
+_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
 
 
 def _require_str(value: object, field_name: str) -> str:
@@ -267,7 +273,7 @@ class GenerateTravelGuideUseCase:
             historical_prompt = _build_historical_info_prompt(travel_plan)
             historical_info = await self._ai_service.generate_with_search(
                 prompt=historical_prompt,
-                system_instruction="検索結果を使用して、簡潔な歴史情報を収集してください。",
+                system_instruction=render_template(_HISTORICAL_SYSTEM_INSTRUCTION_TEMPLATE),
             )
             if not historical_info or not historical_info.strip():
                 raise ValueError("historical_info must be a non-empty string.")
@@ -277,10 +283,7 @@ class GenerateTravelGuideUseCase:
             structured = await self._ai_service.generate_structured_data(
                 prompt=guide_prompt,
                 response_schema=response_schema,
-                system_instruction=(
-                    "レスポンススキーマに正確に一致するJSONを返してください。"
-                    "説明文のフィールドは日本語で記述してください。"
-                ),
+                system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
             )
             if not isinstance(structured, dict):
                 raise ValueError("structured response must be a dict.")
@@ -328,25 +331,21 @@ class GenerateTravelGuideUseCase:
 def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:
     """歴史情報収集用のプロンプトを生成する"""
     spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
-    return (
-        "以下の旅行先と観光スポットについて、信頼できる歴史情報をまとめてください。\n"
-        f"旅行先: {travel_plan.destination}\n"
-        "観光スポット:\n"
-        f"{spots_text}\n"
+    return render_template(
+        _HISTORICAL_PROMPT_TEMPLATE,
+        destination=travel_plan.destination,
+        spots_text=spots_text,
     )
 
 
 def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) -> str:
     """旅行ガイド生成用のプロンプトを生成する"""
     spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
-    return (
-        "以下の旅行計画と歴史情報から旅行ガイドを生成してください。\n"
-        "旅行計画:\n"
-        f"- 目的地: {travel_plan.destination}\n"
-        f"- 観光スポット:\n{spots_text}\n"
-        "注意: spotName/relatedSpots は上記の観光スポット名と完全一致させてください。省略や別名は禁止です。\n"
-        "歴史情報:\n"
-        f"{historical_info}\n"
+    return render_template(
+        _TRAVEL_GUIDE_PROMPT_TEMPLATE,
+        destination=travel_plan.destination,
+        spots_text=spots_text,
+        historical_info=historical_info,
     )
 
 

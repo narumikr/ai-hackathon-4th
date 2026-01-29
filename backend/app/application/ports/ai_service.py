@@ -62,6 +62,7 @@ class IAIService(ABC):
         image_uri: str,
         *,
         system_instruction: str | None = None,
+        tools: list[str] | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> str:
@@ -71,6 +72,7 @@ class IAIService(ABC):
             prompt: 画像に対する質問・指示
             image_uri: 画像のURI（GCS URIまたはHTTPS URL）
             system_instruction: システム命令（オプション）
+            tools: 使用するツールのリスト（オプション）
             temperature: 生成の多様性を制御するパラメータ（0.0-2.0、Noneの場合は実装のデフォルト値を使用）
             max_output_tokens: 最大出力トークン数（Noneの場合は実装のデフォルト値を使用）
 
