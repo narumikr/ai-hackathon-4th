@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "details": {
+      "field1": "Error detail for field1",
+      "field2": "Error detail for field2"
+    }
+  }
+}

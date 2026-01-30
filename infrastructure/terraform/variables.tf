@@ -40,19 +40,6 @@ variable "production_domain" {
   default     = ""
 }
 
-# GitHub設定
-variable "github_repository" {
-  description = "GitHubリポジトリ（owner/repo形式）"
-  type        = string
-  default     = ""
-}
-
-variable "github_workload_identity_pool" {
-  description = "GitHub用Workload Identity Pool名"
-  type        = string
-  default     = ""
-}
-
 # コストセンター
 variable "cost_center" {
   description = "コストセンターのラベル値"

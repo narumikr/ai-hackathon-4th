@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# 仮想環境
+.venv/
+venv/
+ENV/
+env/
+
+# テスト・カバレッジ
+.pytest_cache/
+.coverage
+.hypothesis/
+htmlcov/
+*.cover
+.tox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ログ
+*.log
+logs/
+
+# 環境変数ファイル
+.env
+.env.local
+
+# データベース
+*.db
+*.sqlite
+
+# アップロードファイル
+uploads/
+
+# Alembic
+alembic.ini
+
+# Ruff cache
+.ruff_cache/
+
+# Git
+.git/
+.gitignore
+
+# ドキュメント
+README.md
+docs/
+
+# テストファイル
+tests/

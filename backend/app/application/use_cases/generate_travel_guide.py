@@ -24,7 +24,11 @@ from app.prompts import render_template
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "overview": {"type": "string"},
+        "overview": {
+            "type": "string",
+            "description": "旅行全体の概要。以下の4要素を含む充実した概要文（200-400文字程度）: 1) 旅行のテーマや目的、2) 訪問スポットの関連性、3) 歴史的時代背景、4) おすすめポイント",
+            "minLength": 100,
+        },
         "timeline": {
             "type": "array",
             "items": {
@@ -90,6 +94,12 @@ def _require_str(value: object, field_name: str) -> str:
     return value.strip()
 
 
+def _require_min_length(value: str, field_name: str, min_length: int) -> None:
+    """文字列の最小長を検証する"""
+    if len(value) < min_length:
+        raise ValueError(f"{field_name} must be at least {min_length} characters.")
+
+
 def _require_list(value: object, field_name: str) -> list[Any]:
     """必須の配列フィールドを検証する"""
     if not isinstance(value, list) or not value:
@@ -104,7 +114,7 @@ def _require_int(value: object, field_name: str) -> int:
     return value
 
 
-def _build_timeline(items: list, spot_names: set[str]) -> list[HistoricalEvent]:
+def _build_timeline(items: list, allowed_spot_names: set[str]) -> list[HistoricalEvent]:
     """年表データを値オブジェクトに変換する"""
     timeline: list[HistoricalEvent] = []
     for index, item in enumerate(items):
@@ -118,8 +128,8 @@ def _build_timeline(items: list, spot_names: set[str]) -> list[HistoricalEvent]:
             _require_str(spot, f"timeline[{index}].relatedSpots") for spot in related_spots
         ]
         related_spot_set = set(related_spot_names)
-        if not related_spot_set.issubset(spot_names):
-            missing = sorted(related_spot_set - spot_names)
+        if not related_spot_set.issubset(allowed_spot_names):
+            missing = sorted(related_spot_set - allowed_spot_names)
             raise ValueError(
                 f"timeline[{index}].relatedSpots contains unknown spot names: {missing}"
             )
@@ -137,14 +147,14 @@ def _build_timeline(items: list, spot_names: set[str]) -> list[HistoricalEvent]:
 def _build_spot_details(items: list, plan_spot_names: set[str]) -> list[SpotDetail]:
     """スポット詳細データを値オブジェクトに変換する"""
     spot_details: list[SpotDetail] = []
+    seen_spot_names: set[str] = set()
     for index, item in enumerate(items):
         if not isinstance(item, dict):
             raise ValueError(f"spotDetails[{index}] must be a dict.")
         spot_name = _require_str(item.get("spotName"), f"spotDetails[{index}].spotName")
-        if spot_name not in plan_spot_names:
-            raise ValueError(
-                f"spotDetails[{index}].spotName is not in travel plan spots: {spot_name}"
-            )
+        if spot_name in seen_spot_names:
+            raise ValueError(f"spotDetails contains duplicate spotName: {spot_name}")
+        seen_spot_names.add(spot_name)
         historical_background = _require_str(
             item.get("historicalBackground"),
             f"spotDetails[{index}].historicalBackground",
@@ -177,17 +187,15 @@ def _build_spot_details(items: list, plan_spot_names: set[str]) -> list[SpotDeta
     return spot_details
 
 
-def _build_checkpoints(items: list, plan_spot_names: set[str]) -> list[Checkpoint]:
+def _build_checkpoints(items: list, allowed_spot_names: set[str]) -> list[Checkpoint]:
     """チェックポイントデータを値オブジェクトに変換する"""
     checkpoints: list[Checkpoint] = []
     for index, item in enumerate(items):
         if not isinstance(item, dict):
             raise ValueError(f"checkpoints[{index}] must be a dict.")
         spot_name = _require_str(item.get("spotName"), f"checkpoints[{index}].spotName")
-        if spot_name not in plan_spot_names:
-            raise ValueError(
-                f"checkpoints[{index}].spotName is not in travel plan spots: {spot_name}"
-            )
+        if spot_name not in allowed_spot_names:
+            raise ValueError(f"checkpoints[{index}].spotName is not in spotDetails: {spot_name}")
         checkpoint_list = _require_list(
             item.get("checkpoints"), f"checkpoints[{index}].checkpoints"
         )
@@ -279,7 +287,7 @@ class GenerateTravelGuideUseCase:
                 raise ValueError("historical_info must be a non-empty string.")
 
             guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
-            response_schema = _build_travel_guide_schema(plan_spot_names)
+            response_schema = _build_travel_guide_schema()
             structured = await self._ai_service.generate_structured_data(
                 prompt=guide_prompt,
                 response_schema=response_schema,
@@ -289,21 +297,26 @@ class GenerateTravelGuideUseCase:
                 raise ValueError("structured response must be a dict.")
 
             overview = _require_str(structured.get("overview"), "overview")
+            _require_min_length(overview, "overview", 100)
             timeline_items = _require_list(structured.get("timeline"), "timeline")
             spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
             checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
 
             plan_spot_name_set = set(plan_spot_names)
             spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
-            checkpoints = _build_checkpoints(checkpoint_items, plan_spot_name_set)
-            timeline = _build_timeline(timeline_items, plan_spot_name_set)
+            spot_detail_name_set = {detail.spot_name for detail in spot_details}
+            checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
+            allowed_related_spots_for_timeline = spot_detail_name_set | {travel_plan.destination}
+            timeline = _build_timeline(timeline_items, allowed_related_spots_for_timeline)
 
+            allowed_related_spots_for_compose = {travel_plan.destination}
             generated_guide = self._composer.compose(
                 plan_id=travel_plan.id,
                 overview=overview,
                 timeline=timeline,
                 spot_details=spot_details,
                 checkpoints=checkpoints,
+                allowed_related_spots=allowed_related_spots_for_compose,
             )
 
             existing = self._guide_repository.find_by_plan_id(travel_plan.id)
@@ -349,16 +362,7 @@ def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) ->
     )
 
 
-def _build_travel_guide_schema(spot_names: list[str]) -> dict[str, Any]:
-    """旅行ガイド生成用のスキーマをスポット名で制約する"""
+def _build_travel_guide_schema() -> dict[str, Any]:
+    """旅行ガイド生成用のスキーマを構築する"""
     schema = copy.deepcopy(_TRAVEL_GUIDE_SCHEMA)
-    timeline_items = schema["properties"]["timeline"]["items"]
-    related_spots = timeline_items["properties"]["relatedSpots"]["items"]
-    related_spots["enum"] = spot_names
-
-    spot_details_items = schema["properties"]["spotDetails"]["items"]
-    spot_details_items["properties"]["spotName"]["enum"] = spot_names
-
-    checkpoints_items = schema["properties"]["checkpoints"]["items"]
-    checkpoints_items["properties"]["spotName"]["enum"] = spot_names
     return schema

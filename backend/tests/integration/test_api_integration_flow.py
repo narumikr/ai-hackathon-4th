@@ -89,7 +89,7 @@ class StubAIService(IAIService):
                 "nextTripSuggestions": ["奈良の寺社巡り"],
             }
         return {
-            "overview": "京都の歴史を学ぶ旅行ガイド",
+            "overview": "京都の歴史を学ぶ旅行ガイドです。清水寺を中心に、地域の成り立ちや信仰文化の背景を丁寧にたどり、観光体験の学びが深まるよう構成しています。時代ごとの変化と見どころを整理し、旅のテーマとハイライトが伝わる内容にしています。",
             "timeline": [
                 {
                     "year": 778,
