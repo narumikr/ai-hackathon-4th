@@ -75,7 +75,7 @@ export default function TravelListPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={fetchTravels} disabled={isLoading}>
-              {isLoading ? MESSAGES.LOADING : '一覧を更新'}
+              {isLoading ? MESSAGES.LOADING : BUTTON_LABELS.REFRESH_LIST}
             </Button>
             <Link href="/travel/new">
               <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
@@ -126,7 +126,7 @@ export default function TravelListPage() {
                   {travel.guideGenerationStatus === 'processing' ? (
                     <div className="flex-1">
                       <Button variant="primary" fullWidth disabled>
-                        生成中...
+                        {MESSAGES.GENERATING}
                       </Button>
                     </div>
                   ) : (

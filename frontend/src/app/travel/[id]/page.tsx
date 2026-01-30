@@ -99,7 +99,7 @@ export default function TravelGuidePage() {
   if (reflectionStatus === 'succeeded') {
     actionButtonLabel = BUTTON_LABELS.VIEW_REFLECTION;
   } else if (reflectionStatus === 'processing') {
-    actionButtonLabel = '生成中...';
+    actionButtonLabel = MESSAGES.GENERATING;
     isActionDisabled = true;
   } else if (reflectionStatus === 'not_started') {
     actionButtonLabel = BUTTON_LABELS.CREATE_REFLECTION;
@@ -165,10 +165,10 @@ export default function TravelGuidePage() {
         {/* 観光スポット一覧 */}
         <section className="mb-12 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
           <h2 className="mb-6 font-bold text-2xl text-neutral-900">
-            <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> 観光スポット
+            <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {SECTION_TITLES.TOURIST_SPOTS}
           </h2>
           {travel.spots.length === 0 ? (
-            <p className="text-neutral-600">観光スポットが登録されていません。</p>
+            <p className="text-neutral-600">{MESSAGES.NO_SPOTS_REGISTERED}</p>
           ) : (
             <div className="space-y-4">
               {travel.spots.map((spot, index) => (
@@ -186,7 +186,9 @@ export default function TravelGuidePage() {
                         <p className="text-neutral-600 text-sm">{spot.description}</p>
                       )}
                       {spot.userNotes && (
-                        <p className="mt-1 text-neutral-500 text-sm">メモ: {spot.userNotes}</p>
+                        <p className="mt-1 text-neutral-500 text-sm">
+                          {LABELS.MEMO_PREFIX} {spot.userNotes}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -260,7 +262,8 @@ export default function TravelGuidePage() {
                       {spot.highlights && spot.highlights.length > 0 && (
                         <div>
                           <h4 className="mb-2 font-semibold text-neutral-700 text-sm">
-                            <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} /> ハイライト
+                            <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} />{' '}
+                            {SECTION_TITLES.HIGHLIGHTS}
                           </h4>
                           <ul className="space-y-1">
                             {spot.highlights.map((highlight: string, idx: number) => (
@@ -286,9 +289,9 @@ export default function TravelGuidePage() {
         {!hasGuide && (
           <section className="mb-12 rounded-lg border border-primary-200 bg-primary-50 p-6">
             <p className="text-center text-primary-900">
-              旅行ガイドはまだ生成されていません。
-              {travel.guideGenerationStatus === 'processing' && '現在生成中です...'}
-              {travel.guideGenerationStatus === 'failed' && 'ガイドの生成に失敗しました。'}
+              {MESSAGES.GUIDE_NOT_GENERATED}
+              {travel.guideGenerationStatus === 'processing' && MESSAGES.GUIDE_GENERATING}
+              {travel.guideGenerationStatus === 'failed' && MESSAGES.GUIDE_GENERATION_FAILED}
             </p>
           </section>
         )}
