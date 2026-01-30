@@ -2,6 +2,7 @@ export { Accordion } from './Accordion';
 export { Button } from './Button';
 export { Card } from './Card';
 export { Checkbox } from './Checkbox';
+export { Dialog } from './Dialog';
 export { FileUploader } from './FileUploader';
 export { LoadingSpinner } from './LoadingSpinner';
 export { RadioButton } from './RadioButton';

@@ -2,16 +2,57 @@
 
 import { Emoji } from '@/components/ui';
 import { EMOJI_LABELS, FORM_LABELS, LABELS, SECTION_TITLES } from '@/constants';
-import type { ReflectionContent } from '@/data/sampleReflections';
-import type { SampleTravel } from '@/data/sampleTravels';
+import type { ReflectionPamphletResponse, ReflectionPhotoResponse, TravelPlanResponse } from '@/types';
+import Image from 'next/image';
 import type React from 'react';
+import { useMemo } from 'react';
 
 interface ReflectionViewerProps {
-  travel: SampleTravel;
-  reflection: ReflectionContent;
+  travel: TravelPlanResponse;
+  pamphlet: ReflectionPamphletResponse;
 }
 
-export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, reflection }) => {
+export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamphlet }) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  };
+
+  // スポット名からスポットIDを取得するマップを作成
+  const spotNameToId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const spot of travel.spots) {
+      if (spot.id) {
+        map.set(spot.name, spot.id);
+      }
+    }
+    return map;
+  }, [travel.spots]);
+
+  // スポットIDごとに写真をグループ化
+  const photosBySpotId = useMemo(() => {
+    const map = new Map<string, ReflectionPhotoResponse[]>();
+    if (travel.reflection?.photos) {
+      for (const photo of travel.reflection.photos) {
+        const existing = map.get(photo.spotId) || [];
+        existing.push(photo);
+        map.set(photo.spotId, existing);
+      }
+    }
+    return map;
+  }, [travel.reflection?.photos]);
+
+  // スポット名から写真を取得
+  const getPhotosForSpot = (spotName: string): ReflectionPhotoResponse[] => {
+    const spotId = spotNameToId.get(spotName);
+    if (!spotId) return [];
+    return photosBySpotId.get(spotId) || [];
+  };
+
   return (
     <div className="space-y-8">
       {/* 旅行概要 */}
@@ -23,10 +64,20 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, refl
           </span>
           <span>
             <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} /> {LABELS.COMPLETED_DATE}{' '}
-            {travel.completedAt}
+            {formatDate(travel.updatedAt)}
           </span>
         </div>
       </div>
+
+      {/* 旅行サマリー */}
+      <section className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+        <h3 className="mb-4 font-bold text-neutral-900 text-xl">
+          {FORM_LABELS.OVERALL_IMPRESSION_PLAIN}
+        </h3>
+        <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">
+          {pamphlet.travelSummary}
+        </p>
+      </section>
 
       {/* スポットごとの振り返り */}
       <section>
@@ -34,45 +85,61 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, refl
           {SECTION_TITLES.SPOT_MEMORIES}
         </h3>
         <div className="space-y-8">
-          {reflection.photos.map(photo => (
-            <div
-              key={photo.id}
-              className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
-            >
-              <div className="flex flex-col gap-6 md:flex-row">
-                <div className="w-full shrink-0 md:w-1/3">
-                  <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-neutral-200 text-neutral-400">
-                    <div className="text-center">
-                      <span className="mb-2 block text-4xl">
-                        <Emoji symbol="🖼️" label={EMOJI_LABELS.PICTURE} />
-                      </span>
-                      <span className="text-sm">Photo {photo.id}</span>
-                    </div>
+          {pamphlet.spotReflections.map((spotReflection, index) => {
+            const photos = getPhotosForSpot(spotReflection.spotName);
+            return (
+              <div
+                key={`${spotReflection.spotName}-${index}`}
+                className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
+              >
+                <h4 className="mb-4 font-bold text-lg text-neutral-800">
+                  <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {spotReflection.spotName}
+                </h4>
+
+                {/* 写真ギャラリー */}
+                {photos.length > 0 && (
+                  <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {photos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="relative aspect-square overflow-hidden rounded-lg"
+                      >
+                        <Image
+                          src={photo.url}
+                          alt={photo.userDescription || spotReflection.spotName}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, 33vw"
+                        />
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div className="flex-1">
-                  <h4 className="mb-2 font-bold text-lg text-neutral-800">
-                    {SECTION_TITLES.MEMORY_SCENE(photo.id)}
-                  </h4>
-                  <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">
-                    {photo.comment}
-                  </p>
-                </div>
+                )}
+
+                <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">
+                  {spotReflection.reflection}
+                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* 全体的な感想 */}
-      <section className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 font-bold text-neutral-900 text-xl">
-          {FORM_LABELS.OVERALL_IMPRESSION_PLAIN}
-        </h3>
-        <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">
-          {reflection.overallComment}
-        </p>
-      </section>
+      {/* 次の旅行の提案 */}
+      {pamphlet.nextTripSuggestions && pamphlet.nextTripSuggestions.length > 0 && (
+        <section className="rounded-lg border border-primary-200 bg-primary-50 p-6 shadow-sm">
+          <h3 className="mb-4 font-bold text-neutral-900 text-xl">
+            <Emoji symbol="✈️" label={EMOJI_LABELS.AIRPLANE} /> 次の旅行の提案
+          </h3>
+          <ul className="space-y-2">
+            {pamphlet.nextTripSuggestions.map((suggestion, index) => (
+              <li key={index} className="text-neutral-700">
+                • {suggestion}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 };

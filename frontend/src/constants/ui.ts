@@ -382,4 +382,5 @@ export const EMOJI_LABELS = {
   CHECKMARK: 'チェックマーク',
   LIGHTBULB: '電球',
   PICTURE: '写真',
+  AIRPLANE: '飛行機',
 } as const;

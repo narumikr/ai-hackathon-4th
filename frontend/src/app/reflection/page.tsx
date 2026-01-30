@@ -15,49 +15,71 @@ import {
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanListResponse } from '@/types';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function ReflectionListPage() {
   const [travels, setTravels] = useState<TravelPlanListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchTravels = async () => {
+  const fetchTravels = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
       setIsLoading(true);
-      setError(null);
+    }
+    setError(null);
 
-      try {
-        const apiClient = createApiClientFromEnv();
-        // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-        const userId = 'demo-user';
+    try {
+      const apiClient = createApiClientFromEnv();
+      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
+      const userId = 'demo-user';
 
-        const response = await apiClient.listTravelPlans({ userId });
-        // ステータスが completed のもののみをフィルタ
-        const completedTravels = response.filter(t => t.status === 'completed');
-        setTravels(completedTravels);
-      } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plans:', apiError);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTravels();
+      const response = await apiClient.listTravelPlans({ userId });
+      // ステータスが completed のもののみをフィルタ
+      const completedTravels = response.filter(t => t.status === 'completed');
+      setTravels(completedTravels);
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError.message || MESSAGES.ERROR);
+      console.error('Failed to fetch travel plans:', apiError);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTravels(false);
+  }, [fetchTravels]);
+
+  const handleRefresh = () => {
+    fetchTravels(true);
+  };
 
   const hasTravels = travels.length > 0;
 
   return (
     <div className="py-8">
       <Container>
-        <div className="mb-8">
-          <h1 className="mb-2 font-bold text-3xl text-neutral-900">
-            {PAGE_TITLES.REFLECTION_LIST}
-          </h1>
-          <p className="text-neutral-600">{PAGE_DESCRIPTIONS.REFLECTION_LIST}</p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="mb-2 font-bold text-3xl text-neutral-900">
+              {PAGE_TITLES.REFLECTION_LIST}
+            </h1>
+            <p className="text-neutral-600">{PAGE_DESCRIPTIONS.REFLECTION_LIST}</p>
+          </div>
+          <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <>
+                <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
+                更新中...
+              </>
+            ) : (
+              '更新'
+            )}
+          </Button>
         </div>
 
         {error && (
@@ -110,10 +132,12 @@ export default function ReflectionListPage() {
 
                   <div className="flex gap-2">
                     {travel.reflectionGenerationStatus === 'processing' ? (
-                      <Button variant="secondary" fullWidth disabled>
-                        <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
-                        {STATUS_LABELS.REFLECTION_PROCESSING}
-                      </Button>
+                      <Link href={`/reflection/${travel.id}/view`} className="flex-1">
+                        <Button variant="secondary" fullWidth>
+                          <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
+                          {STATUS_LABELS.REFLECTION_PROCESSING}
+                        </Button>
+                      </Link>
                     ) : hasReflection ? (
                       <Link href={`/reflection/${travel.id}/view`} className="flex-1">
                         <Button variant="primary" fullWidth>

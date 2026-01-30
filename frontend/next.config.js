@@ -8,6 +8,13 @@ const nextConfig = {
   // 画像最適化（静的エクスポート時は無効化）
   images: {
     unoptimized: process.env.NODE_ENV === 'production',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        pathname: '/**',
+      },
+    ],
   },
 
   // 開発環境でのAPIプロキシ設定（CORS回避）

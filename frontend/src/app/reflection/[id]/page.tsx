@@ -2,7 +2,7 @@
 
 import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
-import { Button, TextArea } from '@/components/ui';
+import { Button, Dialog, TextArea } from '@/components/ui';
 import {
   BUTTON_LABELS,
   FORM_LABELS,
@@ -21,6 +21,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+type SubmitStatus = 'idle' | 'uploading' | 'generating';
+
 export default function ReflectionDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -31,7 +33,7 @@ export default function ReflectionDetailPage() {
   const [overallComment, setOverallComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
 
   useEffect(() => {
     const fetchTravelPlan = async () => {
@@ -114,33 +116,39 @@ export default function ReflectionDetailPage() {
   const handleSubmit = async () => {
     if (!travel || !id) return;
 
-    setIsSubmitting(true);
-
     try {
       const apiClient = createApiClientFromEnv();
       // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
       const userId = 'demo-user';
 
       // 1. 各スポットの写真をアップロード
-      for (const spot of spots) {
-        const files = spot.photos
-          .filter(photo => photo.file !== undefined)
-          .map(photo => photo.file as File);
+      const spotsWithPhotos = spots.filter(spot =>
+        spot.photos.some(photo => photo.file !== undefined)
+      );
 
-        // 写真がある場合のみアップロード
-        if (files.length > 0) {
-          await apiClient.uploadSpotReflection({
-            planId: id,
-            userId,
-            spotId: spot.id,
-            spotNote: spot.comment,
-            files,
-          });
-          console.log(`Photos uploaded for spot: ${spot.name}`);
+      if (spotsWithPhotos.length > 0) {
+        setSubmitStatus('uploading');
+
+        for (const spot of spotsWithPhotos) {
+          const files = spot.photos
+            .filter(photo => photo.file !== undefined)
+            .map(photo => photo.file as File);
+
+          if (files.length > 0) {
+            await apiClient.uploadSpotReflection({
+              planId: id,
+              userId,
+              spotId: spot.id,
+              spotNote: spot.comment,
+              files,
+            });
+            console.log(`Photos uploaded for spot: ${spot.name}`);
+          }
         }
       }
 
       // 2. 振り返り生成APIを呼び出す
+      setSubmitStatus('generating');
       await apiClient.createReflection({
         request: {
           planId: id,
@@ -149,14 +157,25 @@ export default function ReflectionDetailPage() {
         },
       });
 
-      // 3. 成功後、振り返り一覧ページにリダイレクト
-      router.push('/reflection');
+      // 3. 成功後、振り返り閲覧ページにリダイレクト
+      setSubmitStatus('idle');
+      router.push(`/reflection/${id}/view`);
     } catch (err) {
       const apiError = toApiError(err);
       console.error('Failed to create reflection:', apiError);
+      setSubmitStatus('idle');
       alert(`振り返りの作成に失敗しました: ${apiError.message}`);
-    } finally {
-      setIsSubmitting(false);
+    }
+  };
+
+  const getDialogMessage = () => {
+    switch (submitStatus) {
+      case 'uploading':
+        return '画像アップロード中です';
+      case 'generating':
+        return '振り返り生成準備中です';
+      default:
+        return '';
     }
   };
 
@@ -247,7 +266,7 @@ export default function ReflectionDetailPage() {
           {/* アクションボタン */}
           <div className="flex flex-col gap-4 sm:flex-row">
             <Link href="/reflection" className="flex-1">
-              <Button variant="ghost" size="lg" fullWidth disabled={isSubmitting}>
+              <Button variant="ghost" size="lg" fullWidth disabled={submitStatus !== 'idle'}>
                 {BUTTON_LABELS.CANCEL}
               </Button>
             </Link>
@@ -256,11 +275,19 @@ export default function ReflectionDetailPage() {
               size="lg"
               className="flex-1"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={submitStatus !== 'idle'}
             >
-              {isSubmitting ? '作成中...' : BUTTON_LABELS.GENERATE_REFLECTION}
+              {BUTTON_LABELS.GENERATE_REFLECTION}
             </Button>
           </div>
+
+          {/* 処理中ダイアログ */}
+          <Dialog
+            isOpen={submitStatus !== 'idle'}
+            title="処理中"
+            message={getDialogMessage()}
+            showSpinner
+          />
 
           {/* 注意事項 */}
           <div className="mt-6 rounded-lg border border-primary-200 bg-primary-50 p-4">

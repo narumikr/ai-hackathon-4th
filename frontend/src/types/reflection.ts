@@ -48,6 +48,17 @@ export interface ReflectionResponse {
   createdAt: string;
 }
 
+export interface SpotReflectionResponse {
+  spotName: string;
+  reflection: string;
+}
+
+export interface ReflectionPamphletResponse {
+  travelSummary: string;
+  spotReflections: SpotReflectionResponse[];
+  nextTripSuggestions: string[];
+}
+
 export interface CreateReflectionRequest {
   planId: string;
   userId: string;
