@@ -86,7 +86,8 @@ export default function TravelNewPage() {
         .filter(spot => spot.name.trim())
         .map(spot => ({ name: spot.name.trim() }));
 
-      await apiClient.createTravelPlan({
+      // 1. 旅行計画を作成
+      const response = await apiClient.createTravelPlan({
         request: {
           userId,
           title: title.trim(),
@@ -95,12 +96,19 @@ export default function TravelNewPage() {
         },
       });
 
-      // 作成成功後、旅行一覧ページにリダイレクト
+      // 2. 旅行ガイドを生成
+      await apiClient.generateTravelGuide({
+        request: {
+          planId: response.id,
+        },
+      });
+
+      // 3. 成功後、旅行一覧ページにリダイレクト
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to create travel plan:', apiError);
+      console.error('Failed to create travel plan or generate guide:', apiError);
     } finally {
       setIsSubmitting(false);
     }

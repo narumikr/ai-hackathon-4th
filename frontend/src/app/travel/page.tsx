@@ -14,36 +14,36 @@ import {
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanListResponse, TravelPlanStatus } from '@/types';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function TravelListPage() {
   const [travels, setTravels] = useState<TravelPlanListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchTravels = async () => {
-      setIsLoading(true);
-      setError(null);
+  const fetchTravels = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const apiClient = createApiClientFromEnv();
-        // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-        const userId = 'demo-user';
+    try {
+      const apiClient = createApiClientFromEnv();
+      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
+      const userId = 'demo-user';
 
-        const response = await apiClient.listTravelPlans({ userId });
-        setTravels(response);
-      } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plans:', apiError);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTravels();
+      const response = await apiClient.listTravelPlans({ userId });
+      setTravels(response);
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError.message || MESSAGES.ERROR);
+      console.error('Failed to fetch travel plans:', apiError);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTravels();
+  }, [fetchTravels]);
 
   const hasTravels = travels.length > 0;
 
@@ -73,9 +73,14 @@ export default function TravelListPage() {
             <h1 className="mb-2 font-bold text-3xl text-neutral-900">{PAGE_TITLES.TRAVEL_LIST}</h1>
             <p className="text-neutral-600">{PAGE_DESCRIPTIONS.TRAVEL_LIST}</p>
           </div>
-          <Link href="/travel/new">
-            <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={fetchTravels} disabled={isLoading}>
+              {isLoading ? MESSAGES.LOADING : BUTTON_LABELS.REFRESH_LIST}
+            </Button>
+            <Link href="/travel/new">
+              <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
+            </Link>
+          </div>
         </div>
 
         {error && (
@@ -118,16 +123,29 @@ export default function TravelListPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Link href={`/travel/${travel.id}`} className="flex-1">
-                    <Button variant="primary" fullWidth>
-                      {BUTTON_LABELS.VIEW_DETAILS}
-                    </Button>
-                  </Link>
-                  {travel.status !== 'completed' && (
-                    <Link href={`/travel/${travel.id}/edit`}>
-                      <Button variant="ghost">{BUTTON_LABELS.EDIT}</Button>
+                  {travel.guideGenerationStatus === 'processing' ? (
+                    <div className="flex-1">
+                      <Button variant="primary" fullWidth disabled>
+                        {MESSAGES.GENERATING}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Link href={`/travel/${travel.id}`} className="flex-1">
+                      <Button variant="primary" fullWidth>
+                        {BUTTON_LABELS.VIEW_DETAILS}
+                      </Button>
                     </Link>
                   )}
+                  {travel.status !== 'completed' &&
+                    (travel.guideGenerationStatus === 'processing' ? (
+                      <Button variant="ghost" disabled>
+                        {BUTTON_LABELS.EDIT}
+                      </Button>
+                    ) : (
+                      <Link href={`/travel/${travel.id}/edit`}>
+                        <Button variant="ghost">{BUTTON_LABELS.EDIT}</Button>
+                      </Link>
+                    ))}
                 </div>
               </div>
             ))}
