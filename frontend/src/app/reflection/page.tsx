@@ -132,12 +132,10 @@ export default function ReflectionListPage() {
 
                   <div className="flex gap-2">
                     {travel.reflectionGenerationStatus === 'processing' ? (
-                      <Link href={`/reflection/${travel.id}/view`} className="flex-1">
-                        <Button variant="secondary" fullWidth>
-                          <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
-                          {STATUS_LABELS.REFLECTION_PROCESSING}
-                        </Button>
-                      </Link>
+                      <Button variant="secondary" fullWidth disabled className="flex-1">
+                        <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
+                        {STATUS_LABELS.REFLECTION_PROCESSING}
+                      </Button>
                     ) : hasReflection ? (
                       <Link href={`/reflection/${travel.id}/view`} className="flex-1">
                         <Button variant="primary" fullWidth>
