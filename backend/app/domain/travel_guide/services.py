@@ -17,6 +17,8 @@ class TravelGuideComposer:
         timeline: list[HistoricalEvent],
         spot_details: list[SpotDetail],
         checkpoints: list[Checkpoint],
+        *,
+        allowed_related_spots: set[str] | None = None,
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ) -> TravelGuide:
@@ -37,11 +39,12 @@ class TravelGuideComposer:
                     f"checkpoint spot_name not found in spot_details: {checkpoint.spot_name}"
                 )
 
+        allowed_spot_names = spot_name_set | (allowed_related_spots or set())
         for event in timeline:
-            missing = set(event.related_spots) - spot_name_set
+            missing = set(event.related_spots) - allowed_spot_names
             if missing:
                 raise InvalidTravelGuideError(
-                    f"timeline related_spots not found in spot_details: {sorted(missing)}"
+                    f"timeline related_spots contains unsupported names: {sorted(missing)}"
                 )
 
         return TravelGuide(
