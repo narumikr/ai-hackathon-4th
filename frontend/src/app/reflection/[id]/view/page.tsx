@@ -19,34 +19,37 @@ export default function ReflectionViewPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTravelPlan = useCallback(async (isRefresh = false) => {
-    if (!id) return;
+  const fetchTravelPlan = useCallback(
+    async (isRefresh = false) => {
+      if (!id) return;
 
-    if (isRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError(null);
-
-    try {
-      const apiClient = createApiClientFromEnv();
-      const response = await apiClient.getTravelPlan({ planId: id });
-      setTravel(response);
-
-      // 振り返りがまだ作成されていない場合（processing以外）
-      if (!response.pamphlet && response.reflectionGenerationStatus !== 'processing') {
-        setError(MESSAGES.REFLECTION_NOT_FOUND);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
       }
-    } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to fetch travel plan:', apiError);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [id]);
+      setError(null);
+
+      try {
+        const apiClient = createApiClientFromEnv();
+        const response = await apiClient.getTravelPlan({ planId: id });
+        setTravel(response);
+
+        // 振り返りがまだ作成されていない場合（processing以外）
+        if (!response.pamphlet && response.reflectionGenerationStatus !== 'processing') {
+          setError(MESSAGES.REFLECTION_NOT_FOUND);
+        }
+      } catch (err) {
+        const apiError = toApiError(err);
+        setError(apiError.message || MESSAGES.ERROR);
+        console.error('Failed to fetch travel plan:', apiError);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [id]
+  );
 
   useEffect(() => {
     fetchTravelPlan(false);
@@ -81,7 +84,9 @@ export default function ReflectionViewPage() {
       <div className="py-8">
         <Container>
           <div className="mb-6 flex items-center justify-between">
-            <h1 className="font-bold text-2xl text-neutral-900">{PAGE_TITLES.REFLECTION_PAMPHLET}</h1>
+            <h1 className="font-bold text-2xl text-neutral-900">
+              {PAGE_TITLES.REFLECTION_PAMPHLET}
+            </h1>
             <div className="flex gap-2">
               <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
                 {isRefreshing ? (

@@ -2,7 +2,11 @@
 
 import { Emoji } from '@/components/ui';
 import { EMOJI_LABELS, FORM_LABELS, LABELS, SECTION_TITLES } from '@/constants';
-import type { ReflectionPamphletResponse, ReflectionPhotoResponse, TravelPlanResponse } from '@/types';
+import type {
+  ReflectionPamphletResponse,
+  ReflectionPhotoResponse,
+  TravelPlanResponse,
+} from '@/types';
 import Image from 'next/image';
 import type React from 'react';
 import { useMemo } from 'react';
@@ -99,7 +103,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
                 {/* 写真ギャラリー */}
                 {photos.length > 0 && (
                   <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3">
-                    {photos.map((photo) => (
+                    {photos.map(photo => (
                       <div
                         key={photo.id}
                         className="relative aspect-square overflow-hidden rounded-lg"
@@ -132,8 +136,8 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
             <Emoji symbol="✈️" label={EMOJI_LABELS.AIRPLANE} /> 次の旅行の提案
           </h3>
           <ul className="space-y-2">
-            {pamphlet.nextTripSuggestions.map((suggestion, index) => (
-              <li key={index} className="text-neutral-700">
+            {pamphlet.nextTripSuggestions.map(suggestion => (
+              <li key={suggestion} className="text-neutral-700">
                 • {suggestion}
               </li>
             ))}

@@ -142,7 +142,6 @@ export default function ReflectionDetailPage() {
               spotNote: spot.comment,
               files,
             });
-            console.log(`Photos uploaded for spot: ${spot.name}`);
           }
         }
       }
@@ -171,9 +170,9 @@ export default function ReflectionDetailPage() {
   const getDialogMessage = () => {
     switch (submitStatus) {
       case 'uploading':
-        return '画像アップロード中です';
+        return MESSAGES.UPLOADING_IMAGES;
       case 'generating':
-        return '振り返り生成準備中です';
+        return MESSAGES.GENERATING_REFLECTION;
       default:
         return '';
     }
@@ -284,7 +283,7 @@ export default function ReflectionDetailPage() {
           {/* 処理中ダイアログ */}
           <Dialog
             isOpen={submitStatus !== 'idle'}
-            title="処理中"
+            title={MESSAGES.PROCESSING}
             message={getDialogMessage()}
             showSpinner
           />

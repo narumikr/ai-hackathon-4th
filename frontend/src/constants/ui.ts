@@ -172,6 +172,9 @@ export const MESSAGES = {
   TRAVEL_NOT_FOUND: '旅行が見つかりません',
   REFLECTION_NOT_FOUND: '振り返りが見つかりません',
   REFLECTION_GENERATED: '振り返りを生成しました！',
+  UPLOADING_IMAGES: '画像アップロード中です',
+  GENERATING_REFLECTION: '振り返り生成準備中です',
+  PROCESSING: '処理中',
 } as const;
 
 /**
