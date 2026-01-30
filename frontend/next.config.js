@@ -8,7 +8,6 @@ const nextConfig = {
 
   // 画像最適化
   images: {
-<<<<<<< HEAD
     unoptimized: process.env.NODE_ENV === 'production',
     remotePatterns: [
       {
@@ -17,9 +16,6 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-=======
-    unoptimized: false,
->>>>>>> 953b3fb4b9ebaf4e6adb33b78d1acedb6cc5329d
   },
 
   // 開発環境でのAPIプロキシ設定（CORS回避）

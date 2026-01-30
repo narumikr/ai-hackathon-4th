@@ -21,8 +21,6 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-type SubmitStatus = 'idle' | 'uploading' | 'generating';
-
 export default function ReflectionDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -33,7 +31,7 @@ export default function ReflectionDetailPage() {
   const [overallComment, setOverallComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchTravelPlan = async () => {
@@ -116,38 +114,31 @@ export default function ReflectionDetailPage() {
   const handleSubmit = async () => {
     if (!travel || !id) return;
 
+    setIsSubmitting(true);
+
     try {
       const apiClient = createApiClientFromEnv();
       // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
       const userId = 'demo-user';
 
       // 1. 各スポットの写真をアップロード
-      const spotsWithPhotos = spots.filter(spot =>
-        spot.photos.some(photo => photo.file !== undefined)
-      );
+      for (const spot of spots) {
+        const files = spot.photos
+          .filter(photo => photo.file !== undefined)
+          .map(photo => photo.file as File);
 
-      if (spotsWithPhotos.length > 0) {
-        setSubmitStatus('uploading');
-
-        for (const spot of spotsWithPhotos) {
-          const files = spot.photos
-            .filter(photo => photo.file !== undefined)
-            .map(photo => photo.file as File);
-
-          if (files.length > 0) {
-            await apiClient.uploadSpotReflection({
-              planId: id,
-              userId,
-              spotId: spot.id,
-              spotNote: spot.comment,
-              files,
-            });
-          }
+        if (files.length > 0) {
+          await apiClient.uploadSpotReflection({
+            planId: id,
+            userId,
+            spotId: spot.id,
+            spotNote: spot.comment,
+            files,
+          });
         }
       }
 
       // 2. 振り返り生成APIを呼び出す
-      setSubmitStatus('generating');
       await apiClient.createReflection({
         request: {
           planId: id,
@@ -157,24 +148,11 @@ export default function ReflectionDetailPage() {
       });
 
       // 3. 成功後、振り返り閲覧ページにリダイレクト
-      setSubmitStatus('idle');
       router.push(`/reflection/${id}/view`);
     } catch (err) {
       const apiError = toApiError(err);
-      console.error('Failed to create reflection:', apiError);
-      setSubmitStatus('idle');
+      setIsSubmitting(false);
       alert(`振り返りの作成に失敗しました: ${apiError.message}`);
-    }
-  };
-
-  const getDialogMessage = () => {
-    switch (submitStatus) {
-      case 'uploading':
-        return MESSAGES.UPLOADING_IMAGES;
-      case 'generating':
-        return MESSAGES.GENERATING_REFLECTION;
-      default:
-        return '';
     }
   };
 
@@ -265,7 +243,7 @@ export default function ReflectionDetailPage() {
           {/* アクションボタン */}
           <div className="flex flex-col gap-4 sm:flex-row">
             <Link href="/reflection" className="flex-1">
-              <Button variant="ghost" size="lg" fullWidth disabled={submitStatus !== 'idle'}>
+              <Button variant="ghost" size="lg" fullWidth disabled={isSubmitting}>
                 {BUTTON_LABELS.CANCEL}
               </Button>
             </Link>
@@ -274,7 +252,7 @@ export default function ReflectionDetailPage() {
               size="lg"
               className="flex-1"
               onClick={handleSubmit}
-              disabled={submitStatus !== 'idle'}
+              disabled={isSubmitting}
             >
               {BUTTON_LABELS.GENERATE_REFLECTION}
             </Button>
@@ -282,9 +260,9 @@ export default function ReflectionDetailPage() {
 
           {/* 処理中ダイアログ */}
           <Dialog
-            isOpen={submitStatus !== 'idle'}
+            isOpen={isSubmitting}
             title={MESSAGES.PROCESSING}
-            message={getDialogMessage()}
+            message={MESSAGES.GENERATING_REFLECTION}
             showSpinner
           />
 
