@@ -19,6 +19,7 @@ export default function TravelGuidePage() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     const fetchTravelPlan = async () => {
@@ -76,6 +77,28 @@ export default function TravelGuidePage() {
 
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
+  };
+
+  const handleComplete = async () => {
+    if (!id) return;
+
+    setIsCompleting(true);
+    try {
+      const apiClient = createApiClientFromEnv();
+      await apiClient.updateTravelPlan({
+        planId: id,
+        request: {
+          status: 'completed',
+        },
+      });
+      router.push('/travel');
+    } catch (err) {
+      const apiError = toApiError(err);
+      alert(`完了処理に失敗しました: ${apiError.message}`);
+      console.error('Failed to complete travel plan:', apiError);
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
   const handleReflectionAction = () => {
@@ -156,7 +179,9 @@ export default function TravelGuidePage() {
             </div>
             {!isCompleted && (
               <div className="flex gap-2">
-                <Button variant="primary">{BUTTON_LABELS.TRAVEL_COMPLETE}</Button>
+                <Button variant="primary" onClick={handleComplete} disabled={isCompleting}>
+                  {isCompleting ? MESSAGES.LOADING : BUTTON_LABELS.TRAVEL_COMPLETE}
+                </Button>
               </div>
             )}
           </div>
