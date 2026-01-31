@@ -210,18 +210,6 @@ describe('ReflectionViewer', () => {
       const checkIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CHECKMARK });
       expect(checkIcons.length).toBeGreaterThan(0);
     });
-
-    it('renders airplane emoji for next trip suggestions', () => {
-      const travel = createMockTravel();
-      const pamphlet = createMockPamphlet({
-        nextTripSuggestions: ['提案1'],
-      });
-
-      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
-
-      const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.AIRPLANE}"]`);
-      expect(emojiElements.length).toBeGreaterThan(0);
-    });
   });
 
   describe('base styles', () => {

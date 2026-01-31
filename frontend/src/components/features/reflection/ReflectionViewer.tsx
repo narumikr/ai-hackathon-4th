@@ -132,9 +132,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
       {/* 次の旅行の提案 */}
       {pamphlet.nextTripSuggestions && pamphlet.nextTripSuggestions.length > 0 && (
         <section className="rounded-lg border border-primary-200 bg-primary-50 p-6 shadow-sm">
-          <h3 className="mb-4 font-bold text-neutral-900 text-xl">
-            次の旅行の提案
-          </h3>
+          <h3 className="mb-4 font-bold text-neutral-900 text-xl">次の旅行の提案</h3>
           <ul className="space-y-2">
             {pamphlet.nextTripSuggestions.map(suggestion => (
               <li key={suggestion} className="text-neutral-700">
