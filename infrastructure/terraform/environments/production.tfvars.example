@@ -1,0 +1,18 @@
+# 本番環境用Terraform変数ファイル
+
+# 本番環境のGCPプロジェクトID
+prod_project_id = "your-production-project-id"
+
+# 開発環境の設定（本番環境では不要だが、変数定義のため空文字を設定）
+dev_project_id = ""
+developer_id   = ""
+
+# リージョンとゾーン（デフォルト: asia-northeast1）
+region = "asia-northeast1"
+zone   = "asia-northeast1-a"
+
+# 本番ドメイン（未指定時はCORSを全許可）
+production_domain = ""
+
+# コストセンター
+cost_center = "historical-travel-agent"

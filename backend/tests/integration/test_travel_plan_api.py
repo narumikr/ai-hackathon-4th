@@ -186,12 +186,7 @@ def test_get_travel_plan_returns_pamphlet(
                 "id": "photo_010",
                 "spotId": "spot-001",
                 "url": "https://example.com/photos/kiyomizu.jpg",
-                "analysis": {
-                    "detectedSpots": ["清水寺"],
-                    "historicalElements": ["清水の舞台"],
-                    "landmarks": ["清水寺本堂"],
-                    "confidence": 0.9,
-                },
+                "analysis": "清水寺の写真。清水の舞台（本堂の張り出し舞台）が写っており、清水寺本堂の特徴的な懸造（かけづくり）建築が確認できる。",
                 "userDescription": "清水寺の舞台が印象的だった",
             },
         ],
@@ -253,7 +248,19 @@ def test_list_travel_plans(
     data = response.json()
     assert isinstance(data, list)
     assert len(data) >= 1
+    expected_keys = {
+        "id",
+        "title",
+        "destination",
+        "status",
+        "guideGenerationStatus",
+        "reflectionGenerationStatus",
+    }
+    assert set(data[0].keys()) == expected_keys
     assert data[0]["id"] == sample_travel_plan.id
+    assert data[0]["title"] == sample_travel_plan.title
+    assert data[0]["destination"] == sample_travel_plan.destination
+    assert data[0]["status"] == sample_travel_plan.status
     assert data[0]["guideGenerationStatus"] == sample_travel_plan.guide_generation_status
     assert data[0]["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
 

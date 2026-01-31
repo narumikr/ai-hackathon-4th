@@ -79,44 +79,17 @@ def _normalize_spot_reflections(
 class ImageAnalysis(ValueObject):
     """画像分析結果"""
 
-    detected_spots: tuple[str, ...]
-    historical_elements: tuple[str, ...]
-    landmarks: tuple[str, ...]
-    confidence: float
+    description: str
 
     def __post_init__(self) -> None:
         """バリデーション
 
         早期失敗: 画像分析結果の検証
         """
-        if isinstance(self.confidence, bool) or not isinstance(self.confidence, (int, float)):
-            raise ValueError("confidence must be a number.")
+        if not isinstance(self.description, str) or not self.description.strip():
+            raise ValueError("description must be a non-empty string.")
 
-        if not 0 <= float(self.confidence) <= 1:
-            raise ValueError("confidence must be between 0 and 1.")
-
-        detected_spots = _normalize_str_list(
-            self.detected_spots,
-            "detected_spots",
-            allow_empty=True,
-        )
-        historical_elements = _normalize_str_list(
-            self.historical_elements,
-            "historical_elements",
-            allow_empty=True,
-        )
-        landmarks = _normalize_str_list(
-            self.landmarks,
-            "landmarks",
-            allow_empty=True,
-        )
-
-        if not (detected_spots or historical_elements or landmarks):
-            raise ValueError("image analysis must detect at least one item.")
-
-        object.__setattr__(self, "detected_spots", detected_spots)
-        object.__setattr__(self, "historical_elements", historical_elements)
-        object.__setattr__(self, "landmarks", landmarks)
+        object.__setattr__(self, "description", self.description.strip())
 
 
 @dataclass(frozen=True)

@@ -159,6 +159,7 @@ export const BUTTON_LABELS = {
   VIEW_REFLECTION: '振り返りを見る',
   CREATE_REFLECTION: '振り返りを作成',
   COMPLETE_TRAVEL_AND_CREATE_REFLECTION: '旅行を完了して振り返りを作成',
+  REFRESH_LIST: '一覧を更新',
 } as const;
 
 /**
@@ -172,6 +173,11 @@ export const MESSAGES = {
   TRAVEL_NOT_FOUND: '旅行が見つかりません',
   REFLECTION_NOT_FOUND: '振り返りが見つかりません',
   REFLECTION_GENERATED: '振り返りを生成しました！',
+  GENERATING: '生成中...',
+  GUIDE_NOT_GENERATED: '旅行ガイドはまだ生成されていません。',
+  GUIDE_GENERATING: '現在生成中です...',
+  GUIDE_GENERATION_FAILED: 'ガイドの生成に失敗しました。',
+  NO_SPOTS_REGISTERED: '観光スポットが登録されていません。',
 } as const;
 
 /**
@@ -271,6 +277,8 @@ export const SECTION_TITLES = {
   SPOT_MEMORIES: '観光スポットの思い出',
   ADD_SPOT: 'スポットを追加する',
   MEMORY_SCENE: (index: number) => `思い出の場面 #${index}`,
+  TOURIST_SPOTS: '観光スポット',
+  HIGHLIGHTS: 'ハイライト',
 } as const;
 
 /**
@@ -365,6 +373,7 @@ export const LABELS = {
   HINT_TITLE: '💡 ヒント',
   ABOUT_REFLECTION: '💡 振り返りについて',
   REMOVE_IMAGE: '削除',
+  MEMO_PREFIX: 'メモ:',
 } as const;
 
 /**

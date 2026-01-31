@@ -9,6 +9,15 @@ Terraformワークスペースを使用して、開発環境と本番環境を�
 - **development**: 開発者個人用環境（Cloud Storageバケットのみ）
 - **production**: 本番環境（全リソース）
 
+### 本番環境のリソース
+
+- **Cloud Run**: バックエンドサービス（FastAPI）とフロントエンドサービス（Next.js）
+- **Cloud SQL**: PostgreSQL 16データベース
+- **Cloud Storage**: アップロード用バケット
+- **Artifact Registry**: Dockerイメージ用リポジトリ（backend, frontend）
+- **Secret Manager**: データベースパスワード管理
+- **IAM**: サービスアカウントと権限管理
+
 ## 前提条件
 
 - Terraform 1.6.0以上

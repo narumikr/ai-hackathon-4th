@@ -5,7 +5,6 @@ import { Button, Emoji } from '@/components/ui';
 import {
   BUTTON_LABELS,
   EMOJI_LABELS,
-  LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
@@ -13,12 +12,12 @@ import {
   STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
-import type { TravelPlanResponse, TravelPlanStatus } from '@/types';
+import type { TravelPlanListResponse, TravelPlanStatus } from '@/types';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function TravelListPage() {
-  const [travels, setTravels] = useState<TravelPlanResponse[]>([]);
+  const [travels, setTravels] = useState<TravelPlanListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,15 +65,6 @@ export default function TravelListPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  };
-
   return (
     <div className="py-8">
       <Container>
@@ -85,7 +75,7 @@ export default function TravelListPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={fetchTravels} disabled={isLoading}>
-              {isLoading ? MESSAGES.LOADING : '一覧を更新'}
+              {isLoading ? MESSAGES.LOADING : BUTTON_LABELS.REFRESH_LIST}
             </Button>
             <Link href="/travel/new">
               <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
@@ -132,22 +122,11 @@ export default function TravelListPage() {
                   </span>
                 </div>
 
-                <div className="mb-4 flex items-center gap-4 text-neutral-600 text-sm">
-                  <span>
-                    <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {travel.spots.length}
-                    {LABELS.SPOTS_COUNT}
-                  </span>
-                  <span>
-                    <Emoji symbol="📅" label={EMOJI_LABELS.CALENDAR} />{' '}
-                    {formatDate(travel.createdAt)}
-                  </span>
-                </div>
-
                 <div className="flex gap-2">
                   {travel.guideGenerationStatus === 'processing' ? (
                     <div className="flex-1">
                       <Button variant="primary" fullWidth disabled>
-                        生成中...
+                        {MESSAGES.GENERATING}
                       </Button>
                     </div>
                   ) : (

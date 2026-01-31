@@ -52,7 +52,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画一覧を取得",
-        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanResponse]: 旅行計画リスト",
+        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanListResponse]: 旅行計画リスト",
         "operationId": "list_travel_plans_api_v1_travel_plans_get",
         "parameters": [
           {
@@ -73,7 +73,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TravelPlanResponse"
+                    "$ref": "#/components/schemas/TravelPlanListResponse"
                   },
                   "title": "Response List Travel Plans Api V1 Travel Plans Get"
                 }
@@ -583,44 +583,6 @@
         "title": "HistoricalEventSchema",
         "description": "歴史イベントスキーマ"
       },
-      "ImageAnalysisResponse": {
-        "properties": {
-          "detectedSpots": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Detectedspots"
-          },
-          "historicalElements": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Historicalelements"
-          },
-          "landmarks": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Landmarks"
-          },
-          "confidence": {
-            "type": "number",
-            "title": "Confidence"
-          }
-        },
-        "type": "object",
-        "required": [
-          "detectedSpots",
-          "historicalElements",
-          "landmarks",
-          "confidence"
-        ],
-        "title": "ImageAnalysisResponse",
-        "description": "画像分析レスポンス"
-      },
       "ReflectionPamphletResponse": {
         "properties": {
           "travelSummary": {
@@ -666,7 +628,8 @@
             "title": "Url"
           },
           "analysis": {
-            "$ref": "#/components/schemas/ImageAnalysisResponse"
+            "type": "string",
+            "title": "Analysis"
           },
           "userDescription": {
             "anyOf": [
@@ -920,6 +883,45 @@
         ],
         "title": "TravelGuideResponse",
         "description": "旅行ガイドレスポンス"
+      },
+      "TravelPlanListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "destination": {
+            "type": "string",
+            "title": "Destination"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "guideGenerationStatus": {
+            "type": "string",
+            "title": "Guide Generation Status"
+          },
+          "reflectionGenerationStatus": {
+            "type": "string",
+            "title": "Reflection Generation Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "destination",
+          "status",
+          "guideGenerationStatus",
+          "reflectionGenerationStatus"
+        ],
+        "title": "TravelPlanListResponse",
+        "description": "旅行計画一覧レスポンス"
       },
       "TravelPlanResponse": {
         "properties": {

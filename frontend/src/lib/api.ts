@@ -2,6 +2,7 @@ import type { GenerateTravelGuideRequest } from '@/types/guide';
 import type { CreateReflectionRequest } from '@/types/reflection';
 import type {
   CreateTravelPlanRequest,
+  TravelPlanListResponse,
   TravelPlanResponse,
   UpdateTravelPlanRequest,
 } from '@/types/travel';
@@ -76,7 +77,7 @@ export type ApiClient = {
   listTravelPlans: (params: {
     userId: string;
     signal?: AbortSignal;
-  }) => Promise<TravelPlanResponse[]>;
+  }) => Promise<TravelPlanListResponse[]>;
   getTravelPlan: (params: {
     planId: string;
     signal?: AbortSignal;
@@ -217,9 +218,9 @@ const parseErrorDetail = async (response: Response): Promise<ApiErrorDetail> => 
 };
 
 const getRequiredEnv = (): string => {
-  const value = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const value = process.env.NEXT_PUBLIC_API_URL;
   if (!value) {
-    throw new ApiError('NEXT_PUBLIC_API_BASE_URL is required for API requests.');
+    throw new ApiError('NEXT_PUBLIC_API_URL is required for API requests.');
   }
   return value;
 };
@@ -274,7 +275,7 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
   return {
     listTravelPlans: async ({ userId, signal }) => {
       assertNonEmpty(userId, 'userId');
-      return request<TravelPlanResponse[]>({
+      return request<TravelPlanListResponse[]>({
         method: 'GET',
         path: '/travel-plans',
         query: { user_id: userId },

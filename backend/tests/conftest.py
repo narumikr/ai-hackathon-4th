@@ -144,12 +144,11 @@ def sample_reflection(
                 "id": "photo_001",
                 "spotId": "spot-001",
                 "url": "https://example.com/photos/kiyomizu.jpg",
-                "analysis": {
-                    "detectedSpots": ["清水寺"],
-                    "historicalElements": ["清水の舞台", "三重塔"],
-                    "landmarks": ["清水寺本堂"],
-                    "confidence": 0.95,
-                },
+                "analysis": (
+                    "清水寺の舞台は懸造りの構造で知られ、"
+                    "三重塔とともに歴史的景観を形成している。"
+                    "出典: 清水寺公式サイト https://www.kiyomizudera.or.jp/history/ 。"
+                ),
                 "userDescription": "清水の舞台からの絶景",
             },
         ],

@@ -43,6 +43,7 @@ class StubAIService(IAIService):
         image_uri: str,
         *,
         system_instruction: str | None = None,
+        tools: list[str] | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> str:
@@ -75,7 +76,7 @@ class StubAIService(IAIService):
         max_output_tokens: int | None = None,
     ) -> dict:
         return {
-            "overview": "京都の歴史を学ぶ旅行ガイド",
+            "overview": "京都の歴史を学ぶ旅行ガイドです。清水寺と金閣寺を巡り、寺院文化の成り立ちや町の変遷を理解できるように構成しています。関連する出来事と見どころを整理し、旅行のテーマと学びのポイントが明確になる内容にまとめています。",
             "timeline": [
                 {
                     "year": 778,

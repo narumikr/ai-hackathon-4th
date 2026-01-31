@@ -49,6 +49,7 @@ class FakeAIService(IAIService):
         image_uri: str,
         *,
         system_instruction: str | None = None,
+        tools: list[str] | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> str:
@@ -80,7 +81,7 @@ class FakeAIService(IAIService):
 
 def _structured_guide_payload() -> dict[str, Any]:
     return {
-        "overview": "京都の代表的な寺院を巡りながら歴史の流れを学ぶ旅行ガイド。",
+        "overview": "京都の代表的な寺院を巡りながら歴史の流れを学ぶ旅行ガイドです。清水寺と金閣寺を中心に、時代ごとの文化や人々の営みを辿り、現地での体験を通じて理解を深められる内容にまとめています。宗教と政治の背景、町の成り立ちや景観の変化にも触れ、旅全体のテーマと学びをはっきり示します。",
         "timeline": [
             {
                 "year": 778,
@@ -126,6 +127,72 @@ def _structured_guide_payload() -> dict[str, Any]:
     }
 
 
+def _structured_guide_payload_with_recommendations() -> dict[str, Any]:
+    return {
+        "overview": "京都の主要寺院に加えて城郭も巡る旅行ガイドです。寺院文化と武家文化の両面から京都の歴史を俯瞰できるように構成し、各スポットの関係性と時代背景を示しながら、学びのポイントを丁寧に整理しています。宗教施設と城郭の役割の違いを比較し、旅行のハイライトと体験価値が伝わる内容にしています。",
+        "timeline": [
+            {
+                "year": 794,
+                "event": "平安京遷都",
+                "significance": "京都の歴史的発展の起点となる出来事。",
+                "relatedSpots": ["京都"],
+            },
+            {
+                "year": 1603,
+                "event": "二条城の築城",
+                "significance": "江戸幕府の権威を示す城郭の建立。",
+                "relatedSpots": ["二条城"],
+            },
+            {
+                "year": 778,
+                "event": "清水寺創建",
+                "significance": "奈良時代から続く歴史的寺院の始まり。",
+                "relatedSpots": ["清水寺"],
+            },
+        ],
+        "spotDetails": [
+            {
+                "spotName": "清水寺",
+                "historicalBackground": "奈良時代末期に創建された古刹。",
+                "highlights": ["清水の舞台", "音羽の滝"],
+                "recommendedVisitTime": "早朝",
+                "historicalSignificance": "平安京遷都以前の歴史を持つ。",
+            },
+            {
+                "spotName": "金閣寺",
+                "historicalBackground": "足利義満の別荘として建立された寺院。",
+                "highlights": ["金箔の舎利殿", "鏡湖池"],
+                "recommendedVisitTime": "午後",
+                "historicalSignificance": "室町文化の象徴。",
+            },
+            {
+                "spotName": "二条城",
+                "historicalBackground": "徳川家康が上洛時の居城として築城。",
+                "highlights": ["二の丸御殿", "唐門"],
+                "recommendedVisitTime": "午前",
+                "historicalSignificance": "武家政権の権威を示す城郭。",
+            },
+        ],
+        "checkpoints": [
+            {
+                "spotName": "清水寺",
+                "checkpoints": ["清水の舞台の高さを確認", "音羽の滝の由来を学ぶ"],
+                "historicalContext": "断崖に建つ舞台は江戸時代の信仰文化を示す。",
+            },
+            {
+                "spotName": "金閣寺",
+                "checkpoints": ["金箔装飾の意味を学ぶ", "庭園の構成を確認"],
+                "historicalContext": "将軍文化が色濃く反映された空間構成。",
+            },
+            {
+                "spotName": "二条城",
+                "checkpoints": ["二の丸御殿の障壁画を観察", "鴬張りの廊下を体験"],
+                "historicalContext": "江戸幕府の権威を示す空間構成。",
+            },
+        ],
+    }
+
+
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_creates_guide(
     db_session: Session, sample_travel_plan
@@ -164,6 +231,72 @@ async def test_generate_travel_guide_use_case_creates_guide(
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
     assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_allows_recommended_spots(
+    db_session: Session, sample_travel_plan
+) -> None:
+    """前提条件: 旅行計画とおすすめスポットを含む構造化データ。
+    実行: 旅行ガイドを生成する。
+    検証: 追加スポットと目的地全体の年表イベントが保持される。
+    """
+    # 前提条件: 旅行計画とおすすめスポットを含む構造化データ。
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        historical_info="京都全体とおすすめスポットの歴史情報。",
+        structured_data=_structured_guide_payload_with_recommendations(),
+    )
+
+    # 実行: 旅行ガイドを生成する。
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    dto = await use_case.execute(plan_id=sample_travel_plan.id)
+
+    # 検証: 追加スポットと目的地全体の年表イベントが保持される。
+    spot_names = {detail["spotName"] for detail in dto.spot_details}
+    assert "二条城" in spot_names
+    assert "清水寺" in spot_names
+    assert "金閣寺" in spot_names
+    assert any("京都" in event["relatedSpots"] for event in dto.timeline)
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rejects_short_overview(
+    db_session: Session, sample_travel_plan
+) -> None:
+    """前提条件: overviewが最小文字数を満たさない構造化データ。
+    実行: 旅行ガイドを生成する。
+    検証: ValueErrorが発生し、生成ステータスがFAILEDになる。
+    """
+    # 前提条件: overviewが最小文字数を満たさない構造化データ。
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    short_overview_payload = {
+        **_structured_guide_payload(),
+        "overview": "短い概要。",
+    }
+    ai_service = FakeAIService(
+        historical_info="京都の歴史情報を検索結果から取得。",
+        structured_data=short_overview_payload,
+    )
+
+    # 実行 & 検証: ValueErrorが発生する。
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    with pytest.raises(ValueError, match="overview must be at least"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
 
 
 @pytest.mark.asyncio
