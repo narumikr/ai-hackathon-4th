@@ -4,6 +4,52 @@
  */
 
 /**
+ * デフォルトユーザーID（認証機能実装前の仮の値）
+ */
+export const DEFAULT_USER_ID = 'demo-user';
+
+/**
+ * ボタン状態テキスト
+ */
+export const BUTTON_STATES = {
+  UPDATING: '更新中...',
+} as const;
+
+/**
+ * 確認メッセージ
+ */
+export const CONFIRMATION_MESSAGES = {
+  DELETE_TRAVEL: 'この旅行計画を削除してもよろしいですか？',
+  CONFIRM_TITLE: '確認',
+} as const;
+
+/**
+ * エラーアラート
+ */
+export const ERROR_ALERTS = {
+  DELETE_FAILED: (message: string) => `削除に失敗しました: ${message}`,
+  COMPLETE_FAILED: (message: string) => `完了処理に失敗しました: ${message}`,
+  REFLECTION_CREATE_FAILED: (message: string) => `振り返りの作成に失敗しました: ${message}`,
+} as const;
+
+/**
+ * 日付ラベル
+ */
+export const DATE_LABELS = {
+  CREATED_DATE: '作成日:',
+} as const;
+
+/**
+ * アクセシビリティ用aria-label
+ */
+export const ARIA_LABELS = {
+  MENU_OPEN: 'メニューを開く',
+  MENU_CLOSE: 'メニューを閉じる',
+  USER_MENU: 'ユーザーメニュー',
+  REMOVE_SPOT: 'スポットを削除',
+} as const;
+
+/**
  * リストコンポーネント関連の文言
  */
 export const LIST = {
@@ -175,6 +221,8 @@ export const MESSAGES = {
   REFLECTION_GENERATED: '振り返りを生成しました！',
   UPLOADING_IMAGES: '画像アップロード中です',
   GENERATING_REFLECTION: '振り返り生成準備中です',
+  GENERATING_REFLECTION_HINT:
+    '振り返りパンフレットを生成しています。更新ボタンで状態を確認できます。',
   PROCESSING: '処理中',
   GENERATING: '生成中...',
   GUIDE_NOT_GENERATED: '旅行ガイドはまだ生成されていません。',

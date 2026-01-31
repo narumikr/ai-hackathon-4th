@@ -1,6 +1,6 @@
 'use client';
 
-import { APP_NAME } from '@/constants';
+import { APP_NAME, ARIA_LABELS, EMOJI_LABELS } from '@/constants';
 import type { HeaderProps } from '@/types';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -27,7 +27,7 @@ export function Header({ className = '' }: HeaderProps) {
             href="/"
             className="flex items-center gap-2 text-primary-700 transition-colors hover:text-primary-800"
           >
-            <span className="text-2xl" role="img" aria-label="歴史的建造物">
+            <span className="text-2xl" role="img" aria-label={EMOJI_LABELS.HISTORIC_BUILDING}>
               🏛️
             </span>
             <span className="font-bold text-lg">{APP_NAME}</span>
@@ -43,7 +43,7 @@ export function Header({ className = '' }: HeaderProps) {
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
               className="rounded-md p-2 text-neutral-700 hover:bg-primary-50 hover:text-primary-700 lg:hidden"
-              aria-label="メニューを開く"
+              aria-label={ARIA_LABELS.MENU_OPEN}
             >
               <svg
                 className="h-6 w-6"
@@ -65,9 +65,9 @@ export function Header({ className = '' }: HeaderProps) {
             <button
               type="button"
               className="hidden h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200 lg:flex"
-              aria-label="ユーザーメニュー"
+              aria-label={ARIA_LABELS.USER_MENU}
             >
-              <span className="text-xl" role="img" aria-label="ユーザー">
+              <span className="text-xl" role="img" aria-label={EMOJI_LABELS.USER}>
                 👤
               </span>
             </button>

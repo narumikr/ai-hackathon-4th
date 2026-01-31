@@ -5,6 +5,8 @@ import { Container } from '@/components/layout';
 import { Button, Dialog, TextArea } from '@/components/ui';
 import {
   BUTTON_LABELS,
+  DEFAULT_USER_ID,
+  ERROR_ALERTS,
   FORM_LABELS,
   HINTS,
   LABELS,
@@ -119,7 +121,7 @@ export default function ReflectionDetailPage() {
     try {
       const apiClient = createApiClientFromEnv();
       // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = 'demo-user';
+      const userId = DEFAULT_USER_ID;
 
       // 1. 各スポットの写真をアップロード
       for (const spot of spots) {
@@ -152,7 +154,7 @@ export default function ReflectionDetailPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setIsSubmitting(false);
-      alert(`振り返りの作成に失敗しました: ${apiError.message}`);
+      alert(ERROR_ALERTS.REFLECTION_CREATE_FAILED(apiError.message));
     }
   };
 

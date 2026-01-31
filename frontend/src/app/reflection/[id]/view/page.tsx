@@ -3,7 +3,7 @@
 import { ReflectionViewer } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
 import { Button, LoadingSpinner } from '@/components/ui';
-import { BUTTON_LABELS, MESSAGES, PAGE_TITLES, STATUS_LABELS } from '@/constants';
+import { BUTTON_LABELS, BUTTON_STATES, MESSAGES, PAGE_TITLES, STATUS_LABELS } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
@@ -92,10 +92,10 @@ export default function ReflectionViewPage() {
                 {isRefreshing ? (
                   <>
                     <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
-                    更新中...
+                    {BUTTON_STATES.UPDATING}
                   </>
                 ) : (
-                  '更新'
+                  BUTTON_LABELS.UPDATE
                 )}
               </Button>
               <Link href="/reflection">
@@ -108,9 +108,7 @@ export default function ReflectionViewPage() {
             <p className="mb-2 font-semibold text-lg text-warning-800">
               {STATUS_LABELS.REFLECTION_PROCESSING}
             </p>
-            <p className="text-sm text-warning-700">
-              振り返りパンフレットを生成しています。更新ボタンで状態を確認できます。
-            </p>
+            <p className="text-sm text-warning-700">{MESSAGES.GENERATING_REFLECTION_HINT}</p>
           </div>
         </Container>
       </div>

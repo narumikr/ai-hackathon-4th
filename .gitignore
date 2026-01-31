@@ -33,6 +33,7 @@ backend/.hypothesis/
 # Frontend lib directory is part of the source tree.
 !frontend/src/lib/
 !frontend/src/lib/**
+frontend/next-env.d.ts
 
 # Node.js
 node_modules/

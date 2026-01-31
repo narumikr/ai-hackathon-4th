@@ -4,6 +4,8 @@ import { Container } from '@/components/layout';
 import { Button, Emoji, LoadingSpinner } from '@/components/ui';
 import {
   BUTTON_LABELS,
+  BUTTON_STATES,
+  DEFAULT_USER_ID,
   EMOJI_LABELS,
   HINTS,
   LABELS,
@@ -34,7 +36,7 @@ export default function ReflectionListPage() {
     try {
       const apiClient = createApiClientFromEnv();
       // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = 'demo-user';
+      const userId = DEFAULT_USER_ID;
 
       const response = await apiClient.listTravelPlans({ userId });
       // ステータスが completed のもののみをフィルタ
@@ -74,10 +76,10 @@ export default function ReflectionListPage() {
             {isRefreshing ? (
               <>
                 <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
-                更新中...
+                {BUTTON_STATES.UPDATING}
               </>
             ) : (
-              '更新'
+              BUTTON_LABELS.UPDATE
             )}
           </Button>
         </div>
