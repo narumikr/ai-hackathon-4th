@@ -1,5 +1,17 @@
 # Claude Code プロジェクトガイドライン
 
+## Skills
+
+プロジェクトでは以下のSkillsが利用可能です。必要に応じて参照してください。
+
+| Skill名 | 説明 | 使用場面 |
+|---------|------|----------|
+| api-design | RESTful API設計のベストプラクティス | API設計、仕様レビュー、エンドポイント設計 |
+| agent-design | AI Agent設計とワークフローパターン | マルチエージェントシステム、ワークフロー設計 |
+| prompt-engineering | プロンプトエンジニアリングのベストプラクティス | プロンプト改善、LLM活用の最適化 |
+
+Skillsは `.claude/skills/` に配置され、`.codex/skills/`、`.kilocode/skills/`、`.kiro/skills/` からシンボリックリンクで参照されています。
+
 ## Just コマンドの使用
 
 **重要**: 開発タスクの実行には`just`コマンドを使用すること。
