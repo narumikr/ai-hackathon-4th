@@ -4,26 +4,11 @@
 
 以下にCodingルールが記載されているので作業前に必ず参照すること。
 
-- `./CLAUDE.md`を参照する。
-- `~/.claude/CLAUDE.md`を参照する。
-- `~/.claude/rules`を参照する。
-
-ただし、AskUserQuestion は、Codexでは利用できないため、Codexでは使用しないこと。
-
-## コミット
-
-- コミット時のタイムアウトは120秒とする。
-
-## 図の記述
-
-- 図を記述する場合は、mermaidを使用すること。
+@./CLAUDE.md
+@~/.claude/CLAUDE.md
+@~/.claude/rules
 
 ## Codex固有の設定
-
+- ただし、AskUserQuestion は、Codexでは利用できないため、Codexでは使用しないこと。
 - git操作はサンドボックス環境外で行うこと
-
-## GitHub issue & PR
-
-- issueやPRはtemplateに従って記述すること。
-- issueやPRのタイトルは簡潔に要点をまとめること。
-- issueやPRのタイトル、本文は日本語で記述すること。
+- コミット時のタイムアウトは120秒とする。
