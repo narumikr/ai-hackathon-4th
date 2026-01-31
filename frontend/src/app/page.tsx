@@ -1,5 +1,5 @@
 import { Container } from '@/components/layout';
-import { Button, Emoji } from '@/components/ui';
+import { Button, Icon } from '@/components/ui';
 import { APP_DESCRIPTION, APP_NAME, BUTTON_LABELS, HOME_CONTENT } from '@/constants';
 import Link from 'next/link';
 
@@ -39,10 +39,10 @@ export default function HomePage() {
                 key={feature.title}
                 className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="mb-4 text-4xl">
-                  <Emoji symbol={feature.emoji} label={feature.title} />
-                </div>
-                <h3 className="mb-2 font-semibold text-neutral-900 text-xl">{feature.title}</h3>
+                <h3 className="mb-4 flex items-center gap-3 font-semibold text-neutral-900 text-xl">
+                  <Icon name={feature.iconName} size="lg" label={feature.title} />
+                  {feature.title}
+                </h3>
                 <p className="text-neutral-600">{feature.description}</p>
               </div>
             ))}

@@ -1,11 +1,10 @@
 'use client';
 
 import { Container } from '@/components/layout';
-import { Button, Emoji } from '@/components/ui';
+import { Button, Icon } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
-  EMOJI_LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
@@ -96,8 +95,8 @@ export default function TravelListPage() {
           </div>
         ) : !hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4 text-6xl">
-              <Emoji symbol="📚" label={EMOJI_LABELS.BOOK} />
+            <div className="mb-4">
+              <Icon name="study" size="xl" label="本" />
             </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_TRAVELS}</p>
             <Link href="/travel/new">

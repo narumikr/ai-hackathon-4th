@@ -2,7 +2,7 @@
 
 import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
-import { Button, Dialog, TextArea } from '@/components/ui';
+import { Button, Dialog, Icon, TextArea } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
@@ -228,7 +228,8 @@ export default function ReflectionDetailPage() {
 
           {/* 全体的な感想 */}
           <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 font-bold text-neutral-900 text-xl">
+            <h2 className="mb-4 flex items-center gap-2 font-bold text-neutral-900 text-xl">
+              <Icon name="note" size="md" label="メモ" />
               {FORM_LABELS.OVERALL_IMPRESSION}
             </h2>
             <TextArea
@@ -270,7 +271,10 @@ export default function ReflectionDetailPage() {
 
           {/* 注意事項 */}
           <div className="mt-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
-            <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.HINT_TITLE}</h3>
+            <h3 className="mb-2 flex items-center gap-1 font-semibold text-primary-900 text-sm">
+              <Icon name="hint" size="sm" label="ヒント" />
+              {LABELS.HINT_TITLE}
+            </h3>
             <ul className="space-y-1 text-primary-800 text-sm">
               {HINTS.REFLECTION_CREATE.map(hint => (
                 <li key={hint}>• {hint}</li>

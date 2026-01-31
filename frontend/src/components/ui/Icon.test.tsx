@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { Icon, iconNames, type IconName, type IconSize } from './Icon';
+import { Icon, type IconName, type IconSize, iconNames } from './Icon';
 
 describe('Icon', () => {
   it('デフォルトサイズ(md)でアイコンを表示する', () => {
@@ -18,22 +18,19 @@ describe('Icon', () => {
     expect(img).toBeInTheDocument();
   });
 
-  it.each<IconSize>(['xs', 'sm', 'md', 'lg', 'xl'])(
-    'サイズ %s でアイコンを表示する',
-    (size) => {
-      const expectedSizes: Record<IconSize, number> = {
-        xs: 16,
-        sm: 20,
-        md: 24,
-        lg: 32,
-        xl: 48,
-      };
-      render(<Icon name="check" size={size} />);
-      const img = screen.getByRole('img', { name: 'check' });
-      expect(img).toHaveAttribute('width', String(expectedSizes[size]));
-      expect(img).toHaveAttribute('height', String(expectedSizes[size]));
-    }
-  );
+  it.each<IconSize>(['xs', 'sm', 'md', 'lg', 'xl'])('サイズ %s でアイコンを表示する', size => {
+    const expectedSizes: Record<IconSize, number> = {
+      xs: 16,
+      sm: 20,
+      md: 24,
+      lg: 32,
+      xl: 48,
+    };
+    render(<Icon name="check" size={size} />);
+    const img = screen.getByRole('img', { name: 'check' });
+    expect(img).toHaveAttribute('width', String(expectedSizes[size]));
+    expect(img).toHaveAttribute('height', String(expectedSizes[size]));
+  });
 
   it('カスタムクラス名を適用できる', () => {
     render(<Icon name="user" className="custom-class" />);

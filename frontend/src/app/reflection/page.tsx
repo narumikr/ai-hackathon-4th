@@ -1,12 +1,11 @@
 'use client';
 
 import { Container } from '@/components/layout';
-import { Button, Emoji, LoadingSpinner } from '@/components/ui';
+import { Button, Icon, LoadingSpinner } from '@/components/ui';
 import {
   BUTTON_LABELS,
   BUTTON_STATES,
   DEFAULT_USER_ID,
-  EMOJI_LABELS,
   HINTS,
   LABELS,
   MESSAGES,
@@ -96,8 +95,8 @@ export default function ReflectionListPage() {
           </div>
         ) : !hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4 text-6xl">
-              <Emoji symbol="📸" label={EMOJI_LABELS.CAMERA} />
+            <div className="mb-4">
+              <Icon name="photo" size="xl" label="カメラ" />
             </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_REFLECTIONS}</p>
             <Link href="/travel">
@@ -160,7 +159,10 @@ export default function ReflectionListPage() {
 
         {/* ヒント */}
         <div className="mt-8 rounded-lg border border-primary-200 bg-primary-50 p-4">
-          <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.ABOUT_REFLECTION}</h3>
+          <h3 className="mb-2 flex items-center gap-1 font-semibold text-primary-900 text-sm">
+            <Icon name="hint" size="sm" label="ヒント" />
+            {LABELS.ABOUT_REFLECTION}
+          </h3>
           <ul className="space-y-1 text-primary-800 text-sm">
             {HINTS.REFLECTION.map(hint => (
               <li key={hint}>• {hint}</li>

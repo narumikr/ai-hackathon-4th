@@ -1,6 +1,6 @@
 'use client';
 
-import { Emoji } from '@/components/ui';
+import { Icon } from '@/components/ui';
 import { EMOJI_LABELS, FORM_LABELS, LABELS, SECTION_TITLES } from '@/constants';
 import type {
   ReflectionPamphletResponse,
@@ -63,11 +63,11 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
       <div className="rounded-lg border border-primary-200 bg-primary-50 p-6">
         <h2 className="mb-2 font-bold text-2xl text-neutral-900">{travel.title}</h2>
         <div className="flex gap-6 text-neutral-700">
-          <span>
-            <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {travel.destination}
+          <span className="flex items-center gap-1">
+            <Icon name="pin" size="sm" label={EMOJI_LABELS.PIN} /> {travel.destination}
           </span>
-          <span>
-            <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} /> {LABELS.COMPLETED_DATE}{' '}
+          <span className="flex items-center gap-1">
+            <Icon name="check" size="sm" label={EMOJI_LABELS.CHECKMARK} /> {LABELS.COMPLETED_DATE}{' '}
             {formatDate(travel.updatedAt)}
           </span>
         </div>
@@ -96,8 +96,8 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
                 key={`${spotReflection.spotName}-${index}`}
                 className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
               >
-                <h4 className="mb-4 font-bold text-lg text-neutral-800">
-                  <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {spotReflection.spotName}
+                <h4 className="mb-4 flex items-center gap-1 font-bold text-lg text-neutral-800">
+                  <Icon name="pin" size="md" label={EMOJI_LABELS.PIN} /> {spotReflection.spotName}
                 </h4>
 
                 {/* 写真ギャラリー */}
@@ -133,7 +133,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
       {pamphlet.nextTripSuggestions && pamphlet.nextTripSuggestions.length > 0 && (
         <section className="rounded-lg border border-primary-200 bg-primary-50 p-6 shadow-sm">
           <h3 className="mb-4 font-bold text-neutral-900 text-xl">
-            <Emoji symbol="✈️" label={EMOJI_LABELS.AIRPLANE} /> 次の旅行の提案
+            次の旅行の提案
           </h3>
           <ul className="space-y-2">
             {pamphlet.nextTripSuggestions.map(suggestion => (
