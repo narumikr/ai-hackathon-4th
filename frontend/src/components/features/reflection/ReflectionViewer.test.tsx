@@ -1,215 +1,225 @@
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { EMOJI_LABELS, FORM_LABELS, LABELS, SECTION_TITLES } from '@/constants';
-import type { ReflectionContent } from '@/data/sampleReflections';
-import type { SampleTravel } from '@/data/sampleTravels';
+import type { ReflectionPamphletResponse, TravelPlanResponse } from '@/types';
 import { ReflectionViewer } from './ReflectionViewer';
 
+// next/imageをモック
+vi.mock('next/image', () => ({
+  default: (props: { src: string; alt: string }) => {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={props.src} alt={props.alt} />;
+  },
+}));
+
 describe('ReflectionViewer', () => {
-  const createMockTravel = (overrides?: Partial<SampleTravel>): SampleTravel => ({
+  const createMockTravel = (overrides?: Partial<TravelPlanResponse>): TravelPlanResponse => ({
     id: '1',
+    userId: 'user-1',
     title: '京都の歴史探訪',
     destination: '京都',
+    spots: [
+      { id: 'spot-1', name: '清水寺', description: '有名な寺院' },
+      { id: 'spot-2', name: '金閣寺', description: '黄金の寺院' },
+    ],
     status: 'completed',
-    spotsCount: 3,
-    createdAt: '2024-03-15',
-    completedAt: '2024年3月17日',
-    hasReflection: true,
-    photosCount: 5,
+    guideGenerationStatus: 'succeeded',
+    reflectionGenerationStatus: 'succeeded',
+    createdAt: '2024-03-15T00:00:00Z',
+    updatedAt: '2024-03-17T00:00:00Z',
+    reflection: {
+      id: 'reflection-1',
+      planId: '1',
+      userId: 'user-1',
+      photos: [],
+      spotNotes: {},
+      createdAt: '2024-03-17T00:00:00Z',
+    },
     ...overrides,
   });
 
-  const createMockReflection = (overrides?: Partial<ReflectionContent>): ReflectionContent => ({
-    travelId: '1',
-    overallComment: '京都の歴史を深く学ぶことができました。',
-    photos: [
-      { id: 1, comment: '清水寺の本堂から京都市街を望む絶景' },
-      { id: 2, comment: '金閣寺の黄金に輝く姿は圧巻でした' },
+  const createMockPamphlet = (
+    overrides?: Partial<ReflectionPamphletResponse>
+  ): ReflectionPamphletResponse => ({
+    travelSummary: '京都の歴史を深く学ぶことができました。',
+    spotReflections: [
+      { spotName: '清水寺', reflection: '清水寺の本堂から京都市街を望む絶景でした。' },
+      { spotName: '金閣寺', reflection: '金閣寺の黄金に輝く姿は圧巻でした。' },
     ],
+    nextTripSuggestions: ['奈良の東大寺を訪れる', '姫路城を見学する'],
     ...overrides,
   });
 
   describe('rendering', () => {
     it('renders travel title', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText(travel.title)).toBeInTheDocument();
     });
 
     it('renders travel destination', () => {
       const travel = createMockTravel({ destination: '奈良' });
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText(/奈良/)).toBeInTheDocument();
     });
 
     it('renders completed date', () => {
-      const travel = createMockTravel({ completedAt: '2024年4月20日' });
-      const reflection = createMockReflection();
+      const travel = createMockTravel();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText(new RegExp(LABELS.COMPLETED_DATE))).toBeInTheDocument();
-      expect(screen.getByText(/2024年4月20日/)).toBeInTheDocument();
     });
 
     it('renders spot memories section title', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText(SECTION_TITLES.SPOT_MEMORIES)).toBeInTheDocument();
     });
 
     it('renders overall impression section title', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText(FORM_LABELS.OVERALL_IMPRESSION_PLAIN)).toBeInTheDocument();
     });
 
-    it('renders overall comment', () => {
+    it('renders travel summary', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        overallComment: '素晴らしい体験でした。',
+      const pamphlet = createMockPamphlet({
+        travelSummary: '素晴らしい体験でした。',
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText('素晴らしい体験でした。')).toBeInTheDocument();
     });
   });
 
-  describe('photo display', () => {
-    it('renders all photo comments', () => {
+  describe('spot reflections display', () => {
+    it('renders all spot reflections', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [
-          { id: 1, comment: 'コメント1' },
-          { id: 2, comment: 'コメント2' },
-          { id: 3, comment: 'コメント3' },
+      const pamphlet = createMockPamphlet({
+        spotReflections: [
+          { spotName: 'スポット1', reflection: '振り返り1' },
+          { spotName: 'スポット2', reflection: '振り返り2' },
+          { spotName: 'スポット3', reflection: '振り返り3' },
         ],
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      expect(screen.getByText('コメント1')).toBeInTheDocument();
-      expect(screen.getByText('コメント2')).toBeInTheDocument();
-      expect(screen.getByText('コメント3')).toBeInTheDocument();
+      expect(screen.getByText('振り返り1')).toBeInTheDocument();
+      expect(screen.getByText('振り返り2')).toBeInTheDocument();
+      expect(screen.getByText('振り返り3')).toBeInTheDocument();
     });
 
-    it('renders photo placeholders for each photo', () => {
+    it('renders spot names', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [
-          { id: 1, comment: 'Comment for first photo' },
-          { id: 2, comment: 'Comment for second photo' },
+      const pamphlet = createMockPamphlet({
+        spotReflections: [
+          { spotName: '清水寺', reflection: '振り返り内容' },
+          { spotName: '金閣寺', reflection: '振り返り内容' },
         ],
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      // Each photo has a placeholder with "Photo {id}" text
-      expect(screen.getByText('Photo 1')).toBeInTheDocument();
-      expect(screen.getByText('Photo 2')).toBeInTheDocument();
+      expect(screen.getByText(/清水寺/)).toBeInTheDocument();
+      expect(screen.getByText(/金閣寺/)).toBeInTheDocument();
     });
 
-    it('renders memory scene titles for each photo', () => {
+    it('handles empty spot reflections array', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [
-          { id: 1, comment: 'First memory' },
-          { id: 2, comment: 'Second memory' },
-        ],
-      });
+      const pamphlet = createMockPamphlet({ spotReflections: [] });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
-
-      expect(screen.getByText(SECTION_TITLES.MEMORY_SCENE(1))).toBeInTheDocument();
-      expect(screen.getByText(SECTION_TITLES.MEMORY_SCENE(2))).toBeInTheDocument();
-    });
-
-    it('handles empty photos array', () => {
-      const travel = createMockTravel();
-      const reflection = createMockReflection({ photos: [] });
-
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       // Should still render the section title
       expect(screen.getByText(SECTION_TITLES.SPOT_MEMORIES)).toBeInTheDocument();
-      // But no photo items
-      expect(screen.queryByText(/Photo \d+/)).not.toBeInTheDocument();
     });
 
-    it('handles single photo', () => {
+    it('handles single spot reflection', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: '唯一の写真コメント' }],
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: '唯一のスポット', reflection: '唯一の振り返り' }],
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      expect(screen.getByText('唯一の写真コメント')).toBeInTheDocument();
-      expect(screen.getByText(SECTION_TITLES.MEMORY_SCENE(1))).toBeInTheDocument();
+      expect(screen.getByText('唯一の振り返り')).toBeInTheDocument();
+    });
+  });
+
+  describe('next trip suggestions', () => {
+    it('renders next trip suggestions when available', () => {
+      const travel = createMockTravel();
+      const pamphlet = createMockPamphlet({
+        nextTripSuggestions: ['提案1', '提案2', '提案3'],
+      });
+
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+
+      expect(screen.getByText(/提案1/)).toBeInTheDocument();
+      expect(screen.getByText(/提案2/)).toBeInTheDocument();
+      expect(screen.getByText(/提案3/)).toBeInTheDocument();
     });
 
-    it('handles many photos', () => {
+    it('does not render next trip section when suggestions are empty', () => {
       const travel = createMockTravel();
-      const photos = Array.from({ length: 10 }, (_, i) => ({
-        id: i + 1,
-        comment: `写真 ${i + 1} のコメント`,
-      }));
-      const reflection = createMockReflection({ photos });
-
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
-
-      photos.forEach((_photo, index) => {
-        expect(screen.getByText(`写真 ${index + 1} のコメント`)).toBeInTheDocument();
+      const pamphlet = createMockPamphlet({
+        nextTripSuggestions: [],
       });
+
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+
+      expect(screen.queryByText(/次の旅行の提案/)).not.toBeInTheDocument();
     });
   });
 
   describe('emojis', () => {
     it('renders pin emoji for destination', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      // Check for emoji with the pin label
       const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.PIN}"]`);
       expect(emojiElements.length).toBeGreaterThan(0);
     });
 
     it('renders checkmark emoji for completion', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      // Check for emoji with the checkmark label
       const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.CHECKMARK}"]`);
       expect(emojiElements.length).toBeGreaterThan(0);
     });
 
-    it('renders picture emoji for photo placeholders', () => {
+    it('renders airplane emoji for next trip suggestions', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: 'Test comment' }],
+      const pamphlet = createMockPamphlet({
+        nextTripSuggestions: ['提案1'],
       });
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      // Check for emoji with the picture label
-      const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.PICTURE}"]`);
+      const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.AIRPLANE}"]`);
       expect(emojiElements.length).toBeGreaterThan(0);
     });
   });
@@ -217,9 +227,9 @@ describe('ReflectionViewer', () => {
   describe('base styles', () => {
     it('has proper travel overview container styles', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       const overviewContainer = container.querySelector('.border-primary-200');
       expect(overviewContainer).toHaveClass('rounded-lg', 'bg-primary-50', 'p-6');
@@ -227,9 +237,9 @@ describe('ReflectionViewer', () => {
 
     it('has proper title heading styles', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       const title = screen.getByText(travel.title);
       expect(title.tagName).toBe('H2');
@@ -238,89 +248,61 @@ describe('ReflectionViewer', () => {
 
     it('has proper section heading styles', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       const sectionHeading = screen.getByText(SECTION_TITLES.SPOT_MEMORIES);
       expect(sectionHeading.tagName).toBe('H3');
       expect(sectionHeading).toHaveClass('font-bold', 'text-xl', 'border-b');
     });
 
-    it('photo cards have proper styles', () => {
+    it('spot cards have proper styles', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: 'Test comment' }],
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: 'テストスポット', reflection: 'テスト振り返り' }],
       });
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const photoCard = container.querySelector('.border-neutral-200.bg-white.shadow-sm');
-      expect(photoCard).toHaveClass('rounded-lg', 'p-6');
-    });
-
-    it('overall comment section has proper styles', () => {
-      const travel = createMockTravel();
-      const reflection = createMockReflection();
-
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
-
-      // Find the overall comment section (last section with shadow-sm)
-      const sections = container.querySelectorAll('.shadow-sm');
-      const overallSection = sections[sections.length - 1];
-      expect(overallSection).toHaveClass('rounded-lg', 'border', 'bg-white', 'p-6');
+      const spotCard = container.querySelector('.border-neutral-200.bg-white.shadow-sm');
+      expect(spotCard).toHaveClass('rounded-lg', 'p-6');
     });
   });
 
   describe('text formatting', () => {
-    it('preserves whitespace in photo comments', () => {
+    it('preserves whitespace in spot reflections', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: '一行目\n二行目\n三行目' }],
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: 'スポット', reflection: '一行目\n二行目\n三行目' }],
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const comment = screen.getByText(/一行目/);
-      expect(comment).toHaveClass('whitespace-pre-wrap');
+      const reflection = screen.getByText(/一行目/);
+      expect(reflection).toHaveClass('whitespace-pre-wrap');
     });
 
-    it('preserves whitespace in overall comment', () => {
+    it('preserves whitespace in travel summary', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        overallComment: '段落1\n\n段落2\n\n段落3',
+      const pamphlet = createMockPamphlet({
+        travelSummary: '段落1\n\n段落2\n\n段落3',
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const comment = screen.getByText(/段落1/);
-      expect(comment).toHaveClass('whitespace-pre-wrap');
-    });
-  });
-
-  describe('responsive design', () => {
-    it('photo layout has responsive flex classes', () => {
-      const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: 'Test' }],
-      });
-
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
-
-      // The photo card content should have responsive flex direction
-      const flexContainer = container.querySelector('.flex-col.md\\:flex-row');
-      expect(flexContainer).toBeInTheDocument();
+      const summary = screen.getByText(/段落1/);
+      expect(summary).toHaveClass('whitespace-pre-wrap');
     });
   });
 
   describe('edge cases', () => {
-    it('handles empty overall comment', () => {
+    it('handles empty travel summary', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({ overallComment: '' });
+      const pamphlet = createMockPamphlet({ travelSummary: '' });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      // Section title should still be visible
       expect(screen.getByText(FORM_LABELS.OVERALL_IMPRESSION_PLAIN)).toBeInTheDocument();
     });
 
@@ -328,44 +310,44 @@ describe('ReflectionViewer', () => {
       const longTitle =
         '歴史と文化を巡る日本の古都京都・奈良の文化財と伝統工芸体験を含む充実の3日間の旅';
       const travel = createMockTravel({ title: longTitle });
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText(longTitle)).toBeInTheDocument();
     });
 
-    it('handles very long photo comments', () => {
-      const longComment =
+    it('handles very long spot reflections', () => {
+      const longReflection =
         '清水寺の本堂から見える京都市街の景色は本当に素晴らしく、春の桜、夏の新緑、秋の紅葉、冬の雪景色と四季折々の美しさを楽しむことができます。特に今回訪れた時期は新緑の季節で、目に鮮やかな緑が広がっていました。';
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: longComment }],
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: 'スポット', reflection: longReflection }],
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      expect(screen.getByText(longComment)).toBeInTheDocument();
+      expect(screen.getByText(longReflection)).toBeInTheDocument();
     });
 
-    it('handles very long overall comment', () => {
-      const longComment =
-        '今回の京都旅行を通じて、日本の歴史と文化の深さを改めて実感しました。訪れた各寺社では、それぞれに独自の歴史があり、建築様式や庭園のデザインからも当時の人々の美意識や価値観を感じ取ることができました。また、地元の方々との交流を通じて、伝統文化が現代にも息づいていることを知り、文化の継承の大切さについて考えさせられました。';
+    it('handles very long travel summary', () => {
+      const longSummary =
+        '今回の京都旅行を通じて、日本の歴史と文化の深さを改めて実感しました。訪れた各寺社では、それぞれに独自の歴史があり、建築様式や庭園のデザインからも当時の人々の美意識や価値観を感じ取ることができました。';
       const travel = createMockTravel();
-      const reflection = createMockReflection({ overallComment: longComment });
+      const pamphlet = createMockPamphlet({ travelSummary: longSummary });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      expect(screen.getByText(longComment)).toBeInTheDocument();
+      expect(screen.getByText(longSummary)).toBeInTheDocument();
     });
 
-    it('handles special characters in comments', () => {
+    it('handles special characters in reflections', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: '素晴らしい！感動的！！！😊🎌🏯' }],
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: 'スポット', reflection: '素晴らしい！感動的！！！' }],
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       expect(screen.getByText(/素晴らしい！感動的！！！/)).toBeInTheDocument();
     });
@@ -374,38 +356,38 @@ describe('ReflectionViewer', () => {
   describe('layout structure', () => {
     it('has space-y-8 for main sections', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection();
+      const pamphlet = createMockPamphlet();
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       const mainContainer = container.querySelector('.space-y-8');
       expect(mainContainer).toBeInTheDocument();
     });
 
-    it('photo list has space-y-8', () => {
+    it('spot list has space-y-8', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [
-          { id: 1, comment: 'Comment 1' },
-          { id: 2, comment: 'Comment 2' },
+      const pamphlet = createMockPamphlet({
+        spotReflections: [
+          { spotName: 'スポット1', reflection: '振り返り1' },
+          { spotName: 'スポット2', reflection: '振り返り2' },
         ],
       });
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const photoList = container.querySelectorAll('.space-y-8');
-      expect(photoList.length).toBeGreaterThan(0);
+      const spotList = container.querySelectorAll('.space-y-8');
+      expect(spotList.length).toBeGreaterThan(0);
     });
   });
 
   describe('accessibility', () => {
     it('uses semantic heading hierarchy', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: 'Test' }],
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: 'テストスポット', reflection: 'テスト' }],
       });
 
-      render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
       // H2 for travel title
       const h2 = screen.getByRole('heading', { level: 2 });
@@ -415,27 +397,76 @@ describe('ReflectionViewer', () => {
       const h3Elements = screen.getAllByRole('heading', { level: 3 });
       expect(h3Elements.length).toBeGreaterThan(0);
 
-      // H4 for individual memories
+      // H4 for individual spot reflections
       const h4Elements = screen.getAllByRole('heading', { level: 4 });
       expect(h4Elements.length).toBeGreaterThan(0);
     });
 
     it('emoji elements have proper aria-label', () => {
       const travel = createMockTravel();
-      const reflection = createMockReflection({
-        photos: [{ id: 1, comment: 'Test' }],
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: 'テストスポット', reflection: 'テスト' }],
       });
 
-      const { container } = render(<ReflectionViewer travel={travel} reflection={reflection} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      // All emoji elements should have role="img"
       const emojiElements = container.querySelectorAll('[role="img"]');
       expect(emojiElements.length).toBeGreaterThan(0);
 
-      // All should have aria-label
       emojiElements.forEach(emoji => {
         expect(emoji).toHaveAttribute('aria-label');
       });
+    });
+  });
+
+  describe('photo display', () => {
+    it('renders photos when available', () => {
+      const travel = createMockTravel({
+        spots: [{ id: 'spot-1', name: '清水寺', description: '' }],
+        reflection: {
+          id: 'reflection-1',
+          planId: '1',
+          userId: 'user-1',
+          photos: [
+            {
+              id: 'photo-1',
+              spotId: 'spot-1',
+              url: 'https://example.com/photo1.jpg',
+              analysis: '写真の分析',
+              userDescription: '清水寺の写真',
+            },
+          ],
+          spotNotes: {},
+          createdAt: '2024-03-17T00:00:00Z',
+        },
+      });
+      const pamphlet = createMockPamphlet({
+        spotReflections: [{ spotName: '清水寺', reflection: '振り返り' }],
+      });
+
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+
+      const image = screen.getByAltText('清水寺の写真');
+      expect(image).toBeInTheDocument();
+    });
+
+    it('does not render photo section when no photos', () => {
+      const travel = createMockTravel({
+        reflection: {
+          id: 'reflection-1',
+          planId: '1',
+          userId: 'user-1',
+          photos: [],
+          spotNotes: {},
+          createdAt: '2024-03-17T00:00:00Z',
+        },
+      });
+      const pamphlet = createMockPamphlet();
+
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+
+      const photoGrid = container.querySelector('.grid.grid-cols-2');
+      expect(photoGrid).not.toBeInTheDocument();
     });
   });
 });
