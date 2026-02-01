@@ -4,6 +4,7 @@ import { Container } from '@/components/layout';
 import { Button, Emoji } from '@/components/ui';
 import {
   BUTTON_LABELS,
+  DEFAULT_USER_ID,
   EMOJI_LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
@@ -28,7 +29,7 @@ export default function TravelListPage() {
     try {
       const apiClient = createApiClientFromEnv();
       // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = 'demo-user';
+      const userId = DEFAULT_USER_ID;
 
       const response = await apiClient.listTravelPlans({ userId });
       setTravels(response);

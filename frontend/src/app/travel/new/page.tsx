@@ -2,7 +2,9 @@
 import { Container } from '@/components/layout';
 import { Button, Emoji, TextField, Tooltip } from '@/components/ui';
 import {
+  ARIA_LABELS,
   BUTTON_LABELS,
+  DEFAULT_USER_ID,
   FORM_LABELS,
   HELP_TEXTS,
   HINTS,
@@ -79,7 +81,7 @@ export default function TravelNewPage() {
     try {
       const apiClient = createApiClientFromEnv();
       // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = 'demo-user';
+      const userId = DEFAULT_USER_ID;
 
       // スポットリストを整形（空の値を除外）
       const filteredSpots = spots
@@ -195,7 +197,7 @@ export default function TravelNewPage() {
                         variant="ghost"
                         onClick={() => handleRemoveSpot(spot.id)}
                         disabled={spots.length <= 1}
-                        title="Remove spot"
+                        title={ARIA_LABELS.REMOVE_SPOT}
                         type="button"
                       >
                         <Emoji symbol="🗑️" label="Delete" />

@@ -1,5 +1,5 @@
 import type { TravelGuideResponse } from './guide';
-import type { ReflectionResponse } from './reflection';
+import type { ReflectionPamphletResponse, ReflectionResponse } from './reflection';
 
 export type TravelPlanStatus = 'planning' | 'completed';
 export type GenerationStatus = 'not_started' | 'processing' | 'succeeded' | 'failed';
@@ -52,4 +52,5 @@ export interface TravelPlanResponse {
   updatedAt: string;
   guide?: TravelGuideResponse | null;
   reflection?: ReflectionResponse | null;
+  pamphlet?: ReflectionPamphletResponse | null;
 }

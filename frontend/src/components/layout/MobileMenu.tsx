@@ -1,6 +1,6 @@
 'use client';
 
-import { NAVIGATION_ITEMS } from '@/constants';
+import { ARIA_LABELS, NAVIGATION_ITEMS } from '@/constants';
 import type { MobileMenuProps } from '@/types';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -35,7 +35,7 @@ export function MobileMenu({ isOpen, onClose, currentPath }: MobileMenuProps) {
         type="button"
         className="fixed inset-0 z-40 bg-black/50 lg:hidden"
         onClick={onClose}
-        aria-label="メニューを閉じる"
+        aria-label={ARIA_LABELS.MENU_CLOSE}
         tabIndex={-1}
       />
 
@@ -48,7 +48,7 @@ export function MobileMenu({ isOpen, onClose, currentPath }: MobileMenuProps) {
               type="button"
               onClick={onClose}
               className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
-              aria-label="メニューを閉じる"
+              aria-label={ARIA_LABELS.MENU_CLOSE}
             >
               <svg
                 className="h-6 w-6"

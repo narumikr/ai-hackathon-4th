@@ -2,7 +2,16 @@
 
 import { Container } from '@/components/layout';
 import { Button, Emoji, Modal } from '@/components/ui';
-import { BUTTON_LABELS, EMOJI_LABELS, LABELS, MESSAGES, SECTION_TITLES } from '@/constants';
+import {
+  BUTTON_LABELS,
+  CONFIRMATION_MESSAGES,
+  DATE_LABELS,
+  EMOJI_LABELS,
+  ERROR_ALERTS,
+  LABELS,
+  MESSAGES,
+  SECTION_TITLES,
+} from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
@@ -68,7 +77,7 @@ export default function TravelGuidePage() {
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
-      alert(`削除に失敗しました: ${apiError.message}`);
+      alert(ERROR_ALERTS.DELETE_FAILED(apiError.message));
       console.error('Failed to delete travel plan:', apiError);
     } finally {
       setIsDeleting(false);
@@ -94,7 +103,7 @@ export default function TravelGuidePage() {
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
-      alert(`完了処理に失敗しました: ${apiError.message}`);
+      alert(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
       console.error('Failed to complete travel plan:', apiError);
     } finally {
       setIsCompleting(false);
@@ -174,7 +183,7 @@ export default function TravelGuidePage() {
               <h1 className="mb-2 font-bold text-3xl text-neutral-900">{travel.title}</h1>
               <p className="text-lg text-neutral-600">{travel.destination}</p>
               <p className="mt-2 text-neutral-500 text-sm">
-                作成日: {formatDate(travel.createdAt)}
+                {DATE_LABELS.CREATED_DATE} {formatDate(travel.createdAt)}
               </p>
             </div>
             {!isCompleted && (
@@ -352,9 +361,14 @@ export default function TravelGuidePage() {
         </div>
 
         {/* Delete Confirmation Modal */}
-        <Modal isOpen={isDeleteModalOpen} onClose={handleDeleteCancel} title="確認" size="sm">
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={handleDeleteCancel}
+          title={CONFIRMATION_MESSAGES.CONFIRM_TITLE}
+          size="sm"
+        >
           <div className="space-y-6">
-            <p className="text-neutral-600">この旅行計画を削除してもよろしいですか？</p>
+            <p className="text-neutral-600">{CONFIRMATION_MESSAGES.DELETE_TRAVEL}</p>
             <div className="flex justify-end gap-3">
               <Button variant="ghost" onClick={handleDeleteCancel} disabled={isDeleting}>
                 {BUTTON_LABELS.CANCEL}

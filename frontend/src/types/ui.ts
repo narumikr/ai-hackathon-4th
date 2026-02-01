@@ -304,6 +304,32 @@ export interface ModalProps {
 }
 
 /**
+ * Dialog Component Props
+ */
+export type DialogSize = 'sm' | 'md' | 'lg';
+
+export interface DialogProps {
+  /** Whether the dialog is open */
+  isOpen: boolean;
+  /** Callback when the dialog should close (only called if closable is true) */
+  onClose?: () => void;
+  /** Dialog title */
+  title?: string;
+  /** Message to display in the dialog */
+  message?: string;
+  /** Dialog size */
+  size?: DialogSize;
+  /** Whether to show a loading spinner */
+  showSpinner?: boolean;
+  /** Whether the dialog can be closed by the user */
+  closable?: boolean;
+  /** Custom content */
+  children?: ReactNode;
+  /** Additional CSS classes for the dialog content */
+  className?: string;
+}
+
+/**
  * Accordion Component Props
  */
 export interface AccordionItem {

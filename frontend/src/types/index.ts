@@ -46,5 +46,7 @@ export type {
   ReflectionFormData,
   ReflectionPhotoResponse,
   ReflectionResponse,
+  SpotReflectionResponse,
+  ReflectionPamphletResponse,
   CreateReflectionRequest,
 } from './reflection';
