@@ -251,6 +251,7 @@ export default function ReflectionDetailPage() {
             title={MESSAGES.PROCESSING}
             message={MESSAGES.GENERATING_REFLECTION}
             showSpinner
+            closable={false}
           />
 
           {/* 注意事項 */}
