@@ -158,21 +158,6 @@ export default function ReflectionDetailPage() {
     }
   };
 
-  if (!travel && !isLoading) {
-    return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
-          <Link href="/reflection">
-            <Button>{BUTTON_LABELS.BACK}</Button>
-          </Link>
-        </Container>
-      </div>
-    );
-  }
-
   if (isLoading) {
     return <div className="py-20 text-center">{MESSAGES.LOADING}</div>;
   }
