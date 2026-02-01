@@ -198,6 +198,7 @@ export default function TravelNewPage() {
                         onClick={() => handleRemoveSpot(spot.id)}
                         disabled={spots.length <= 1}
                         title={ARIA_LABELS.REMOVE_SPOT}
+                        aria-label={ARIA_LABELS.REMOVE_SPOT}
                         type="button"
                       >
                         ✕

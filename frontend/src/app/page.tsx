@@ -40,7 +40,7 @@ export default function HomePage() {
                 className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
               >
                 <h3 className="mb-4 flex items-center gap-3 font-semibold text-neutral-900 text-xl">
-                  <Icon name={feature.iconName} size="lg" label={feature.title} />
+                  <Icon name={feature.iconName} size="lg" decorative />
                   {feature.title}
                 </h3>
                 <p className="text-neutral-600">{feature.description}</p>

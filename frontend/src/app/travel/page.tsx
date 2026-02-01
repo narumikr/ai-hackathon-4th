@@ -5,6 +5,7 @@ import { Button, Icon } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
+  EMOJI_LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
@@ -96,7 +97,7 @@ export default function TravelListPage() {
         ) : !hasTravels ? (
           <div className="py-16 text-center">
             <div className="mb-4">
-              <Icon name="study" size="xl" label="本" />
+              <Icon name="study" size="xl" label={EMOJI_LABELS.BOOK} />
             </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_TRAVELS}</p>
             <Link href="/travel/new">

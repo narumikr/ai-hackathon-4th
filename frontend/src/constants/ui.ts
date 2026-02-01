@@ -330,6 +330,7 @@ export const SECTION_TITLES = {
   MEMORY_SCENE: (index: number) => `思い出の場面 #${index}`,
   TOURIST_SPOTS: '観光スポット',
   HIGHLIGHTS: 'ハイライト',
+  NEXT_TRIP_SUGGESTIONS: '次の旅行の提案',
 } as const;
 
 /**
@@ -443,4 +444,6 @@ export const EMOJI_LABELS = {
   LIGHTBULB: '電球',
   PICTURE: '写真',
   AIRPLANE: '飛行機',
+  UPLOAD: 'アップロード',
+  NOTE: 'メモ',
 } as const;
