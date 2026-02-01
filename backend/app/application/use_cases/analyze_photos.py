@@ -261,7 +261,23 @@ class AnalyzePhotosUseCase:
         results = await asyncio.gather(*tasks)
         new_photos = [photo for photo in results if photo is not None]
         if not new_photos:
-            raise ValueError("all photo analyses failed.")
+            logger.error(
+                "All photo analyses failed.",
+                extra={
+                    "plan_id": plan_id,
+                    "user_id": user_id,
+                    "requested_photo_count": len(analysis_inputs),
+                    "successful_photo_count": len(new_photos),
+                    "spot_id": spot_id,
+                },
+            )
+            raise ValueError(
+                "all photo analyses failed for "
+                f"plan_id={plan_id}, user_id={user_id}, "
+                f"requested_photo_count={len(analysis_inputs)}, "
+                f"successful_photo_count={len(new_photos)}, "
+                f"spot_id={spot_id}"
+            )
 
         if existing_reflection is None:
             reflection = Reflection(
