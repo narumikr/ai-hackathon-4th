@@ -21,6 +21,7 @@ from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
+from app.infrastructure.ai.schemas.evaluation import TravelGuideEvaluationSchema
 from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
 from app.prompts import render_template
 
@@ -32,40 +33,6 @@ _EVALUATION_PROMPT_TEMPLATE = "travel_guide_evaluation_prompt.txt"
 _EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_evaluation_system_instruction.txt"
 
 logger = logging.getLogger(__name__)
-
-_EVALUATION_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "spotEvaluations": {
-            "type": "array",
-            "description": "各スポットの評価結果",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "spotName": {"type": "string", "description": "スポット名"},
-                    "hasCitation": {
-                        "type": "boolean",
-                        "description": "出典が含まれているか（URL、書籍名、施設の展示、公式サイト、公的機関の資料など）",
-                    },
-                    "citationExample": {
-                        "type": "string",
-                        "description": "見つかった出典の例（見つからない場合は空文字列）",
-                    },
-                },
-                "required": ["spotName", "hasCitation", "citationExample"],
-            },
-        },
-        "hasHistoricalComparison": {
-            "type": "boolean",
-            "description": "overviewに歴史の有名な話題との対比が含まれているか（例: 同時期の世界では、一方ヨーロッパでは、など）",
-        },
-        "historicalComparisonExample": {
-            "type": "string",
-            "description": "見つかった歴史的対比の例（見つからない場合は空文字列）",
-        },
-    },
-    "required": ["spotEvaluations", "hasHistoricalComparison", "historicalComparisonExample"],
-}
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -445,10 +412,9 @@ class GenerateTravelGuideUseCase:
         prompt = render_template(_EVALUATION_PROMPT_TEMPLATE, guide_data=guide_data_json)
         system_instruction = render_template(_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE)
 
-        return await self._ai_service.evaluate_travel_guide(
-            guide_content=guide_data,
-            evaluation_schema=_EVALUATION_SCHEMA,
-            evaluation_prompt=prompt,
+        return await self._ai_service.generate_structured_data(
+            prompt=prompt,
+            response_schema=TravelGuideEvaluationSchema,
             system_instruction=system_instruction,
         )
 
