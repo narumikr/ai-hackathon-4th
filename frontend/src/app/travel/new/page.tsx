@@ -199,6 +199,7 @@ export default function TravelNewPage() {
                         disabled={spots.length <= 1}
                         title={ARIA_LABELS.REMOVE_SPOT}
                         aria-label={ARIA_LABELS.REMOVE_SPOT}
+                        aria-label={ARIA_LABELS.REMOVE_SPOT}
                         type="button"
                       >
                         ✕
