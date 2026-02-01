@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from typing import Any
 
 from app.application.dto.travel_guide_dto import TravelGuideDTO
@@ -85,6 +86,44 @@ _HISTORICAL_PROMPT_TEMPLATE = "travel_guide_historical_prompt.txt"
 _TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
 _HISTORICAL_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_historical_system_instruction.txt"
 _TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
+_EVALUATION_PROMPT_TEMPLATE = "travel_guide_evaluation_prompt.txt"
+_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_evaluation_system_instruction.txt"
+
+logger = logging.getLogger(__name__)
+
+_EVALUATION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "spotEvaluations": {
+            "type": "array",
+            "description": "各スポットの評価結果",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "spotName": {"type": "string", "description": "スポット名"},
+                    "hasCitation": {
+                        "type": "boolean",
+                        "description": "出典が含まれているか（URL、書籍名、施設の展示、公式サイト、公的機関の資料など）",
+                    },
+                    "citationExample": {
+                        "type": "string",
+                        "description": "見つかった出典の例（見つからない場合は空文字列）",
+                    },
+                },
+                "required": ["spotName", "hasCitation", "citationExample"],
+            },
+        },
+        "hasHistoricalComparison": {
+            "type": "boolean",
+            "description": "overviewに歴史の有名な話題との対比が含まれているか（例: 同時期の世界では、一方ヨーロッパでは、など）",
+        },
+        "historicalComparisonExample": {
+            "type": "string",
+            "description": "見つかった歴史的対比の例（見つからない場合は空文字列）",
+        },
+    },
+    "required": ["spotEvaluations", "hasHistoricalComparison", "historicalComparisonExample"],
+}
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -356,15 +395,35 @@ class GenerateTravelGuideUseCase:
                 if not historical_info or not historical_info.strip():
                     raise ValueError("historical_info must be a non-empty string.")
 
-                guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
-                response_schema = _build_travel_guide_schema()
-                structured = await self._ai_service.generate_structured_data(
-                    prompt=guide_prompt,
-                    response_schema=response_schema,
-                    system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
-                )
-                if not isinstance(structured, dict):
-                    raise ValueError("structured response must be a dict.")
+                # 初回生成
+                structured = await self._generate_guide_data(travel_plan, historical_info)
+
+                # 評価
+                evaluation = await self._evaluate_guide_data(structured)
+
+                # 評価結果を解析
+                is_valid = self._check_evaluation_result(evaluation)
+
+                # 不合格の場合は1回だけ再生成
+                if not is_valid:
+                    failure_reasons = self._get_failure_reasons(evaluation)
+                    logger.warning(
+                        "Travel guide evaluation failed. Reasons: %s. Retrying once...",
+                        "; ".join(failure_reasons),
+                    )
+                    structured = await self._generate_guide_data(travel_plan, historical_info)
+
+                    # 再評価（ログ出力のみ、再生成は行わない）
+                    re_evaluation = await self._evaluate_guide_data(structured)
+                    re_is_valid = self._check_evaluation_result(re_evaluation)
+                    if not re_is_valid:
+                        re_failure_reasons = self._get_failure_reasons(re_evaluation)
+                        logger.warning(
+                            "Travel guide evaluation failed after retry. Reasons: %s. Proceeding anyway.",
+                            "; ".join(re_failure_reasons),
+                        )
+                    else:
+                        logger.info("Travel guide evaluation passed after retry.")
 
                 overview = _require_str(structured.get("overview"), "overview")
                 _require_min_length(overview, "overview", 100)
@@ -422,6 +481,94 @@ class GenerateTravelGuideUseCase:
         self._plan_repository.save(travel_plan, commit=commit)
 
         return TravelGuideDTO.from_entity(saved_guide)
+
+    async def _evaluate_guide_data(self, guide_data: dict[str, Any]) -> dict[str, Any]:
+        """旅行ガイドデータを評価する
+
+        Args:
+            guide_data: 評価対象の旅行ガイドデータ
+
+        Returns:
+            評価結果
+        """
+        import json
+
+        guide_data_json = json.dumps(guide_data, ensure_ascii=False, indent=2)
+        prompt = render_template(_EVALUATION_PROMPT_TEMPLATE, guide_data=guide_data_json)
+        system_instruction = render_template(_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE)
+
+        return await self._ai_service.evaluate_travel_guide(
+            guide_content=guide_data,
+            evaluation_schema=_EVALUATION_SCHEMA,
+            evaluation_prompt=prompt,
+            system_instruction=system_instruction,
+        )
+
+    def _check_evaluation_result(self, evaluation: dict[str, Any]) -> bool:
+        """評価結果が合格かどうかをチェックする
+
+        Args:
+            evaluation: AIサービスからの評価結果
+
+        Returns:
+            合格の場合True
+        """
+        spot_evaluations = evaluation.get("spotEvaluations", [])
+        has_historical_comparison = evaluation.get("hasHistoricalComparison", False)
+
+        # 全てのスポットに出典があり、歴史的対比もある場合のみ合格
+        all_spots_have_citation = all(spot.get("hasCitation", False) for spot in spot_evaluations)
+
+        return all_spots_have_citation and has_historical_comparison
+
+    def _get_failure_reasons(self, evaluation: dict[str, Any]) -> list[str]:
+        """評価結果から不合格の理由を取得する
+
+        Args:
+            evaluation: AIサービスからの評価結果
+
+        Returns:
+            不合格の理由のリスト
+        """
+        reasons: list[str] = []
+
+        spot_evaluations = evaluation.get("spotEvaluations", [])
+        missing_citations = [
+            spot.get("spotName", "")
+            for spot in spot_evaluations
+            if not spot.get("hasCitation", False)
+        ]
+
+        if missing_citations:
+            reasons.append(f"出典が不足しているスポット: {', '.join(missing_citations)}")
+
+        if not evaluation.get("hasHistoricalComparison", False):
+            reasons.append("overviewに歴史の有名な話題との対比が含まれていません")
+
+        return reasons
+
+    async def _generate_guide_data(
+        self, travel_plan: TravelPlan, historical_info: str
+    ) -> dict[str, Any]:
+        """旅行ガイドデータを生成する
+
+        Args:
+            travel_plan: 旅行計画
+            historical_info: 歴史情報
+
+        Returns:
+            生成された構造化データ
+        """
+        guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
+        response_schema = _build_travel_guide_schema()
+        structured = await self._ai_service.generate_structured_data(
+            prompt=guide_prompt,
+            response_schema=response_schema,
+            system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
+        )
+        if not isinstance(structured, dict):
+            raise ValueError("structured response must be a dict.")
+        return structured
 
 
 def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:

@@ -64,6 +64,30 @@ class FakeAIService(IAIService):
     ) -> dict[str, Any]:
         raise NotImplementedError
 
+    async def evaluate_travel_guide(
+        self,
+        guide_content: dict,
+        evaluation_schema: dict,
+        evaluation_prompt: str,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict:
+        """旅行ガイドの評価（テスト用：常に合格を返す）"""
+        return {
+            "spotEvaluations": [
+                {
+                    "spotName": spot["spotName"],
+                    "hasCitation": True,
+                    "citationExample": "テスト用出典",
+                }
+                for spot in guide_content.get("spotDetails", [])
+            ],
+            "hasHistoricalComparison": True,
+            "historicalComparisonExample": "テスト用歴史的対比",
+        }
+
     async def generate_structured_data(
         self,
         prompt: str,

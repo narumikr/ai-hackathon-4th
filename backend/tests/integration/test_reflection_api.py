@@ -73,6 +73,34 @@ class StubAIService(IAIService):
             "confidence": 0.9,
         }
 
+    async def evaluate_travel_guide(
+        self,
+        guide_content: dict,
+        evaluation_schema: dict,
+        evaluation_prompt: str,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict:
+        """旅行ガイドの評価（スタブ：常に合格を返す）"""
+        return {
+            "spotEvaluations": [
+                {
+                    "spotName": "清水寺",
+                    "hasCitation": True,
+                    "citationExample": "清水寺公式サイト",
+                },
+                {
+                    "spotName": "金閣寺",
+                    "hasCitation": True,
+                    "citationExample": "金閣寺公式サイト",
+                },
+            ],
+            "hasHistoricalComparison": True,
+            "historicalComparisonExample": "同時期のヨーロッパでは...",
+        }
+
     async def generate_structured_data(
         self,
         prompt: str,
