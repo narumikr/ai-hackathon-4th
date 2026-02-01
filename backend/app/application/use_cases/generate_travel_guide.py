@@ -309,7 +309,7 @@ class GenerateTravelGuideUseCase:
 
                 # レスポンスバリデーション
                 try:
-                    _validated = TravelGuideResponseSchema.model_validate(structured)
+                    TravelGuideResponseSchema.model_validate(structured)
                 except ValidationError as e:
                     raise ValueError(f"Invalid AI response structure: {e}") from e
 

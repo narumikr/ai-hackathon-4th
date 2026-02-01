@@ -280,7 +280,7 @@ class GenerateReflectionPamphletUseCase:
 
             # レスポンスバリデーション
             try:
-                _validated = ReflectionPamphletResponseSchema.model_validate(structured)
+                ReflectionPamphletResponseSchema.model_validate(structured)
             except ValidationError as e:
                 raise ValueError(f"Invalid AI response structure: {e}") from e
 
