@@ -311,6 +311,7 @@ export const ERROR_MESSAGES = {
 export const TOOLTIP_MESSAGES = {
   TITLE_REQUIRED: 'タイトルを入力してください',
   DESTINATION_REQUIRED: '目的地を入力してください',
+  PHOTO_REQUIRED: '写真を1枚以上アップロードしてください',
 } as const;
 
 /**
@@ -401,6 +402,7 @@ export const HINTS = {
     '生成されたパンフレットは保存できます',
   ],
   REFLECTION_CREATE: [
+    '振り返りパンフレットの生成には写真のアップロードが必須です',
     '写真は訪問した場所が分かるものがおすすめです',
     '事前学習との違いや新たな発見を記入すると効果的です',
     'パンフレット生成には1-2分程度かかる場合があります',

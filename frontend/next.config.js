@@ -8,7 +8,7 @@ const nextConfig = {
 
   // 画像最適化
   images: {
-    unoptimized: process.env.NODE_ENV === 'production',
+    unoptimized: process.env.NODE_ENV !== 'production',
     remotePatterns: [
       {
         protocol: 'https',
