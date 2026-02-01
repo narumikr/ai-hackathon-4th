@@ -84,6 +84,20 @@ class Settings(DatabaseSettings):
     # TODO: 将来の拡張用 - thinking_levelパラメータの活用
     gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）
 
+    # ログ設定
+    log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+    def get_effective_log_level(self) -> str:
+        """debugフラグに基づいて有効なログレベルを取得.
+
+        Requirements:
+        - 4.2: debug=True の場合は DEBUG レベル
+        - 4.3: debug=False の場合は INFO レベル以上
+        """
+        if self.debug:
+            return "DEBUG"
+        return self.log_level
+
     @field_validator("google_cloud_project")
     @classmethod
     def validate_google_cloud_project(cls, value: str | None) -> str | None:
