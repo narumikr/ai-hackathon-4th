@@ -13,4 +13,7 @@ export { List } from './List';
 export { TextField } from './TextField';
 export { Tooltip } from './Tooltip';
 export { Emoji } from './Emoji';
+export { Icon } from './Icon';
+export type { IconName, IconSize } from './Icon';
+export { iconNames } from './Icon';
 export { Modal } from './Modal';

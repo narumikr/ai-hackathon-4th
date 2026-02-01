@@ -1,6 +1,6 @@
 'use client';
 import { Container } from '@/components/layout';
-import { Button, Emoji, TextField, Tooltip } from '@/components/ui';
+import { Button, Icon, TextField, Tooltip } from '@/components/ui';
 import {
   ARIA_LABELS,
   BUTTON_LABELS,
@@ -198,9 +198,10 @@ export default function TravelNewPage() {
                         onClick={() => handleRemoveSpot(spot.id)}
                         disabled={spots.length <= 1}
                         title={ARIA_LABELS.REMOVE_SPOT}
+                        aria-label={ARIA_LABELS.REMOVE_SPOT}
                         type="button"
                       >
-                        <Emoji symbol="🗑️" label="Delete" />
+                        ✕
                       </Button>
                     </div>
                   ))}
@@ -241,7 +242,10 @@ export default function TravelNewPage() {
 
           {/* 注意事項 */}
           <div className="mt-6 rounded-lg border border-primary-200 bg-primary-50 p-4">
-            <h3 className="mb-2 font-semibold text-primary-900 text-sm">{LABELS.HINT_TITLE}</h3>
+            <h3 className="mb-2 flex items-center gap-1 font-semibold text-primary-900 text-sm">
+              <Icon name="hint" size="sm" label={LABELS.HINT_TITLE} />
+              {LABELS.HINT_TITLE}
+            </h3>
             <ul className="space-y-1 text-primary-800 text-sm">
               {HINTS.TRAVEL_NEW.map(hint => (
                 <li key={hint}>• {hint}</li>

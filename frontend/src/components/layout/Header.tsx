@@ -1,5 +1,6 @@
 'use client';
 
+import { Icon } from '@/components/ui';
 import { APP_NAME, ARIA_LABELS, EMOJI_LABELS } from '@/constants';
 import type { HeaderProps } from '@/types';
 import Link from 'next/link';
@@ -27,9 +28,7 @@ export function Header({ className = '' }: HeaderProps) {
             href="/"
             className="flex items-center gap-2 text-primary-700 transition-colors hover:text-primary-800"
           >
-            <span className="text-2xl" role="img" aria-label={EMOJI_LABELS.HISTORIC_BUILDING}>
-              🏛️
-            </span>
+            <Icon name="museum" size="lg" label={EMOJI_LABELS.HISTORIC_BUILDING} />
             <span className="font-bold text-lg">{APP_NAME}</span>
           </Link>
 
@@ -67,9 +66,7 @@ export function Header({ className = '' }: HeaderProps) {
               className="hidden h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200 lg:flex"
               aria-label={ARIA_LABELS.USER_MENU}
             >
-              <span className="text-xl" role="img" aria-label={EMOJI_LABELS.USER}>
-                👤
-              </span>
+              <Icon name="user" size="md" label={EMOJI_LABELS.USER} />
             </button>
           </div>
         </div>

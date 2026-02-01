@@ -259,11 +259,11 @@ export const FORM_LABELS = {
   TRAVEL_TITLE: '旅行タイトル',
   DESTINATION: '目的地',
   SPOTS: '観光スポット',
-  PHOTO_UPLOAD: '📸 写真をアップロード',
-  PHOTO_COMMENTS: '✍️ 写真ごとの感想',
-  OVERALL_IMPRESSION: '📝 旅行全体の感想',
+  PHOTO_UPLOAD: '写真をアップロード',
+  PHOTO_COMMENTS: '写真ごとの感想',
+  OVERALL_IMPRESSION: '旅行全体の感想',
   OVERALL_IMPRESSION_PLAIN: '全体的な感想',
-  PRE_LEARNING: '📚 事前学習で学んだこと（参考）',
+  PRE_LEARNING: '事前学習で学んだこと（参考）',
   PHOTOS: '写真',
   COMMENT: '感想',
 } as const;
@@ -323,16 +323,17 @@ export const SECTION_TITLES = {
   MAIN_FEATURES: '主な機能',
   HOW_TO_USE: '使い方',
   CTA: 'さあ、歴史を学ぶ旅を始めましょう',
-  TIMELINE: '📅 歴史年表',
-  SPOT_DETAILS: '📍 観光スポット詳細',
-  HISTORICAL_CONTEXT: '🏛️ 歴史的背景',
-  CHECKPOINTS: '✅ チェックポイント',
+  TIMELINE: '歴史年表',
+  SPOT_DETAILS: '観光スポット詳細',
+  HISTORICAL_CONTEXT: '歴史的背景',
+  CHECKPOINTS: 'チェックポイント',
   SPOT_REFLECTIONS: '観光スポットの振り返り',
   SPOT_MEMORIES: '観光スポットの思い出',
   ADD_SPOT: 'スポットを追加する',
   MEMORY_SCENE: (index: number) => `思い出の場面 #${index}`,
   TOURIST_SPOTS: '観光スポット',
   HIGHLIGHTS: 'ハイライト',
+  NEXT_TRIP_SUGGESTIONS: '次の旅行の提案',
 } as const;
 
 /**
@@ -349,18 +350,18 @@ export const HOME_CONTENT = {
   },
   FEATURES: [
     {
-      emoji: '📚',
+      iconName: 'study' as const,
       title: '事前学習ガイド生成',
       description:
         '訪問予定の観光スポットの歴史的背景や見どころを、AIが分かりやすくまとめた旅行ガイドを自動生成。',
     },
     {
-      emoji: '📅',
+      iconName: 'calendar' as const,
       title: '歴史年表',
       description: '時系列で整理された歴史年表で、訪問地の歴史的背景を深く理解できます。',
     },
     {
-      emoji: '📸',
+      iconName: 'photo' as const,
       title: '旅行後の振り返り',
       description:
         '旅行写真と感想をアップロードすると、AIが事前学習との比較を含めた振り返りパンフレットを生成。',
@@ -425,8 +426,8 @@ export const LABELS = {
   PHOTO_NUMBER: '写真',
   YEAR_SUFFIX: '年',
   COMPLETED_DATE: '完了:',
-  HINT_TITLE: '💡 ヒント',
-  ABOUT_REFLECTION: '💡 振り返りについて',
+  HINT_TITLE: 'ヒント',
+  ABOUT_REFLECTION: '振り返りについて',
   REMOVE_IMAGE: '削除',
   MEMO_PREFIX: 'メモ:',
 } as const;
@@ -447,4 +448,7 @@ export const EMOJI_LABELS = {
   LIGHTBULB: '電球',
   PICTURE: '写真',
   AIRPLANE: '飛行機',
+  UPLOAD: 'アップロード',
+  NOTE: 'メモ',
+  HINT: 'ヒント',
 } as const;

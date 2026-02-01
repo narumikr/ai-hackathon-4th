@@ -1,7 +1,7 @@
 'use client';
 
 import { Container } from '@/components/layout';
-import { Button, Emoji, Modal } from '@/components/ui';
+import { Button, Icon, Modal } from '@/components/ui';
 import {
   BUTTON_LABELS,
   CONFIRMATION_MESSAGES,
@@ -198,8 +198,8 @@ export default function TravelGuidePage() {
 
         {/* 観光スポット一覧 */}
         <section className="mb-12 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-6 font-bold text-2xl text-neutral-900">
-            <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {SECTION_TITLES.TOURIST_SPOTS}
+          <h2 className="mb-6 flex items-center gap-2 font-bold text-2xl text-neutral-900">
+            <Icon name="pin" size="lg" label={EMOJI_LABELS.PIN} /> {SECTION_TITLES.TOURIST_SPOTS}
           </h2>
           {travel.spots.length === 0 ? (
             <p className="text-neutral-600">{MESSAGES.NO_SPOTS_REGISTERED}</p>
@@ -238,8 +238,9 @@ export default function TravelGuidePage() {
             {/* 歴史年表 */}
             {travel.guide.timeline && travel.guide.timeline.length > 0 && (
               <section className="mb-12 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-6 font-bold text-2xl text-neutral-900">
-                  <Emoji symbol="📅" label={EMOJI_LABELS.CALENDAR} /> {SECTION_TITLES.TIMELINE}
+                <h2 className="mb-6 flex items-center gap-2 font-bold text-2xl text-neutral-900">
+                  <Icon name="calendar" size="lg" label={EMOJI_LABELS.CALENDAR} />{' '}
+                  {SECTION_TITLES.TIMELINE}
                 </h2>
                 <div className="space-y-4">
                   {travel.guide.timeline.map((item, index) => (
@@ -260,8 +261,9 @@ export default function TravelGuidePage() {
             {/* スポット詳細 */}
             {travel.guide.spotDetails && travel.guide.spotDetails.length > 0 && (
               <section className="mb-12">
-                <h2 className="mb-6 font-bold text-2xl text-neutral-900">
-                  <Emoji symbol="📍" label={EMOJI_LABELS.PIN} /> {SECTION_TITLES.SPOT_DETAILS}
+                <h2 className="mb-6 flex items-center gap-2 font-bold text-2xl text-neutral-900">
+                  <Icon name="pin" size="lg" label={EMOJI_LABELS.PIN} />{' '}
+                  {SECTION_TITLES.SPOT_DETAILS}
                 </h2>
                 <div className="space-y-6">
                   {travel.guide.spotDetails.map((spot, index) => (
@@ -283,8 +285,8 @@ export default function TravelGuidePage() {
 
                       {spot.historicalSignificance && (
                         <div className="mb-4">
-                          <h4 className="mb-2 font-semibold text-neutral-700 text-sm">
-                            <Emoji symbol="🏛️" label={EMOJI_LABELS.HISTORIC_BUILDING} />{' '}
+                          <h4 className="mb-2 flex items-center gap-1 font-semibold text-neutral-700 text-sm">
+                            <Icon name="museum" size="sm" label={EMOJI_LABELS.HISTORIC_BUILDING} />{' '}
                             {SECTION_TITLES.HISTORICAL_CONTEXT}
                           </h4>
                           <p className="text-neutral-700 leading-relaxed">
@@ -295,8 +297,8 @@ export default function TravelGuidePage() {
 
                       {spot.highlights && spot.highlights.length > 0 && (
                         <div>
-                          <h4 className="mb-2 font-semibold text-neutral-700 text-sm">
-                            <Emoji symbol="✅" label={EMOJI_LABELS.CHECKMARK} />{' '}
+                          <h4 className="mb-2 flex items-center gap-1 font-semibold text-neutral-700 text-sm">
+                            <Icon name="check" size="sm" label={EMOJI_LABELS.CHECKMARK} />{' '}
                             {SECTION_TITLES.HIGHLIGHTS}
                           </h4>
                           <ul className="space-y-1">
