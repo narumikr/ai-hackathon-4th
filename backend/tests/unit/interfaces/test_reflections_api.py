@@ -13,107 +13,90 @@ from app.infrastructure.repositories.travel_plan_repository import TravelPlanRep
 from app.interfaces.api.v1.reflections import _update_reflection_status
 
 
+@pytest.fixture()
+def travel_plan() -> TravelPlan:
+    return TravelPlan(
+        id="plan-京都-001",
+        user_id="user-太郎-001",
+        title="京都旅行",
+        destination="京都",
+        spots=[
+            TouristSpot(
+                id="spot-清水寺-001",
+                name="清水寺",
+                description="清水の舞台で有名な寺院",
+            )
+        ],
+        status=PlanStatus.PLANNING,
+    )
+
+
+@pytest.fixture()
+def mock_repository(travel_plan: TravelPlan) -> MagicMock:
+    repository = MagicMock(spec=TravelPlanRepository)
+    repository.find_by_id.return_value = travel_plan
+    return repository
+
+
 class TestUpdateReflectionStatus:
     """_update_reflection_status関数のテスト"""
 
-    def test_update_reflection_status_to_processing(self) -> None:
+    def test_update_reflection_status_to_processing(
+        self,
+        travel_plan: TravelPlan,
+        mock_repository: MagicMock,
+    ) -> None:
         """前提条件: 旅行計画が存在する
         実行: _update_reflection_status(PROCESSING)
         検証: 振り返り生成ステータスがPROCESSINGになる
         """
-        plan = TravelPlan(
-            id="plan-京都-001",
-            user_id="user-太郎-001",
-            title="京都旅行",
-            destination="京都",
-            spots=[
-                TouristSpot(
-                    id="spot-清水寺-001",
-                    name="清水寺",
-                    description="清水の舞台で有名な寺院",
-                )
-            ],
-            status=PlanStatus.PLANNING,
-        )
-
-        mock_repository = MagicMock(spec=TravelPlanRepository)
-        mock_repository.find_by_id.return_value = plan
-
         _update_reflection_status(
             mock_repository,
-            "plan-京都-001",
+            travel_plan.id,
             GenerationStatus.PROCESSING,
             commit=False,
         )
 
-        assert plan.reflection_generation_status == GenerationStatus.PROCESSING
-        mock_repository.save.assert_called_once_with(plan, commit=False)
+        assert travel_plan.reflection_generation_status == GenerationStatus.PROCESSING
+        mock_repository.save.assert_called_once_with(travel_plan, commit=False)
 
-    def test_update_reflection_status_to_succeeded(self) -> None:
+    def test_update_reflection_status_to_succeeded(
+        self,
+        travel_plan: TravelPlan,
+        mock_repository: MagicMock,
+    ) -> None:
         """前提条件: 旅行計画が存在する
         実行: _update_reflection_status(SUCCEEDED)
         検証: 振り返り生成ステータスがSUCCEEDEDになる
         """
-        plan = TravelPlan(
-            id="plan-京都-001",
-            user_id="user-太郎-001",
-            title="京都旅行",
-            destination="京都",
-            spots=[
-                TouristSpot(
-                    id="spot-清水寺-001",
-                    name="清水寺",
-                    description="清水の舞台で有名な寺院",
-                )
-            ],
-            status=PlanStatus.PLANNING,
-        )
-
-        mock_repository = MagicMock(spec=TravelPlanRepository)
-        mock_repository.find_by_id.return_value = plan
-
         _update_reflection_status(
             mock_repository,
-            "plan-京都-001",
+            travel_plan.id,
             GenerationStatus.SUCCEEDED,
             commit=True,
         )
 
-        assert plan.reflection_generation_status == GenerationStatus.SUCCEEDED
-        mock_repository.save.assert_called_once_with(plan, commit=True)
+        assert travel_plan.reflection_generation_status == GenerationStatus.SUCCEEDED
+        mock_repository.save.assert_called_once_with(travel_plan, commit=True)
 
-    def test_update_reflection_status_to_failed(self) -> None:
+    def test_update_reflection_status_to_failed(
+        self,
+        travel_plan: TravelPlan,
+        mock_repository: MagicMock,
+    ) -> None:
         """前提条件: 旅行計画が存在する
         実行: _update_reflection_status(FAILED)
         検証: 振り返り生成ステータスがFAILEDになる
         """
-        plan = TravelPlan(
-            id="plan-京都-001",
-            user_id="user-太郎-001",
-            title="京都旅行",
-            destination="京都",
-            spots=[
-                TouristSpot(
-                    id="spot-清水寺-001",
-                    name="清水寺",
-                    description="清水の舞台で有名な寺院",
-                )
-            ],
-            status=PlanStatus.PLANNING,
-        )
-
-        mock_repository = MagicMock(spec=TravelPlanRepository)
-        mock_repository.find_by_id.return_value = plan
-
         _update_reflection_status(
             mock_repository,
-            "plan-京都-001",
+            travel_plan.id,
             GenerationStatus.FAILED,
             commit=True,
         )
 
-        assert plan.reflection_generation_status == GenerationStatus.FAILED
-        mock_repository.save.assert_called_once_with(plan, commit=True)
+        assert travel_plan.reflection_generation_status == GenerationStatus.FAILED
+        mock_repository.save.assert_called_once_with(travel_plan, commit=True)
 
     def test_update_reflection_status_raises_on_plan_not_found(self) -> None:
         """前提条件: 旅行計画が存在しない
