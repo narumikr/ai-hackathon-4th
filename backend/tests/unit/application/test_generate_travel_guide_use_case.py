@@ -19,7 +19,7 @@ from app.infrastructure.repositories.travel_plan_repository import TravelPlanRep
 class FakeAIService(IAIService):
     """テスト用のAIサービス"""
 
-    def __init__(self, extracted_facts: str, structured_data: dict[str, Any]) -> None:
+    def __init__(self, extracted_facts: str, structured_data: Any) -> None:
         self.extracted_facts = extracted_facts
         self.structured_data = structured_data
 
@@ -461,7 +461,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
     guide_repository = TravelGuideRepository(db_session)
     ai_service = FakeAIService(
         extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
-        structured_data=[],  # type: ignore[arg-type]
+        structured_data=[],
     )
 
     # 実行 & 検証: ValueErrorが発生する。
