@@ -7,9 +7,9 @@ import { ReflectionViewer } from './ReflectionViewer';
 
 // next/imageをモック
 vi.mock('next/image', () => ({
-  default: (props: { src: string; alt: string }) => {
+  default: (props: { src: string; alt: string; 'aria-label'?: string }) => {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={props.src} alt={props.alt} />;
+    return <img src={props.src} alt={props.alt} aria-label={props['aria-label']} />;
   },
 }));
 
@@ -192,37 +192,25 @@ describe('ReflectionViewer', () => {
     });
   });
 
-  describe('emojis', () => {
-    it('renders pin emoji for destination', () => {
+  describe('icons and emojis', () => {
+    it('renders pin icon for destination', () => {
       const travel = createMockTravel();
       const pamphlet = createMockPamphlet();
 
-      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.PIN}"]`);
-      expect(emojiElements.length).toBeGreaterThan(0);
+      const pinIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.PIN });
+      expect(pinIcons.length).toBeGreaterThan(0);
     });
 
-    it('renders checkmark emoji for completion', () => {
+    it('renders checkmark icon for completion', () => {
       const travel = createMockTravel();
       const pamphlet = createMockPamphlet();
 
-      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.CHECKMARK}"]`);
-      expect(emojiElements.length).toBeGreaterThan(0);
-    });
-
-    it('renders airplane emoji for next trip suggestions', () => {
-      const travel = createMockTravel();
-      const pamphlet = createMockPamphlet({
-        nextTripSuggestions: ['提案1'],
-      });
-
-      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
-
-      const emojiElements = container.querySelectorAll(`[aria-label="${EMOJI_LABELS.AIRPLANE}"]`);
-      expect(emojiElements.length).toBeGreaterThan(0);
+      const checkIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CHECKMARK });
+      expect(checkIcons.length).toBeGreaterThan(0);
     });
   });
 
@@ -404,19 +392,27 @@ describe('ReflectionViewer', () => {
       expect(h4Elements.length).toBeGreaterThan(0);
     });
 
-    it('emoji elements have proper aria-label', () => {
+    it('icon and emoji elements have proper aria-label', () => {
       const travel = createMockTravel();
       const pamphlet = createMockPamphlet({
         spotReflections: [{ spotName: 'テストスポット', reflection: 'テスト' }],
+        nextTripSuggestions: ['提案1'],
       });
 
-      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const emojiElements = container.querySelectorAll('[role="img"]');
-      expect(emojiElements.length).toBeGreaterThan(0);
+      // Check that icon images have alt text (filter out photo preview images)
+      const pinIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.PIN });
+      const checkIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CHECKMARK });
 
-      emojiElements.forEach(emoji => {
-        expect(emoji).toHaveAttribute('aria-label');
+      expect(pinIcons.length).toBeGreaterThan(0);
+      expect(checkIcons.length).toBeGreaterThan(0);
+
+      pinIcons.forEach(icon => {
+        expect(icon).toHaveAttribute('alt', EMOJI_LABELS.PIN);
+      });
+      checkIcons.forEach(icon => {
+        expect(icon).toHaveAttribute('alt', EMOJI_LABELS.CHECKMARK);
       });
     });
   });

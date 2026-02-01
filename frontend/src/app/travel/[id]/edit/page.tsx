@@ -1,6 +1,6 @@
 'use client';
 import { Container } from '@/components/layout';
-import { Button, Emoji, TextField, Tooltip } from '@/components/ui';
+import { Button, TextField, Tooltip } from '@/components/ui';
 import {
   ARIA_LABELS,
   BUTTON_LABELS,
@@ -253,9 +253,9 @@ export default function TravelEditPage() {
                         variant="ghost"
                         onClick={() => handleRemoveSpot(spot.id)}
                         disabled={formData.spots.length <= 1}
-                        title={ARIA_LABELS.REMOVE_SPOT}
+                        aria-label={ARIA_LABELS.REMOVE_SPOT}
                       >
-                        <Emoji symbol="🗑️" label="Delete" />
+                        ✕
                       </Button>
                     </div>
                   ))}

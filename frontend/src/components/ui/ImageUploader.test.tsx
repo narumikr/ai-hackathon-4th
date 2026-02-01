@@ -35,11 +35,9 @@ describe('ImageUploader', () => {
     });
 
     it('renders upload icon', () => {
-      const { container } = render(
-        <ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />
-      );
+      render(<ImageUploader photos={[]} onPhotosChange={mockOnPhotosChange} />);
 
-      expect(container.querySelector('[role="img"]')).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: 'アップロード' })).toBeInTheDocument();
     });
 
     it('has hidden file input', () => {
