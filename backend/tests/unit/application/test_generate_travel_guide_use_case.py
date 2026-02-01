@@ -300,6 +300,50 @@ async def test_generate_travel_guide_use_case_rejects_short_overview(
 
 
 @pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
+    db_session: Session, sample_travel_plan
+) -> None:
+    """前提条件: 旅行計画が存在し、AIが新規スポットを追加する。
+    実行: 年表に不正な関連スポットを含めてガイド生成を失敗させる。
+    検証: 旅行計画に新規スポットが保存されず、生成ステータスがFAILEDになる。
+    """
+    # 前提条件: 旅行計画が存在する。
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    broken_timeline_payload = {
+        **_structured_guide_payload_with_recommendations(),
+        "timeline": [
+            {
+                "year": 1603,
+                "event": "不正な関連スポット",
+                "significance": "存在しないスポットを参照。",
+                "relatedSpots": ["存在しないスポット"],
+            }
+        ],
+    }
+    ai_service = FakeAIService(
+        historical_info="京都全体とおすすめスポットの歴史情報。",
+        structured_data=broken_timeline_payload,
+    )
+
+    # 実行 & 検証: ValueErrorが発生する。
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    with pytest.raises(ValueError, match="relatedSpots contains unknown spot names"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    # 検証: 新規スポットが保存されていない。
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    spot_names = [spot.name for spot in plan.spots]
+    assert spot_names == ["清水寺", "金閣寺"]
+    assert plan.guide_generation_status == GenerationStatus.FAILED
+
+
+@pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_updates_existing_guide(
     db_session: Session, sample_travel_plan, sample_travel_guide
 ) -> None:
