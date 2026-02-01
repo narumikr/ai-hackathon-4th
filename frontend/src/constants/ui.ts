@@ -446,4 +446,5 @@ export const EMOJI_LABELS = {
   AIRPLANE: '飛行機',
   UPLOAD: 'アップロード',
   NOTE: 'メモ',
+  HINT: 'ヒント',
 } as const;
