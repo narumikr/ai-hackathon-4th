@@ -91,6 +91,8 @@ class FakeAIService(IAIService):
             ],
             "hasHistoricalComparison": True,
             "historicalComparisonExample": "テスト用歴史的対比",
+            "allSpotsIncluded": True,
+            "missingSpots": [],
         }
 
     async def generate_structured_data(
@@ -102,6 +104,24 @@ class FakeAIService(IAIService):
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> dict[str, Any]:
+        # 評価用のプロンプトかどうかを判定
+        if "評価してください" in prompt or "評価基準" in prompt:
+            # 評価結果を返す（全て合格）
+            spot_details = self.structured_data.get("spotDetails", [])
+            return {
+                "spotEvaluations": [
+                    {
+                        "spotName": spot["spotName"],
+                        "hasCitation": True,
+                        "citationExample": "テスト用出典",
+                    }
+                    for spot in spot_details
+                ],
+                "hasHistoricalComparison": True,
+                "historicalComparisonExample": "テスト用歴史的対比",
+                "allSpotsIncluded": True,
+                "missingSpots": [],
+            }
         return self.structured_data
 
 

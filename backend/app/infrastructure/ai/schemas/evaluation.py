@@ -45,3 +45,13 @@ class TravelGuideEvaluationSchema(GeminiResponseSchema):
         description="見つかった歴史的対比の例（見つからない場合は空文字列）",
         alias="historicalComparisonExample",
     )
+    all_spots_included: bool = Field(
+        ...,
+        description="旅行計画の全スポットがspotDetailsに含まれているか",
+        alias="allSpotsIncluded",
+    )
+    missing_spots: list[str] = Field(
+        ...,
+        description="spotDetailsに含まれていないスポット名のリスト（全て含まれている場合は空配列）",
+        alias="missingSpots",
+    )

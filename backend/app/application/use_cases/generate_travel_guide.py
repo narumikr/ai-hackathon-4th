@@ -308,7 +308,7 @@ class GenerateTravelGuideUseCase:
                 structured = await self._generate_guide_data(travel_plan, historical_info)
 
                 # 評価
-                evaluation = await self._evaluate_guide_data(structured)
+                evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
 
                 # 評価結果を解析
                 is_valid = self._check_evaluation_result(evaluation)
@@ -323,7 +323,7 @@ class GenerateTravelGuideUseCase:
                     structured = await self._generate_guide_data(travel_plan, historical_info)
 
                     # 再評価（ログ出力のみ、再生成は行わない）
-                    re_evaluation = await self._evaluate_guide_data(structured)
+                    re_evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
                     re_is_valid = self._check_evaluation_result(re_evaluation)
                     if not re_is_valid:
                         re_failure_reasons = self._get_failure_reasons(re_evaluation)
@@ -397,11 +397,14 @@ class GenerateTravelGuideUseCase:
 
         return TravelGuideDTO.from_entity(saved_guide)
 
-    async def _evaluate_guide_data(self, guide_data: dict[str, Any]) -> dict[str, Any]:
+    async def _evaluate_guide_data(
+        self, guide_data: dict[str, Any], required_spot_names: list[str]
+    ) -> dict[str, Any]:
         """旅行ガイドデータを評価する
 
         Args:
             guide_data: 評価対象の旅行ガイドデータ
+            required_spot_names: 旅行計画に含まれるべきスポット名のリスト
 
         Returns:
             評価結果
@@ -409,7 +412,12 @@ class GenerateTravelGuideUseCase:
         import json
 
         guide_data_json = json.dumps(guide_data, ensure_ascii=False, indent=2)
-        prompt = render_template(_EVALUATION_PROMPT_TEMPLATE, guide_data=guide_data_json)
+        required_spots_text = "\n".join([f"- {name}" for name in required_spot_names])
+        prompt = render_template(
+            _EVALUATION_PROMPT_TEMPLATE,
+            guide_data=guide_data_json,
+            required_spots=required_spots_text,
+        )
         system_instruction = render_template(_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE)
 
         return await self._ai_service.generate_structured_data(
@@ -429,11 +437,12 @@ class GenerateTravelGuideUseCase:
         """
         spot_evaluations = evaluation.get("spotEvaluations", [])
         has_historical_comparison = evaluation.get("hasHistoricalComparison", False)
+        all_spots_included = evaluation.get("allSpotsIncluded", False)
 
-        # 全てのスポットに出典があり、歴史的対比もある場合のみ合格
+        # 全てのスポットが含まれ、全てのスポットに出典があり、歴史的対比もある場合のみ合格
         all_spots_have_citation = all(spot.get("hasCitation", False) for spot in spot_evaluations)
 
-        return all_spots_have_citation and has_historical_comparison
+        return all_spots_included and all_spots_have_citation and has_historical_comparison
 
     def _get_failure_reasons(self, evaluation: dict[str, Any]) -> list[str]:
         """評価結果から不合格の理由を取得する
@@ -446,6 +455,13 @@ class GenerateTravelGuideUseCase:
         """
         reasons: list[str] = []
 
+        # スポット漏れチェック
+        if not evaluation.get("allSpotsIncluded", False):
+            missing_spots = evaluation.get("missingSpots", [])
+            if missing_spots:
+                reasons.append(f"spotDetailsに含まれていないスポット: {', '.join(missing_spots)}")
+
+        # 出典チェック
         spot_evaluations = evaluation.get("spotEvaluations", [])
         missing_citations = [
             spot.get("spotName", "")
@@ -456,6 +472,7 @@ class GenerateTravelGuideUseCase:
         if missing_citations:
             reasons.append(f"出典が不足しているスポット: {', '.join(missing_citations)}")
 
+        # 歴史的対比チェック
         if not evaluation.get("hasHistoricalComparison", False):
             reasons.append("overviewに歴史の有名な話題との対比が含まれていません")
 

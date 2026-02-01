@@ -142,6 +142,8 @@ class FakeAIService(IAIService):
                     ],
                     "hasHistoricalComparison": True,
                     "historicalComparisonExample": "同時期のヨーロッパ",
+                    "allSpotsIncluded": True,
+                    "missingSpots": [],
                 }
             if isinstance(self.evaluation_data, list):
                 if not self.evaluation_data:
@@ -667,6 +669,8 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
                 ],
                 "hasHistoricalComparison": False,
                 "historicalComparisonExample": "",
+                "allSpotsIncluded": True,
+                "missingSpots": [],
             },
             # 2回目評価: 合格
             {
@@ -684,6 +688,8 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
                 ],
                 "hasHistoricalComparison": True,
                 "historicalComparisonExample": "同時期のヨーロッパではルネサンス",
+                "allSpotsIncluded": True,
+                "missingSpots": [],
             },
         ],
     )
@@ -770,6 +776,8 @@ async def test_generate_travel_guide_proceeds_after_retry_failure(
             ],
             "hasHistoricalComparison": False,
             "historicalComparisonExample": "",
+            "allSpotsIncluded": True,
+            "missingSpots": [],
         },
     )
 
