@@ -13,6 +13,12 @@
 {extracted_facts}
 </extracted_facts_with_sources>
 
+<constraints>
+- 上記の事実情報に含まれない内容は生成しない（推測・補完禁止）。
+- スポット名はユーザー指定スポット + 「追加のおすすめスポット」欄に登場したもののみ許容する。
+- 出典情報そのものは出力しないが、事実の内容は抽出結果に忠実であること。
+</constraints>
+
 <output_structure_requirements>
 1. overview（旅行全体の概要）の構成
    - 以下の4つの要素を含む、充実した概要文を作成する（200-400文字程度）
