@@ -196,6 +196,7 @@ export const BUTTON_LABELS = {
   PDF_EXPORT: 'PDF出力',
   TRAVEL_COMPLETE: '旅行完了',
   GENERATE_GUIDE: '旅行ガイドを生成',
+  RETRY_GENERATE_GUIDE: '再生成する',
   GENERATE_REFLECTION: '振り返りパンフレットを生成',
   ADD_SPOT: '＋ スポットを追加',
   ADD: '追加',

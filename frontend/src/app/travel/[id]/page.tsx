@@ -29,6 +29,7 @@ export default function TravelGuidePage() {
   const [travel, setTravel] = useState<TravelPlanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -67,6 +68,24 @@ export default function TravelGuidePage() {
 
   const handleRefresh = () => {
     fetchTravelPlan(true);
+  };
+
+  const handleRetryGenerate = async () => {
+    if (!id) return;
+
+    setIsRetrying(true);
+    try {
+      const apiClient = createApiClientFromEnv();
+      await apiClient.generateTravelGuide({ request: { planId: id } });
+      // 生成開始後、最新の状態を取得
+      await fetchTravelPlan(true);
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError.message || MESSAGES.ERROR);
+      console.error('Failed to retry guide generation:', apiError);
+    } finally {
+      setIsRetrying(false);
+    }
   };
 
   const isCompleted = travel?.status === 'completed';
@@ -216,6 +235,40 @@ export default function TravelGuidePage() {
               {STATUS_LABELS.GUIDE_PROCESSING}
             </p>
             <p className="text-sm text-warning-700">{MESSAGES.GENERATING_GUIDE_HINT}</p>
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
+  // ガイド生成失敗の場合
+  if (travel.guideGenerationStatus === 'failed') {
+    return (
+      <div className="py-8">
+        <Container>
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="font-bold text-2xl text-neutral-900">{PAGE_TITLES.TRAVEL_GUIDE}</h1>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={handleBack}>
+                {BUTTON_LABELS.BACK}
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-danger-200 bg-danger-50 py-16">
+            <p className="mb-2 font-semibold text-danger-800 text-lg">
+              {STATUS_LABELS.GENERATION_FAILED}
+            </p>
+            <p className="mb-6 text-danger-700 text-sm">{MESSAGES.GUIDE_GENERATION_FAILED}</p>
+            <Button variant="primary" onClick={handleRetryGenerate} disabled={isRetrying}>
+              {isRetrying ? (
+                <>
+                  <LoadingSpinner size="sm" variant="primary" className="mr-2" />
+                  {MESSAGES.GENERATING}
+                </>
+              ) : (
+                BUTTON_LABELS.RETRY_GENERATE_GUIDE
+              )}
+            </Button>
           </div>
         </Container>
       </div>
@@ -375,10 +428,7 @@ export default function TravelGuidePage() {
         {/* ガイド未生成の場合 */}
         {!hasGuide && (
           <section className="mb-12 rounded-lg border border-primary-200 bg-primary-50 p-6">
-            <p className="text-center text-primary-900">
-              {MESSAGES.GUIDE_NOT_GENERATED}
-              {travel.guideGenerationStatus === 'failed' && MESSAGES.GUIDE_GENERATION_FAILED}
-            </p>
+            <p className="text-center text-primary-900">{MESSAGES.GUIDE_NOT_GENERATED}</p>
           </section>
         )}
 
