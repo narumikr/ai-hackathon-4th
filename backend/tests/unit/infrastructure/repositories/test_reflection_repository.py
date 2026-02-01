@@ -61,9 +61,7 @@ def test_save_reflection_with_pamphlet(db_session: Session, sample_travel_plan: 
     )
     pamphlet = ReflectionPamphlet(
         travel_summary="江戸の歴史を感じる旅だった。",
-        spot_reflections=[
-            {"spot_name": "江戸城", "reflection": "石垣の壮大さが印象的だった。"}
-        ],
+        spot_reflections=[{"spot_name": "江戸城", "reflection": "石垣の壮大さが印象的だった。"}],
         next_trip_suggestions=["日光東照宮を巡る旅"],
     )
     reflection = Reflection(
@@ -183,7 +181,9 @@ def test_delete_not_found(db_session: Session):
     repository.delete("non-existent-id")
 
 
-def test_photo_conversion_with_image_analysis(db_session: Session, sample_travel_plan: TravelPlanModel):
+def test_photo_conversion_with_image_analysis(
+    db_session: Session, sample_travel_plan: TravelPlanModel
+):
     """検証: ImageAnalysisの説明文が正しく保存・復元される"""
     # Arrange
     repository = ReflectionRepository(db_session)

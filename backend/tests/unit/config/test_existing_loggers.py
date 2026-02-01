@@ -109,12 +109,8 @@ class TestExistingLoggerCompatibility:
         log_output = log_capture.getvalue()
 
         assert "ERROR" in log_output, "ERRORレベルのログが出力されること"
-        assert "app.interfaces.api.v1.travel_guides" in log_output, (
-            "モジュール名が出力されること"
-        )
-        assert "Failed to generate travel guide" in log_output, (
-            "ログメッセージが出力されること"
-        )
+        assert "app.interfaces.api.v1.travel_guides" in log_output, "モジュール名が出力されること"
+        assert "Failed to generate travel guide" in log_output, "ログメッセージが出力されること"
 
     def test_reflections_logger_works_after_setup_logging(self) -> None:
         """setup_logging()後にreflections.pyのloggerが正常に動作すること
@@ -139,12 +135,8 @@ class TestExistingLoggerCompatibility:
         log_output = log_capture.getvalue()
 
         assert "ERROR" in log_output, "ERRORレベルのログが出力されること"
-        assert "app.interfaces.api.v1.reflections" in log_output, (
-            "モジュール名が出力されること"
-        )
-        assert "Failed to generate reflection" in log_output, (
-            "ログメッセージが出力されること"
-        )
+        assert "app.interfaces.api.v1.reflections" in log_output, "モジュール名が出力されること"
+        assert "Failed to generate reflection" in log_output, "ログメッセージが出力されること"
 
     def test_analyze_photos_logger_works_after_setup_logging(self) -> None:
         """setup_logging()後にanalyze_photos.pyのloggerが正常に動作すること
@@ -253,9 +245,7 @@ class TestExistingLoggersUnifiedFormat:
         log_lines = [line for line in log_output.strip().split("\n") if line]
 
         # 統一フォーマットのパターン: YYYY-MM-DD HH:MM:SS - LEVEL - name - message
-        unified_format_pattern = (
-            r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} - \w+ - [\w.]+ - .+"
-        )
+        unified_format_pattern = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} - \w+ - [\w.]+ - .+"
 
         assert len(log_lines) == 4, f"4つのログが出力されること: {log_lines}"
 
@@ -337,9 +327,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
 
         # ルートロガーのレベルがDEBUGに設定されていることを確認
         root_logger = logging.getLogger()
-        assert root_logger.level == logging.DEBUG, (
-            "ルートロガーのレベルがDEBUGに設定されること"
-        )
+        assert root_logger.level == logging.DEBUG, "ルートロガーのレベルがDEBUGに設定されること"
 
         # 既存のloggerがルートロガーの設定を継承していることを確認
         # (子loggerはデフォルトでNOTSETなので、ルートロガーの設定を継承する)
@@ -464,9 +452,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
 
         log_output = log_capture.getvalue()
 
-        assert "DEBUG" not in log_output, (
-            f"DEBUGレベルのログが抑制されること: {log_output}"
-        )
+        assert "DEBUG" not in log_output, f"DEBUGレベルのログが抑制されること: {log_output}"
         assert "Info message that should be output" in log_output, (
             f"INFOレベルのログは出力されること: {log_output}"
         )

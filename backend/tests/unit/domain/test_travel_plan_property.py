@@ -2,7 +2,8 @@
 
 from datetime import UTC, datetime
 
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.value_objects import GenerationStatus, PlanStatus

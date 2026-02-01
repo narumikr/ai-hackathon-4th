@@ -366,6 +366,7 @@ def test_reflection_property_reflection_pamphlet_completeness(
     for suggestion in pamphlet.next_trip_suggestions:
         assert suggestion.strip()
 
+
 @given(
     travel_summary=_non_empty_printable_text(max_size=200),
     spot_reflections=_spot_reflections(),

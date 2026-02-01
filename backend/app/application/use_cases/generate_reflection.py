@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from pydantic import ValidationError
 
 from app.application.dto.reflection_dto import ReflectionDTO, ReflectionPamphletDTO
 from app.application.ports.ai_service import IAIService
@@ -16,32 +16,8 @@ from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
+from app.infrastructure.ai.schemas.reflection import ReflectionPamphletResponseSchema
 from app.prompts import render_template
-
-_REFLECTION_PAMPHLET_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "travelSummary": {"type": "string"},
-        "spotReflections": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "spotName": {"type": "string"},
-                    "reflection": {"type": "string"},
-                },
-                "required": ["spotName", "reflection"],
-            },
-            "minItems": 1,
-        },
-        "nextTripSuggestions": {
-            "type": "array",
-            "items": {"type": "string"},
-            "minItems": 1,
-        },
-    },
-    "required": ["travelSummary", "spotReflections", "nextTripSuggestions"],
-}
 
 _REFLECTION_PROMPT_TEMPLATE = "reflection_pamphlet_prompt.txt"
 _REFLECTION_SYSTEM_INSTRUCTION_TEMPLATE = "reflection_pamphlet_system_instruction.txt"
@@ -296,11 +272,17 @@ class GenerateReflectionPamphletUseCase:
 
             structured = await self._ai_service.generate_structured_data(
                 prompt=prompt,
-                response_schema=_REFLECTION_PAMPHLET_SCHEMA,
+                response_schema=ReflectionPamphletResponseSchema,
                 system_instruction=render_template(_REFLECTION_SYSTEM_INSTRUCTION_TEMPLATE),
             )
             if not isinstance(structured, dict):
                 raise ValueError("structured response must be a dict.")
+
+            # レスポンスバリデーション
+            try:
+                _validated = ReflectionPamphletResponseSchema.model_validate(structured)
+            except ValidationError as e:
+                raise ValueError(f"Invalid AI response structure: {e}") from e
 
             travel_summary = _require_str(structured.get("travelSummary"), "travelSummary")
             spot_reflection_items = _require_list(

@@ -1,10 +1,13 @@
 """GeminiClientのユニットテスト"""
 
+from __future__ import annotations
+
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from google.api_core import exceptions as google_exceptions
+from pydantic import Field
 
 from app.infrastructure.ai.exceptions import (
     AIServiceConnectionError,
@@ -12,6 +15,21 @@ from app.infrastructure.ai.exceptions import (
     AIServiceQuotaExceededError,
 )
 from app.infrastructure.ai.gemini_client import GeminiClient
+from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+
+class SimpleTestSchema(GeminiResponseSchema):
+    """テスト用のシンプルなスキーマ"""
+
+    name: str = Field(description="名前")
+    type: str = Field(description="タイプ")
+
+
+class SpotTestSchema(GeminiResponseSchema):
+    """テスト用の観光スポットスキーマ"""
+
+    spot: str = Field(description="スポット名")
+    confidence: float = Field(description="信頼度")
 
 
 def _build_response_with_text(text: str) -> MagicMock:
@@ -113,16 +131,9 @@ async def test_generate_structured_data_success():
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
 
-    schema = {
-        "type": "object",
-        "properties": {
-            "name": {"type": "string"},
-            "type": {"type": "string"},
-        },
-    }
     result = await gemini_client.generate_content_with_schema(
         prompt="富士山の情報を返してください",
-        response_schema=schema,
+        response_schema=SimpleTestSchema,
         temperature=0.0,
     )
 
@@ -142,16 +153,9 @@ async def test_generate_structured_data_with_images_success():
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
 
-    schema = {
-        "type": "object",
-        "properties": {
-            "spot": {"type": "string"},
-            "confidence": {"type": "number"},
-        },
-    }
     result = await gemini_client.generate_content_with_schema(
         prompt="画像の観光スポットを特定してください",
-        response_schema=schema,
+        response_schema=SpotTestSchema,
         images=["gs://bucket/kyoto.jpg"],
         temperature=0.0,
     )

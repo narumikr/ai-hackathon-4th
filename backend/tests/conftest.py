@@ -132,9 +132,7 @@ def sample_travel_guide(
 
 
 @pytest.fixture
-def sample_reflection(
-    db_session: Session, sample_travel_plan: TravelPlanModel
-) -> ReflectionModel:
+def sample_reflection(db_session: Session, sample_travel_plan: TravelPlanModel) -> ReflectionModel:
     """サンプル振り返りデータを作成する."""
     reflection = ReflectionModel(
         plan_id=sample_travel_plan.id,

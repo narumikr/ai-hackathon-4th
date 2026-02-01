@@ -67,7 +67,7 @@ async def test_upload_file_親ディレクトリ自動作成(local_storage, temp
     destination = "travels/456/sub/dir/image.png"
     content_type = "image/png"
 
-    url = await local_storage.upload_file(file_data, destination, content_type)
+    _url = await local_storage.upload_file(file_data, destination, content_type)
 
     # 親ディレクトリが作成されていることを確認
     file_path = Path(temp_upload_dir) / destination

@@ -222,9 +222,7 @@ def test_travel_guide_property_checkpoint_list_inclusion(data: TravelGuideInputs
 
     # 検証3: チェックポイントの内容が保持されていること
     assert len(guide.checkpoints) == len(checkpoints)
-    for stored_checkpoint, original_checkpoint in zip(
-        guide.checkpoints, checkpoints, strict=True
-    ):
+    for stored_checkpoint, original_checkpoint in zip(guide.checkpoints, checkpoints, strict=True):
         assert stored_checkpoint.spot_name == original_checkpoint.spot_name
         assert stored_checkpoint.checkpoints == original_checkpoint.checkpoints
         assert stored_checkpoint.historical_context == original_checkpoint.historical_context
@@ -260,6 +258,7 @@ def test_travel_guide_property_content_integration_completeness(
         for highlight in detail.highlights:
             assert highlight.strip()
 
+
 @given(data=_travel_guide_inputs())
 def test_travel_guide_property_rejects_duplicate_spot_names(data: TravelGuideInputs) -> None:
     """バリデーションエラーケース: 重複したspot_nameを持つspot_detailsを拒否する"""
@@ -281,7 +280,9 @@ def test_travel_guide_property_rejects_duplicate_spot_names(data: TravelGuideInp
 
 
 @given(data=_travel_guide_inputs())
-def test_travel_guide_property_rejects_invalid_checkpoint_spot_name(data: TravelGuideInputs) -> None:
+def test_travel_guide_property_rejects_invalid_checkpoint_spot_name(
+    data: TravelGuideInputs,
+) -> None:
     """バリデーションエラーケース: 存在しないspot_nameを参照するcheckpointを拒否する"""
     plan_id, overview, timeline, spot_details, checkpoints, _ = data
     composer = TravelGuideComposer()
@@ -306,7 +307,9 @@ def test_travel_guide_property_rejects_invalid_checkpoint_spot_name(data: Travel
 
 
 @given(data=_travel_guide_inputs())
-def test_travel_guide_property_rejects_invalid_timeline_related_spots(data: TravelGuideInputs) -> None:
+def test_travel_guide_property_rejects_invalid_timeline_related_spots(
+    data: TravelGuideInputs,
+) -> None:
     """バリデーションエラーケース: 存在しないspot_nameを参照するtimeline.related_spotsを拒否する"""
     plan_id, overview, timeline, spot_details, checkpoints, _ = data
     composer = TravelGuideComposer()
