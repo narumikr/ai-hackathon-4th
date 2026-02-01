@@ -27,8 +27,6 @@ def setup_logging() -> None:
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
     }
-    if effective_level not in level_map:
-        raise ValueError(f"log_levelが不正です: {effective_level}")
     log_level = level_map[effective_level]
 
     # ルートロガーの設定
