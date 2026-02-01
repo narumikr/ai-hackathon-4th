@@ -39,6 +39,7 @@ class TestExistingLoggerCompatibility:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -203,6 +204,7 @@ class TestExistingLoggersUnifiedFormat:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -324,6 +326,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
 
         mock_settings = Settings(
             debug=True,  # DEBUGレベルを設定
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -361,6 +364,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
 
         mock_settings = Settings(
             debug=False,  # INFOレベルを設定
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -384,6 +388,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
 
         mock_settings = Settings(
             debug=True,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -428,6 +433,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 

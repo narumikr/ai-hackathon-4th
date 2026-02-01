@@ -86,6 +86,7 @@ class Settings(DatabaseSettings):
 
     # ログ設定
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    log_force_override: bool = False  # 既存のロガー設定を強制上書きするか
 
     def get_effective_log_level(self) -> str:
         """debugフラグに基づいて有効なログレベルを取得.
@@ -97,6 +98,16 @@ class Settings(DatabaseSettings):
         if self.debug:
             return "DEBUG"
         return self.log_level
+
+    @field_validator("log_level")
+    @classmethod
+    def validate_log_level(cls, value: str) -> str:
+        """ログレベルの妥当性を検証."""
+        normalized = value.strip().upper()
+        valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if normalized not in valid_levels:
+            raise ValueError(f"log_levelが不正です: {value}")
+        return normalized
 
     @field_validator("google_cloud_project")
     @classmethod

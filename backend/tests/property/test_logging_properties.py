@@ -125,6 +125,7 @@ def _setup_logging_with_capture() -> tuple[logging.Logger, io.StringIO]:
 
     mock_settings = Settings(
         debug=False,
+        log_force_override=True,
         database_url="postgresql://test:test@localhost/test",
     )
 
@@ -394,6 +395,7 @@ def _setup_logging_with_debug_mode(debug: bool) -> None:
 
     mock_settings = Settings(
         debug=debug,
+        log_force_override=True,
         database_url="postgresql://test:test@localhost/test",
     )
 

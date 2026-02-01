@@ -19,7 +19,17 @@ def setup_logging() -> None:
     フォーマット: %(asctime)s - %(levelname)s - %(name)s - %(message)s
     """
     settings = get_settings()
-    log_level = logging.DEBUG if settings.debug else logging.INFO
+    effective_level = settings.get_effective_log_level()
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    if effective_level not in level_map:
+        raise ValueError(f"log_levelが不正です: {effective_level}")
+    log_level = level_map[effective_level]
 
     # ルートロガーの設定
     logging.basicConfig(
@@ -27,5 +37,5 @@ def setup_logging() -> None:
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[logging.StreamHandler(sys.stdout)],
-        force=True,  # 既存の設定を上書き
+        force=settings.log_force_override,
     )

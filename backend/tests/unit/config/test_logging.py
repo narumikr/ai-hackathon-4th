@@ -46,6 +46,7 @@ class TestSetupLogging:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -63,6 +64,7 @@ class TestSetupLogging:
 
         mock_settings = Settings(
             debug=True,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -102,6 +104,7 @@ class TestLogFormat:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -144,6 +147,7 @@ class TestLogFormat:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -179,6 +183,7 @@ class TestLogFormat:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
@@ -219,6 +224,7 @@ class TestLogFormat:
 
         mock_settings = Settings(
             debug=False,
+            log_force_override=True,
             database_url="postgresql://test:test@localhost/test",
         )
 
