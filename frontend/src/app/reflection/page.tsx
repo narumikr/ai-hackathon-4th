@@ -85,21 +85,12 @@ export default function ReflectionListPage() {
           </Button>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error}
-          </div>
-        )}
-
         {isLoading ? (
           <div className="py-16 text-center">
             <p className="text-neutral-600">{MESSAGES.LOADING}</p>
           </div>
         ) : !hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4">
-              <Icon name="photo" size="xl" label={EMOJI_LABELS.CAMERA} />
-            </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_REFLECTIONS}</p>
             <Link href="/travel">
               <Button>{BUTTON_LABELS.VIEW_TRAVEL_LIST_ALT}</Button>
@@ -179,6 +170,14 @@ export default function ReflectionListPage() {
           </ul>
         </div>
       </Container>
+
+      {/* エラーダイアログ */}
+      <ErrorDialog
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title={MESSAGES.ERROR}
+        message={error || ''}
+      />
     </div>
   );
 }

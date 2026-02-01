@@ -215,7 +215,7 @@ export const BUTTON_LABELS = {
  */
 export const MESSAGES = {
   NO_TRAVELS: '旅行計画がありません。新しい旅行を作成してください。',
-  NO_REFLECTIONS: '振り返りがありません。完了した旅行から振り返りを作成してください。',
+  NO_REFLECTIONS: '振り返りがありません。計画中の旅行を完了させて振り返りを作成してください。',
   LOADING: '読み込み中...',
   ERROR: 'エラーが発生しました。',
   TRAVEL_NOT_FOUND: '旅行が見つかりません',

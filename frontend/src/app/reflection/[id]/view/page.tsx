@@ -64,21 +64,23 @@ export default function ReflectionViewPage() {
     return <div className="py-20 text-center">{MESSAGES.LOADING}</div>;
   }
 
-  if (error || !travel) {
+  if (!travel) {
     return (
-      <div className="py-8">
-        <Container>
-          <Link href="/reflection">
-            <Button>{BUTTON_LABELS.BACK}</Button>
-          </Link>
-        </Container>
+      <>
+        <div className="py-8">
+          <Container>
+            <Link href="/reflection">
+              <Button>{BUTTON_LABELS.BACK}</Button>
+            </Link>
+          </Container>
+        </div>
         <ErrorDialog
           isOpen={!!error}
           onClose={() => setError(null)}
           title={MESSAGES.ERROR}
           message={error || MESSAGES.TRAVEL_NOT_FOUND}
         />
-      </div>
+      </>
     );
   }
 
@@ -99,19 +101,21 @@ export default function ReflectionViewPage() {
 
   if (!travel.pamphlet) {
     return (
-      <div className="py-8">
-        <Container>
-          <Link href="/reflection">
-            <Button>{BUTTON_LABELS.BACK}</Button>
-          </Link>
-        </Container>
+      <>
+        <div className="py-8">
+          <Container>
+            <Link href="/reflection">
+              <Button>{BUTTON_LABELS.BACK}</Button>
+            </Link>
+          </Container>
+        </div>
         <ErrorDialog
           isOpen={true}
           onClose={() => setError(null)}
           title={MESSAGES.ERROR}
           message={MESSAGES.REFLECTION_NOT_FOUND}
         />
-      </div>
+      </>
     );
   }
 

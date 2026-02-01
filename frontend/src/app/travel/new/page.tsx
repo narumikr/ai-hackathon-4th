@@ -127,13 +127,6 @@ export default function TravelNewPage() {
           </div>
 
           <div className="rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
-            {/* エラーメッセージ */}
-            {error && (
-              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            )}
-
             <form className="space-y-6" onSubmit={e => e.preventDefault()}>
               {/* 旅行タイトル */}
               <div>
@@ -255,6 +248,14 @@ export default function TravelNewPage() {
           </div>
         </div>
       </Container>
+
+      {/* エラーダイアログ */}
+      <ErrorDialog
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title={MESSAGES.ERROR}
+        message={error || ''}
+      />
     </div>
   );
 }

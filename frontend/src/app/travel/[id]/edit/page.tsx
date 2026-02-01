@@ -163,14 +163,20 @@ export default function TravelEditPage() {
 
   if (error || !travel) {
     return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
-          <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
-        </Container>
-      </div>
+      <>
+        <div className="py-8">
+          <Container>
+            <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
+          </Container>
+        </div>
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={() => setError(null)}
+            
+          title={MESSAGES.ERROR}
+          message={error || MESSAGES.TRAVEL_NOT_FOUND}
+        />
+      </>
     );
   }
 
@@ -295,6 +301,14 @@ export default function TravelEditPage() {
           </div>
         </div>
       </Container>
+
+      {/* エラーダイアログ */}
+      <ErrorDialog
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title={MESSAGES.ERROR}
+        message={error || ''}
+      />
     </div>
   );
 }

@@ -85,21 +85,12 @@ export default function TravelListPage() {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error}
-          </div>
-        )}
-
         {isLoading ? (
           <div className="py-16 text-center">
             <p className="text-neutral-600">{MESSAGES.LOADING}</p>
           </div>
         ) : !hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4">
-              <Icon name="study" size="xl" label={EMOJI_LABELS.BOOK} />
-            </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_TRAVELS}</p>
             <Link href="/travel/new">
               <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
@@ -161,6 +152,14 @@ export default function TravelListPage() {
           </div>
         )}
       </Container>
+
+      {/* エラーダイアログ */}
+      <ErrorDialog
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title={MESSAGES.ERROR}
+        message={error || ''}
+      />
     </div>
   );
 }
