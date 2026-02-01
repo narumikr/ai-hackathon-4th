@@ -168,7 +168,8 @@ export default function ReflectionDetailPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setIsSubmitting(false);
-      alert(ERROR_ALERTS.REFLECTION_CREATE_FAILED(apiError.message));
+      // TODO: Issue #187 のエラー表示コンポーネント実装後、画面内でエラーを表示するようにする
+      console.error(ERROR_ALERTS.REFLECTION_CREATE_FAILED(apiError.message));
     }
   };
 
@@ -267,6 +268,7 @@ export default function ReflectionDetailPage() {
             title={MESSAGES.PROCESSING}
             message={MESSAGES.GENERATING_REFLECTION}
             showSpinner
+            closable={false}
           />
 
           {/* 注意事項 */}

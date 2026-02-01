@@ -219,7 +219,9 @@ export const MESSAGES = {
   TRAVEL_NOT_FOUND: '旅行が見つかりません',
   REFLECTION_NOT_FOUND: '振り返りが見つかりません',
   REFLECTION_GENERATED: '振り返りを生成しました！',
+  // TODO: 画像アップロード処理の進捗表示で使用予定（実装時に利用箇所を追加する）
   UPLOADING_IMAGES: '画像アップロード中です',
+  // TODO: 振り返り生成処理の進捗表示で使用予定（実装時に利用箇所を追加する）
   GENERATING_REFLECTION: '振り返り生成準備中です',
   GENERATING_REFLECTION_HINT:
     '振り返りパンフレットを生成しています。更新ボタンで状態を確認できます。',
