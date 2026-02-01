@@ -131,9 +131,6 @@ class FakeAIServiceWithMissingSpot(IAIService):
         if self.call_count == 1:
             return self.first_generation
         return self.second_generation
-        if self.call_count == 1:
-            return self.first_generation
-        return self.second_generation
 
 
 @pytest.mark.asyncio

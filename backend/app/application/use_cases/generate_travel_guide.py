@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
 
@@ -409,8 +410,6 @@ class GenerateTravelGuideUseCase:
         Returns:
             評価結果
         """
-        import json
-
         guide_data_json = json.dumps(guide_data, ensure_ascii=False, indent=2)
         required_spots_text = "\n".join([f"- {name}" for name in required_spot_names])
         prompt = render_template(
