@@ -1,5 +1,6 @@
 """写真分析ユースケース"""
 
+import asyncio
 import logging
 
 from app.application.dto.reflection_dto import ReflectionDTO
@@ -63,6 +64,7 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
 
 _IMAGE_ANALYSIS_PROMPT_TEMPLATE = "image_analysis_prompt.txt"
 _IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE = "image_analysis_system_instruction.txt"
+_MAX_CONCURRENT_IMAGE_ANALYSIS = 3
 
 
 def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
@@ -173,7 +175,7 @@ class AnalyzePhotosUseCase:
                 existing_photo_ids.add(photo.id)
 
         plan_spots_by_id = {spot.id: spot for spot in travel_plan.spots}
-        new_photos: list[Photo] = []
+        analysis_inputs: list[dict] = []
         for index, photo in enumerate(normalized_photos):
             photo_id = photo["id"]
             if photo_id in existing_photo_ids:
@@ -189,45 +191,77 @@ class AnalyzePhotosUseCase:
                 spot.name,
                 photo.get("userDescription"),
             )
-            analysis_text = await self._ai_service.analyze_image(
-                prompt=prompt,
-                image_uri=photo["url"],
-                system_instruction=render_template(_IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE),
-                temperature=0.0,
+            analysis_inputs.append(
+                {
+                    "index": index,
+                    "photo_id": photo_id,
+                    "spot_id": spot_id,
+                    "url": photo["url"],
+                    "user_description": photo.get("userDescription"),
+                    "prompt": prompt,
+                }
             )
-            if _analysis_needs_search(analysis_text):
+
+        semaphore = asyncio.Semaphore(_MAX_CONCURRENT_IMAGE_ANALYSIS)
+
+        async def _analyze_single_photo(payload: dict) -> Photo | None:
+            async with semaphore:
                 try:
                     analysis_text = await self._ai_service.analyze_image(
-                        prompt=prompt,
-                        image_uri=photo["url"],
-                        system_instruction=(
-                            "説明文は日本語で作成してください。"
-                            "可能であれば出典名やURLを文中に含めてください。"
+                        prompt=payload["prompt"],
+                        image_uri=payload["url"],
+                        system_instruction=render_template(
+                            _IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE
                         ),
                         temperature=0.0,
-                        tools=["google_search"],
+                    )
+                    if _analysis_needs_search(analysis_text):
+                        try:
+                            analysis_text = await self._ai_service.analyze_image(
+                                prompt=payload["prompt"],
+                                image_uri=payload["url"],
+                                system_instruction=(
+                                    "説明文は日本語で作成してください。"
+                                    "可能であれば出典名やURLを文中に含めてください。"
+                                ),
+                                temperature=0.0,
+                                tools=["google_search"],
+                            )
+                        except Exception as exc:
+                            logger.warning(
+                                "Image analysis with search tool failed; using initial analysis.",
+                                exc_info=exc,
+                                extra={
+                                    "plan_id": plan_id,
+                                    "photo_id": payload["photo_id"],
+                                    "spot_id": payload["spot_id"],
+                                },
+                            )
+                    analysis = _parse_image_analysis(analysis_text, index=payload["index"])
+                    return Photo(
+                        id=payload["photo_id"],
+                        spot_id=payload["spot_id"],
+                        url=payload["url"],
+                        analysis=analysis,
+                        user_description=payload["user_description"],
                     )
                 except Exception as exc:
                     logger.warning(
-                        "Image analysis with search tool failed; using initial analysis.",
+                        "Image analysis failed; skipping photo.",
                         exc_info=exc,
                         extra={
                             "plan_id": plan_id,
-                            "photo_id": photo_id,
-                            "spot_id": spot_id,
+                            "photo_id": payload["photo_id"],
+                            "spot_id": payload["spot_id"],
                         },
                     )
-            analysis = _parse_image_analysis(analysis_text, index=index)
+                    return None
 
-            new_photos.append(
-                Photo(
-                    id=photo_id,
-                    spot_id=spot_id,
-                    url=photo["url"],
-                    analysis=analysis,
-                    user_description=photo.get("userDescription"),
-                )
-            )
+        tasks = [_analyze_single_photo(payload) for payload in analysis_inputs]
+        results = await asyncio.gather(*tasks)
+        new_photos = [photo for photo in results if photo is not None]
+        if not new_photos:
+            raise ValueError("all photo analyses failed.")
 
         if existing_reflection is None:
             reflection = Reflection(
