@@ -1,22 +1,25 @@
 'use client';
 
 import { Container } from '@/components/layout';
-import { Button, Icon, Modal } from '@/components/ui';
+import { Button, Icon, LoadingSpinner, Modal } from '@/components/ui';
 import {
   BUTTON_LABELS,
+  BUTTON_STATES,
   CONFIRMATION_MESSAGES,
   DATE_LABELS,
   EMOJI_LABELS,
   ERROR_ALERTS,
   LABELS,
   MESSAGES,
+  PAGE_TITLES,
   SECTION_TITLES,
+  STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function TravelGuidePage() {
   const router = useRouter();
@@ -25,16 +28,21 @@ export default function TravelGuidePage() {
 
   const [travel, setTravel] = useState<TravelPlanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
 
-  useEffect(() => {
-    const fetchTravelPlan = async () => {
+  const fetchTravelPlan = useCallback(
+    async (isRefresh = false) => {
       if (!id) return;
 
-      setIsLoading(true);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
 
       try {
@@ -47,11 +55,19 @@ export default function TravelGuidePage() {
         console.error('Failed to fetch travel plan:', apiError);
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
       }
-    };
+    },
+    [id]
+  );
 
-    fetchTravelPlan();
-  }, [id]);
+  useEffect(() => {
+    fetchTravelPlan(false);
+  }, [fetchTravelPlan]);
+
+  const handleRefresh = () => {
+    fetchTravelPlan(true);
+  };
 
   const isCompleted = travel?.status === 'completed';
 
@@ -166,6 +182,41 @@ export default function TravelGuidePage() {
             {error || MESSAGES.TRAVEL_NOT_FOUND}
           </div>
           <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
+        </Container>
+      </div>
+    );
+  }
+
+  // ガイド生成中の場合
+  if (travel.guideGenerationStatus === 'processing') {
+    return (
+      <div className="py-8">
+        <Container>
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="font-bold text-2xl text-neutral-900">{PAGE_TITLES.TRAVEL_GUIDE}</h1>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
+                {isRefreshing ? (
+                  <>
+                    <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
+                    {BUTTON_STATES.UPDATING}
+                  </>
+                ) : (
+                  BUTTON_LABELS.UPDATE
+                )}
+              </Button>
+              <Button variant="ghost" onClick={handleBack}>
+                {BUTTON_LABELS.BACK}
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-warning-200 bg-warning-50 py-16">
+            <LoadingSpinner size="lg" variant="primary" className="mb-4" />
+            <p className="mb-2 font-semibold text-lg text-warning-800">
+              {STATUS_LABELS.GUIDE_PROCESSING}
+            </p>
+            <p className="text-sm text-warning-700">{MESSAGES.GENERATING_GUIDE_HINT}</p>
+          </div>
         </Container>
       </div>
     );
@@ -326,7 +377,6 @@ export default function TravelGuidePage() {
           <section className="mb-12 rounded-lg border border-primary-200 bg-primary-50 p-6">
             <p className="text-center text-primary-900">
               {MESSAGES.GUIDE_NOT_GENERATED}
-              {travel.guideGenerationStatus === 'processing' && MESSAGES.GUIDE_GENERATING}
               {travel.guideGenerationStatus === 'failed' && MESSAGES.GUIDE_GENERATION_FAILED}
             </p>
           </section>

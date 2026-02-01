@@ -225,6 +225,7 @@ export const MESSAGES = {
   GENERATING_REFLECTION: '振り返り生成準備中です',
   GENERATING_REFLECTION_HINT:
     '振り返りパンフレットを生成しています。更新ボタンで状態を確認できます。',
+  GENERATING_GUIDE_HINT: '旅行ガイドを生成しています。更新ボタンで状態を確認できます。',
   PROCESSING: '処理中',
   GENERATING: '生成中...',
   GUIDE_NOT_GENERATED: '旅行ガイドはまだ生成されていません。',
@@ -241,6 +242,7 @@ export const STATUS_LABELS = {
   COMPLETED: '完了',
   REFLECTION_CREATED: '作成済み',
   REFLECTION_PROCESSING: '生成中',
+  GUIDE_PROCESSING: '生成中',
   ADDED_SPOT: '追加スポット',
   GENERATION_FAILED: '生成失敗',
 } as const;
