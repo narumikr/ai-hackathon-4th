@@ -6,6 +6,7 @@ import { Button, Dialog, Icon, TextArea } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
+  EMOJI_LABELS,
   ERROR_ALERTS,
   FORM_LABELS,
   HINTS,
@@ -229,7 +230,7 @@ export default function ReflectionDetailPage() {
           {/* 全体的な感想 */}
           <section className="mb-8 rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 flex items-center gap-2 font-bold text-neutral-900 text-xl">
-              <Icon name="note" size="md" label="メモ" />
+              <Icon name="note" size="md" label={EMOJI_LABELS.NOTE} />
               {FORM_LABELS.OVERALL_IMPRESSION}
             </h2>
             <TextArea

@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui';
-import { ERROR_MESSAGES, HELP_TEXTS, LABELS, PLACEHOLDERS } from '@/constants';
+import { EMOJI_LABELS, ERROR_MESSAGES, HELP_TEXTS, LABELS, PLACEHOLDERS } from '@/constants';
 import type { PhotoData } from '@/types/reflection';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -148,7 +148,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       >
         <div className="text-center">
           <div className="mb-2">
-            <Icon name="upload" size="xl" label="アップロード" />
+            <Icon name="upload" size="xl" label={EMOJI_LABELS.UPLOAD} />
           </div>
           <p className="mb-1 font-medium text-neutral-700">{PLACEHOLDERS.UPLOAD_INSTRUCTION}</p>
           <p className="text-neutral-500 text-xs">{HELP_TEXTS.UPLOAD_FORMAT}</p>

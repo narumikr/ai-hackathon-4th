@@ -399,7 +399,7 @@ describe('ReflectionViewer', () => {
 
       render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      // Check that icon images have aria-label (filter out photo preview images)
+      // Check that icon images have alt text (filter out photo preview images)
       const pinIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.PIN });
       const checkIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CHECKMARK });
 
@@ -407,10 +407,10 @@ describe('ReflectionViewer', () => {
       expect(checkIcons.length).toBeGreaterThan(0);
 
       pinIcons.forEach(icon => {
-        expect(icon).toHaveAttribute('aria-label');
+        expect(icon).toHaveAttribute('alt', EMOJI_LABELS.PIN);
       });
       checkIcons.forEach(icon => {
-        expect(icon).toHaveAttribute('aria-label');
+        expect(icon).toHaveAttribute('alt', EMOJI_LABELS.CHECKMARK);
       });
     });
   });

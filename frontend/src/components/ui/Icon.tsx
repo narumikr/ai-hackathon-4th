@@ -39,8 +39,10 @@ interface IconProps {
   name: IconName;
   /** アイコンサイズ（デフォルト: md） */
   size?: IconSize;
-  /** アクセシビリティ用のラベル（省略時はアイコン名を使用） */
+  /** アクセシビリティ用のラベル */
   label?: string;
+  /** 装飾用アイコンとして扱う（alt=""、aria-hidden="true"を設定） */
+  decorative?: boolean;
   /** 追加のCSSクラス */
   className?: string;
 }
@@ -49,18 +51,33 @@ interface IconProps {
  * Icon Component
  * publicフォルダのアイコン画像を表示する共通コンポーネント
  */
-export function Icon({ name, size = 'md', label, className = '' }: IconProps) {
+export function Icon({ name, size = 'md', label, decorative = false, className = '' }: IconProps) {
   const pixelSize = sizeMap[size];
-  const altText = label || name;
+
+  if (decorative) {
+    return (
+      <Image
+        src={`/icons/${name}.png`}
+        alt=""
+        width={pixelSize}
+        height={pixelSize}
+        className={className}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (!label) {
+    throw new Error('Icon component requires "label" prop when not decorative');
+  }
 
   return (
     <Image
       src={`/icons/${name}.png`}
-      alt={altText}
+      alt={label}
       width={pixelSize}
       height={pixelSize}
       className={className}
-      aria-label={altText}
     />
   );
 }
