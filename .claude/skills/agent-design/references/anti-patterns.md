@@ -606,6 +606,266 @@ def update_agent_atomic(item):
 - 楽観的ロック（バージョン管理）
 - タスクをシーケンシャルに実行（並列化しない）
 
+## 5. 構造化出力の誤用
+
+### アンチパターン5-1: 過度に厳格なスキーマ
+
+**問題**
+スキーマに過度な制約を設定し、LLMの柔軟性を損なう。
+
+**症状**
+- 生成失敗率が高い
+- わずかな入力の変化で出力が生成できない
+- 不自然に制約された出力
+
+**Before（過度に厳格なスキーマ）**
+
+```python
+from pydantic import BaseModel, Field
+
+class ProductDescription(BaseModel):
+    """商品説明スキーマ（過度に厳格）"""
+
+    # 問題: 文字数を厳格に制限
+    title: str = Field(
+        ...,
+        min_length=50,
+        max_length=60,
+        description="商品タイトル（50-60文字）"
+    )
+
+    # 問題: 説明文も厳格に制限
+    description: str = Field(
+        ...,
+        min_length=200,
+        max_length=250,
+        description="商品説明（200-250文字）"
+    )
+
+    # 問題: 固定数のキーワードを要求
+    keywords: list[str] = Field(
+        ...,
+        min_length=5,
+        max_length=5,
+        description="キーワードは必ず5個"
+    )
+
+# 問題点:
+# - 狭すぎる文字数制約により、自然な文章生成が困難
+# - 商品によって適切な説明文の長さは異なる
+# - キーワード数の固定化により、柔軟性が失われる
+```
+
+**After（柔軟なスキーマ）**
+
+```python
+from pydantic import BaseModel, Field
+
+class ProductDescription(BaseModel):
+    """商品説明スキーマ（柔軟）"""
+
+    # 改善: 合理的な範囲を許容
+    title: str = Field(
+        ...,
+        min_length=10,
+        max_length=100,
+        description="商品タイトル"
+    )
+
+    # 改善: 最小限の制約のみ
+    description: str = Field(
+        ...,
+        min_length=50,
+        description="商品説明"
+    )
+
+    # 改善: キーワード数に柔軟性を持たせる
+    keywords: list[str] = Field(
+        ...,
+        min_length=3,
+        max_length=10,
+        description="商品キーワード（3-10個）"
+    )
+```
+
+**回避方法**
+- 必要最小限の制約のみ設定する
+- 文字数制約は広い範囲を許容する
+- LLMが自然な出力を生成できる余地を残す
+- 制約は実際のビジネス要件に基づく
+
+### アンチパターン5-2: スキーマの過剰な複雑化
+
+**問題**
+不必要に複雑なネスト構造やフィールドを定義し、メンテナンスとデバッグを困難にする。
+
+**症状**
+- スキーマ定義が数百行に及ぶ
+- 深いネスト構造（5階層以上）
+- 使用されないフィールドが多数存在
+
+**Before（過剰な複雑化）**
+
+```python
+class Address(BaseModel):
+    country: str
+    state: str
+    city: str
+    postal_code: str
+    street: str
+    building: str
+    floor: str
+    room_number: str
+
+class ContactInfo(BaseModel):
+    email: str
+    phone: str
+    fax: str
+    mobile: str
+    emergency_contact: str
+    emergency_phone: str
+
+class PersonalInfo(BaseModel):
+    first_name: str
+    last_name: str
+    middle_name: str
+    nickname: str
+    date_of_birth: str
+    place_of_birth: str
+    nationality: str
+    contact_info: ContactInfo
+    address: Address
+
+class UserProfile(BaseModel):
+    personal_info: PersonalInfo
+    # さらに深くネストが続く...
+
+# 問題点:
+# - 7-8階層のネスト構造
+# - ほとんどのユースケースで不要なフィールドを含む
+# - スキーマの理解とメンテナンスが困難
+```
+
+**After（シンプルな構造）**
+
+```python
+class UserProfile(BaseModel):
+    """ユーザープロフィール（必要最小限）"""
+
+    name: str
+    email: str
+    location: str  # "Tokyo, Japan"のような簡潔な形式
+
+    # 必要に応じてオプショナルフィールドを追加
+    phone: str | None = None
+    bio: str | None = None
+
+# 改善結果:
+# - フラットな構造で理解しやすい
+# - 必須フィールドのみ定義
+# - 拡張が容易
+```
+
+**回避方法**
+- ネスト階層は3-4階層までに抑える
+- 必須フィールドのみ定義する
+- フラットな構造を優先する
+- 実際のユースケースに基づいてスキーマを設計する
+
+### アンチパターン5-3: バリデーションエラーの無視
+
+**問題**
+スキーマ生成やバリデーションのエラーを適切に処理せず、システムをクラッシュさせる。
+
+**症状**
+- 本番環境でのクラッシュ
+- エラーの原因が不明
+- ユーザーへの不適切なエラーメッセージ
+
+**Before（エラーの無視）**
+
+```python
+async def generate_product_info(product_name: str):
+    prompt = f"以下の商品の情報を生成してください: {product_name}"
+
+    # エラーハンドリングなし
+    result = await client.generate_content_with_schema(
+        prompt,
+        ProductInfo.model_json_schema()
+    )
+
+    # バリデーションなし
+    return ProductInfo(**result)
+
+# 問題点:
+# - スキーマ生成失敗時にクラッシュ
+# - JSONパースエラーがキャッチされない
+# - バリデーションエラーが伝播する
+```
+
+**After（適切なエラーハンドリング）**
+
+```python
+from pydantic import ValidationError
+import logging
+
+logger = logging.getLogger(__name__)
+
+async def generate_product_info(product_name: str):
+    prompt = f"以下の商品の情報を生成してください: {product_name}"
+
+    try:
+        # スキーマ生成を試行
+        result = await client.generate_content_with_schema(
+            prompt,
+            ProductInfo.model_json_schema()
+        )
+
+        # バリデーションを実行
+        product_info = ProductInfo(**result)
+        return {
+            "success": True,
+            "data": product_info
+        }
+
+    except ValidationError as e:
+        # バリデーションエラーを記録
+        logger.error(f"Validation error for product {product_name}: {e}")
+        return {
+            "success": False,
+            "error": "生成されたデータが不正です",
+            "error_type": "VALIDATION_ERROR",
+            "details": str(e)
+        }
+
+    except json.JSONDecodeError as e:
+        # JSONパースエラーを記録
+        logger.error(f"JSON parse error for product {product_name}: {e}")
+        return {
+            "success": False,
+            "error": "データのパースに失敗しました",
+            "error_type": "PARSE_ERROR",
+            "details": str(e)
+        }
+
+    except Exception as e:
+        # その他のエラーを記録
+        logger.exception(f"Unexpected error for product {product_name}: {e}")
+        return {
+            "success": False,
+            "error": "予期しないエラーが発生しました",
+            "error_type": "UNKNOWN",
+            "details": str(e)
+        }
+```
+
+**回避方法**
+- すべてのバリデーションエラーをキャッチする
+- エラーの詳細をログに記録する
+- ユーザーに分かりやすいエラーメッセージを提供する
+- グレースフルデグラデーション戦略を実装する
+- リトライ戦略を検討する
+
 ## まとめ
 
 ### アンチパターンの回避原則
@@ -615,6 +875,7 @@ def update_agent_atomic(item):
 3. **明確な指示**: プロンプトは具体的で曖昧さをなくす
 4. **適切なコンテキスト管理**: エージェント間でコンテキストを伝播
 5. **競合の防止**: 共有リソースへのアクセスを制御
+6. **柔軟なスキーマ設計**: 構造化出力では必要最小限の制約に留める
 
 ### チェックリスト
 
@@ -637,6 +898,12 @@ def update_agent_atomic(item):
 - [ ] コンテキストは適切に伝播されているか？
 - [ ] 競合状態はないか？
 - [ ] エージェント間の調整は適切か？
+
+**構造化出力**
+- [ ] スキーマ制約は必要最小限か？
+- [ ] ネスト階層は3-4階層以内か？
+- [ ] バリデーションエラーのハンドリングを実装したか？
+- [ ] LLMの柔軟性を損なっていないか？
 
 ### 次のステップ
 
