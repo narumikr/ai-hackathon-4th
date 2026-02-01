@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import { EMOJI_LABELS, FORM_LABELS, LABELS, SECTION_TITLES } from '@/constants';
@@ -65,9 +65,11 @@ describe('ReflectionViewer', () => {
       const travel = createMockTravel({ destination: '奈良' });
       const pamphlet = createMockPamphlet();
 
-      render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
+      const { container } = render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      expect(screen.getAllByText(/奈良/).length).toBeGreaterThan(0);
+      const overviewContainer = container.querySelector('.border-primary-200');
+      expect(overviewContainer).toBeInTheDocument();
+      expect(within(overviewContainer as HTMLElement).getByText('奈良')).toBeInTheDocument();
     });
 
     it('renders completed date', () => {

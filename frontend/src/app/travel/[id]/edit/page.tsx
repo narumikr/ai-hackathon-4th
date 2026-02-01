@@ -68,7 +68,7 @@ export default function TravelEditPage() {
     };
 
     fetchTravelPlan();
-  }, [id, componentId]);
+  }, [id]);
 
   const handleBack = () => {
     router.push('/travel');

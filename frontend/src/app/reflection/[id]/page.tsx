@@ -2,7 +2,7 @@
 
 import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
-import { Button, Dialog, Icon, TextArea } from '@/components/ui';
+import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
@@ -16,6 +16,7 @@ import {
   PAGE_TITLES,
   PLACEHOLDERS,
   SECTION_TITLES,
+  TOOLTIP_MESSAGES,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
@@ -35,6 +36,7 @@ export default function ReflectionDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPhotoError, setShowPhotoError] = useState(false);
 
   useEffect(() => {
     const fetchTravelPlan = async () => {
@@ -97,6 +99,10 @@ export default function ReflectionDetailPage() {
   const handleSpotUpdate = (spotId: string, updates: Partial<ReflectionSpot>) => {
     // ローカル状態を更新
     setSpots(prev => prev.map(s => (s.id === spotId ? { ...s, ...updates } : s)));
+    // 写真が追加された場合、エラーを解除
+    if (updates.photos && updates.photos.length > 0 && showPhotoError) {
+      setShowPhotoError(false);
+    }
   };
 
   const handleAddSpot = (name: string) => {
@@ -116,6 +122,14 @@ export default function ReflectionDetailPage() {
 
   const handleSubmit = async () => {
     if (!travel || !id) return;
+
+    // 写真が1枚以上アップロードされているかチェック
+    const hasPhotos = spots.some(spot => spot.photos.length > 0);
+    if (!hasPhotos) {
+      setShowPhotoError(true);
+      return;
+    }
+    setShowPhotoError(false);
 
     setIsSubmitting(true);
 
@@ -155,28 +169,10 @@ export default function ReflectionDetailPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setIsSubmitting(false);
-      alert(ERROR_ALERTS.REFLECTION_CREATE_FAILED(apiError.message));
+      // TODO: Issue #187 のエラー表示コンポーネント実装後、画面内でエラーを表示するようにする
+      console.error(ERROR_ALERTS.REFLECTION_CREATE_FAILED(apiError.message));
     }
   };
-
-  if (!travel && !isLoading) {
-    return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
-          <Link href="/reflection">
-            <Button>{BUTTON_LABELS.BACK}</Button>
-          </Link>
-        </Container>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return <div className="py-20 text-center">{MESSAGES.LOADING}</div>;
-  }
 
   return (
     <div className="py-8">
@@ -251,15 +247,21 @@ export default function ReflectionDetailPage() {
                 {BUTTON_LABELS.CANCEL}
               </Button>
             </Link>
-            <Button
-              variant="primary"
-              size="lg"
-              className="flex-1"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
+            <Tooltip
+              content={TOOLTIP_MESSAGES.PHOTO_REQUIRED}
+              isOpen={showPhotoError}
+              position="top"
             >
-              {BUTTON_LABELS.GENERATE_REFLECTION}
-            </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                className="flex-1"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {BUTTON_LABELS.GENERATE_REFLECTION}
+              </Button>
+            </Tooltip>
           </div>
 
           {/* 処理中ダイアログ */}
@@ -268,6 +270,7 @@ export default function ReflectionDetailPage() {
             title={MESSAGES.PROCESSING}
             message={MESSAGES.GENERATING_REFLECTION}
             showSpinner
+            closable={false}
           />
 
           {/* 注意事項 */}
