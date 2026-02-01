@@ -1,6 +1,6 @@
 'use client';
 
-import { GenerationStatusView } from '@/components/features/common';
+import { ErrorDialog, GenerationStatusView } from '@/components/features/common';
 import { Container } from '@/components/layout';
 import { Button, Icon, Modal } from '@/components/ui';
 import {
@@ -34,6 +34,7 @@ export default function TravelGuidePage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [errorDialogMessage, setErrorDialogMessage] = useState<string | null>(null);
 
   const fetchTravelPlan = useCallback(
     async (isRefresh = false) => {
@@ -111,7 +112,8 @@ export default function TravelGuidePage() {
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
-      alert(ERROR_ALERTS.DELETE_FAILED(apiError.message));
+      setIsDeleteModalOpen(false);
+      setErrorDialogMessage(ERROR_ALERTS.DELETE_FAILED(apiError.message));
       console.error('Failed to delete travel plan:', apiError);
     } finally {
       setIsDeleting(false);
@@ -120,6 +122,10 @@ export default function TravelGuidePage() {
 
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
+  };
+
+  const handleErrorDialogClose = () => {
+    setErrorDialogMessage(null);
   };
 
   const handleComplete = async () => {
@@ -137,7 +143,7 @@ export default function TravelGuidePage() {
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
-      alert(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
+      setErrorDialogMessage(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
       console.error('Failed to complete travel plan:', apiError);
     } finally {
       setIsCompleting(false);
@@ -442,6 +448,14 @@ export default function TravelGuidePage() {
             </div>
           </div>
         </Modal>
+
+        {/* Error Dialog */}
+        <ErrorDialog
+          isOpen={errorDialogMessage !== null}
+          onClose={handleErrorDialogClose}
+          title={MESSAGES.ERROR}
+          message={errorDialogMessage ?? ''}
+        />
       </Container>
     </div>
   );

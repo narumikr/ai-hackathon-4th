@@ -189,6 +189,7 @@ export const BUTTON_LABELS = {
   REMOVE: '削除',
   SAVE: '保存',
   CANCEL: 'キャンセル',
+  CLOSE: '閉じる',
   BACK: '戻る',
   NEXT: '次へ',
   SUBMIT: '送信',
