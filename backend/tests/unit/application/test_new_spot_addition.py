@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import pytest
 from sqlalchemy.orm import Session
@@ -11,6 +11,11 @@ from app.application.ports.ai_service import IAIService
 from app.application.use_cases.generate_travel_guide import GenerateTravelGuideUseCase
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
+
+if TYPE_CHECKING:
+    from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+T = TypeVar("T", bound="GeminiResponseSchema")
 
 
 class FakeAIService(IAIService):
@@ -56,7 +61,7 @@ class FakeAIService(IAIService):
         self,
         prompt: str,
         image_uri: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -91,7 +96,7 @@ class FakeAIService(IAIService):
     async def generate_structured_data(
         self,
         prompt: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -133,24 +138,24 @@ async def test_new_spot_addition(db_session: Session, sample_travel_plan) -> Non
         "spotDetails": [
             {
                 "spotName": "清水寺",
-                "historicalBackground": "奈良時代末期に創建された古刹。",
+                "historicalBackground": "奈良時代末期に創建された古刹で、平安京遷都以前から続く歴史的な寺院。",
                 "highlights": ["清水の舞台", "音羽の滝"],
                 "recommendedVisitTime": "早朝",
-                "historicalSignificance": "平安京遷都以前の歴史を持つ。",
+                "historicalSignificance": "平安京遷都以前の歴史を持ち、京都最古級の寺院として知られる。",
             },
             {
                 "spotName": "金閣寺",
-                "historicalBackground": "足利義満の別荘として建立された寺院。",
+                "historicalBackground": "足利義満の別荘として建立された寺院で、室町時代の文化を象徴する建築物。",
                 "highlights": ["金箔の舎利殿", "鏡湖池"],
                 "recommendedVisitTime": "午後",
-                "historicalSignificance": "室町文化の象徴。",
+                "historicalSignificance": "室町文化の象徴として、日本建築史上でも重要な位置を占める。",
             },
             {
                 "spotName": "二条城",
-                "historicalBackground": "徳川家康が上洛時の居城として築城。",
+                "historicalBackground": "徳川家康が上洛時の居城として築城した江戸幕府の重要な政治拠点。",
                 "highlights": ["二の丸御殿", "唐門"],
                 "recommendedVisitTime": "午前",
-                "historicalSignificance": "武家政権の権威を示す城郭。",
+                "historicalSignificance": "武家政権の権威を示す城郭として、江戸時代の政治史において重要な役割を果たした。",
             },
         ],
         "checkpoints": [

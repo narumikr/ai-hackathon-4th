@@ -1,6 +1,9 @@
 """API統合テスト"""
 
+from __future__ import annotations
+
 import time
+from typing import TYPE_CHECKING, TypeVar
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +17,11 @@ from app.interfaces.api.dependencies import (
     get_storage_service_dependency,
 )
 from main import app
+
+if TYPE_CHECKING:
+    from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+T = TypeVar("T", bound="GeminiResponseSchema")
 
 
 class StubAIService(IAIService):
@@ -58,7 +66,7 @@ class StubAIService(IAIService):
         self,
         prompt: str,
         image_uri: str,
-        response_schema: dict,
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -102,13 +110,15 @@ class StubAIService(IAIService):
     async def generate_structured_data(
         self,
         prompt: str,
-        response_schema: dict,
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> dict:
-        if "travelSummary" in response_schema.get("properties", {}):
+        # Pydanticモデルからスキーマ名を取得して判定
+        schema_name = response_schema.__name__ if hasattr(response_schema, "__name__") else ""
+        if "Reflection" in schema_name or "travelSummary" in str(response_schema):
             return {
                 "travelSummary": "京都の歴史を再発見できた旅だった。",
                 "spotReflections": [
@@ -122,17 +132,17 @@ class StubAIService(IAIService):
                 {
                     "year": 778,
                     "event": "清水寺創建",
-                    "significance": "奈良時代末期の創建",
+                    "significance": "奈良時代末期の創建から続く歴史的寺院の始まり。",
                     "relatedSpots": ["清水寺"],
                 }
             ],
             "spotDetails": [
                 {
                     "spotName": "清水寺",
-                    "historicalBackground": "平安京遷都以前からの歴史を持つ",
+                    "historicalBackground": "平安京遷都以前からの歴史を持つ古刹で、長い歴史を今に伝える。",
                     "highlights": ["清水の舞台", "音羽の滝"],
                     "recommendedVisitTime": "早朝",
-                    "historicalSignificance": "信仰と文化の中心地",
+                    "historicalSignificance": "信仰と文化の中心地として、京都の歴史において重要な役割を果たした。",
                 }
             ],
             "checkpoints": [
@@ -270,9 +280,7 @@ def test_api_end_to_end_flow(api_client: TestClient):
     assert guide_response.json()["guideGenerationStatus"] == "processing"
 
     # 検証: ガイド生成完了
-    guide_status = _wait_for_generation(
-        api_client, plan_id, "guideGenerationStatus"
-    )
+    guide_status = _wait_for_generation(api_client, plan_id, "guideGenerationStatus")
     assert guide_status["guideGenerationStatus"] == "succeeded"
     assert guide_status["guide"] is not None
     assert guide_status["guide"]["overview"]
@@ -304,9 +312,7 @@ def test_api_end_to_end_flow(api_client: TestClient):
     assert reflection_response.status_code == 204
 
     # 検証: 振り返り生成完了
-    reflection_status = _wait_for_generation(
-        api_client, plan_id, "reflectionGenerationStatus"
-    )
+    reflection_status = _wait_for_generation(api_client, plan_id, "reflectionGenerationStatus")
     assert reflection_status["reflectionGenerationStatus"] == "succeeded"
     assert reflection_status["reflection"] is not None
     assert reflection_status["reflection"]["photos"]
@@ -378,9 +384,7 @@ def test_api_error_handling_flow(api_client: TestClient):
     guide_response = api_client.post("/api/v1/travel-guides", json={"planId": plan_id})
     assert guide_response.status_code == 202
 
-    guide_status = _wait_for_generation(
-        api_client, plan_id, "guideGenerationStatus"
-    )
+    guide_status = _wait_for_generation(api_client, plan_id, "guideGenerationStatus")
     assert guide_status["guideGenerationStatus"] == "succeeded"
 
     # 実行: 画像未登録で振り返り生成

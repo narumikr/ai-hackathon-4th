@@ -8,8 +8,6 @@ import logging
 import re
 from unittest.mock import patch
 
-import pytest
-
 
 class TestSetupLogging:
     """setup_logging()関数のテスト"""

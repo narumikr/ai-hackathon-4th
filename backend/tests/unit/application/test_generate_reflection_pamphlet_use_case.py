@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import pytest
 from sqlalchemy.orm import Session
@@ -13,6 +13,11 @@ from app.domain.travel_plan.value_objects import GenerationStatus
 from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
+
+if TYPE_CHECKING:
+    from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+T = TypeVar("T", bound="GeminiResponseSchema")
 
 
 class FakeAIService(IAIService):
@@ -57,7 +62,7 @@ class FakeAIService(IAIService):
         self,
         prompt: str,
         image_uri: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -92,13 +97,13 @@ class FakeAIService(IAIService):
     async def generate_structured_data(
         self,
         prompt: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
-    ) -> dict[str, Any] | list[Any]:
-        return self.structured_data
+    ) -> dict[str, Any]:
+        return self.structured_data  # type: ignore[return-value]
 
 
 def _structured_reflection_payload() -> dict[str, Any]:

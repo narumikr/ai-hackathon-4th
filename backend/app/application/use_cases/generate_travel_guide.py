@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import copy
 import logging
 from typing import Any
+
+from pydantic import ValidationError
 
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.ports.ai_service import IAIService
@@ -20,67 +21,8 @@ from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
+from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
 from app.prompts import render_template
-
-_TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "overview": {
-            "type": "string",
-            "description": "旅行全体の概要。以下の4要素を含む充実した概要文（200-400文字程度）: 1) 旅行のテーマや目的、2) 訪問スポットの関連性、3) 歴史的時代背景、4) おすすめポイント",
-            "minLength": 100,
-        },
-        "timeline": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "year": {"type": "integer"},
-                    "event": {"type": "string"},
-                    "significance": {"type": "string"},
-                    "relatedSpots": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-                },
-                "required": ["year", "event", "significance", "relatedSpots"],
-            },
-            "minItems": 1,
-        },
-        "spotDetails": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "spotName": {"type": "string"},
-                    "historicalBackground": {"type": "string"},
-                    "highlights": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-                    "recommendedVisitTime": {"type": "string"},
-                    "historicalSignificance": {"type": "string"},
-                },
-                "required": [
-                    "spotName",
-                    "historicalBackground",
-                    "highlights",
-                    "recommendedVisitTime",
-                    "historicalSignificance",
-                ],
-            },
-            "minItems": 1,
-        },
-        "checkpoints": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "spotName": {"type": "string"},
-                    "checkpoints": {"type": "array", "items": {"type": "string"}, "minItems": 1},
-                    "historicalContext": {"type": "string"},
-                },
-                "required": ["spotName", "checkpoints", "historicalContext"],
-            },
-            "minItems": 1,
-        },
-    },
-    "required": ["overview", "timeline", "spotDetails", "checkpoints"],
-}
 
 _HISTORICAL_PROMPT_TEMPLATE = "travel_guide_historical_prompt.txt"
 _TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
@@ -425,6 +367,12 @@ class GenerateTravelGuideUseCase:
                     else:
                         logger.info("Travel guide evaluation passed after retry.")
 
+                # レスポンスバリデーション
+                try:
+                    TravelGuideResponseSchema.model_validate(structured)
+                except ValidationError as e:
+                    raise ValueError(f"Invalid AI response structure: {e}") from e
+
                 overview = _require_str(structured.get("overview"), "overview")
                 _require_min_length(overview, "overview", 100)
                 timeline_items = _require_list(structured.get("timeline"), "timeline")
@@ -560,10 +508,9 @@ class GenerateTravelGuideUseCase:
             生成された構造化データ
         """
         guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
-        response_schema = _build_travel_guide_schema()
         structured = await self._ai_service.generate_structured_data(
             prompt=guide_prompt,
-            response_schema=response_schema,
+            response_schema=TravelGuideResponseSchema,
             system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
         )
         if not isinstance(structured, dict):
@@ -590,9 +537,3 @@ def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) ->
         spots_text=spots_text,
         historical_info=historical_info,
     )
-
-
-def _build_travel_guide_schema() -> dict[str, Any]:
-    """旅行ガイド生成用のスキーマを構築する"""
-    schema = copy.deepcopy(_TRAVEL_GUIDE_SCHEMA)
-    return schema

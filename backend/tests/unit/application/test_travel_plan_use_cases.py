@@ -133,9 +133,7 @@ def test_get_travel_plan_use_case_not_found(db_session: Session):
         use_case.execute(plan_id="non-existent-id")
 
 
-def test_list_travel_plans_use_case_returns_list(
-    db_session: Session, sample_travel_plan
-):
+def test_list_travel_plans_use_case_returns_list(db_session: Session, sample_travel_plan):
     """前提条件: ユーザーの旅行計画が存在する
     実行: 旅行計画一覧を取得する
     検証: 旅行計画が返る
@@ -153,9 +151,7 @@ def test_list_travel_plans_use_case_returns_list(
     assert any(dto.id == sample_travel_plan.id for dto in dtos)
 
 
-def test_update_travel_plan_use_case_updates_status(
-    db_session: Session, sample_travel_plan
-):
+def test_update_travel_plan_use_case_updates_status(db_session: Session, sample_travel_plan):
     """前提条件: 既存の旅行計画
     実行: statusを更新する
     検証: statusが更新される
