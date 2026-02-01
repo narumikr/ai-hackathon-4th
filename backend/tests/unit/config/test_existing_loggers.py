@@ -1,9 +1,9 @@
-"""既存のlogger利用箇所の互換性テスト.
+"""既存のlogger利用箇所の互換性テスト
 
 Requirements 3.3: THE logging configuration SHALL NOT break existing logger functionality
 in error_handler.py, travel_guides.py, reflections.py, and analyze_photos.py
 
-このテストでは、setup_logging()呼び出し後に既存のloggerが正常に動作することを確認する。
+このテストでは、setup_logging()呼び出し後に既存のloggerが正常に動作することを確認する
 """
 
 import io
@@ -13,19 +13,19 @@ from unittest.mock import patch
 
 
 class TestExistingLoggerCompatibility:
-    """既存のlogger利用箇所との互換性テスト.
+    """既存のlogger利用箇所との互換性テスト
 
     Requirements 3.3: 既存のlogger機能が壊れないことを確認
     """
 
     def setup_method(self) -> None:
-        """各テストの前にロガーをリセット."""
+        """各テストの前にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
 
     def teardown_method(self) -> None:
-        """各テストの後にロガーをリセット."""
+        """各テストの後にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
@@ -34,7 +34,7 @@ class TestExistingLoggerCompatibility:
         get_settings.cache_clear()
 
     def _setup_logging_with_capture(self) -> io.StringIO:
-        """ロギング設定を行い、出力をキャプチャするStringIOを返す."""
+        """ロギング設定を行い、出力をキャプチャするStringIOを返す"""
         from app.config.settings import Settings
 
         mock_settings = Settings(
@@ -67,7 +67,7 @@ class TestExistingLoggerCompatibility:
         return log_capture
 
     def test_error_handler_logger_works_after_setup_logging(self) -> None:
-        """setup_logging()後にerror_handler.pyのloggerが正常に動作すること.
+        """setup_logging()後にerror_handler.pyのloggerが正常に動作すること
 
         Requirements 3.3: error_handler.pyのlogger機能が壊れないこと
         """
@@ -91,7 +91,7 @@ class TestExistingLoggerCompatibility:
         )
 
     def test_travel_guides_logger_works_after_setup_logging(self) -> None:
-        """setup_logging()後にtravel_guides.pyのloggerが正常に動作すること.
+        """setup_logging()後にtravel_guides.pyのloggerが正常に動作すること
 
         Requirements 3.3: travel_guides.pyのlogger機能が壊れないこと
         """
@@ -117,7 +117,7 @@ class TestExistingLoggerCompatibility:
         )
 
     def test_reflections_logger_works_after_setup_logging(self) -> None:
-        """setup_logging()後にreflections.pyのloggerが正常に動作すること.
+        """setup_logging()後にreflections.pyのloggerが正常に動作すること
 
         Requirements 3.3: reflections.pyのlogger機能が壊れないこと
         """
@@ -147,7 +147,7 @@ class TestExistingLoggerCompatibility:
         )
 
     def test_analyze_photos_logger_works_after_setup_logging(self) -> None:
-        """setup_logging()後にanalyze_photos.pyのloggerが正常に動作すること.
+        """setup_logging()後にanalyze_photos.pyのloggerが正常に動作すること
 
         Requirements 3.3: analyze_photos.pyのlogger機能が壊れないこと
         """
@@ -178,19 +178,19 @@ class TestExistingLoggerCompatibility:
 
 
 class TestExistingLoggersUnifiedFormat:
-    """既存のloggerが統一フォーマットで出力されることのテスト.
+    """既存のloggerが統一フォーマットで出力されることのテスト
 
     Requirements 3.3: 既存のloggerが統一フォーマットで出力されること
     """
 
     def setup_method(self) -> None:
-        """各テストの前にロガーをリセット."""
+        """各テストの前にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
 
     def teardown_method(self) -> None:
-        """各テストの後にロガーをリセット."""
+        """各テストの後にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
@@ -199,7 +199,7 @@ class TestExistingLoggersUnifiedFormat:
         get_settings.cache_clear()
 
     def _setup_logging_with_capture(self) -> io.StringIO:
-        """ロギング設定を行い、出力をキャプチャするStringIOを返す."""
+        """ロギング設定を行い、出力をキャプチャするStringIOを返す"""
         from app.config.settings import Settings
 
         mock_settings = Settings(
@@ -231,7 +231,7 @@ class TestExistingLoggersUnifiedFormat:
         return log_capture
 
     def test_all_existing_loggers_use_unified_format(self) -> None:
-        """すべての既存loggerが統一フォーマットで出力されること.
+        """すべての既存loggerが統一フォーマットで出力されること
 
         Requirements 3.3: 既存のloggerが統一フォーマットで出力されること
         """
@@ -265,7 +265,7 @@ class TestExistingLoggersUnifiedFormat:
             )
 
     def test_existing_loggers_include_timestamp_level_and_name(self) -> None:
-        """既存のloggerの出力にタイムスタンプ、レベル、モジュール名が含まれること.
+        """既存のloggerの出力にタイムスタンプ、レベル、モジュール名が含まれること
 
         Requirements 3.3: 既存のloggerが統一フォーマットで出力されること
         """
@@ -293,20 +293,20 @@ class TestExistingLoggersUnifiedFormat:
 
 
 class TestLoggingConfigurationAppliestoExistingLoggers:
-    """ロギング設定が既存のloggerインスタンスに適用されることのテスト.
+    """ロギング設定が既存のloggerインスタンスに適用されることのテスト
 
     Requirements 3.2: WHEN configuring logging THEN the configuration SHALL apply
     to all existing logger instances
     """
 
     def setup_method(self) -> None:
-        """各テストの前にロガーをリセット."""
+        """各テストの前にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
 
     def teardown_method(self) -> None:
-        """各テストの後にロガーをリセット."""
+        """各テストの後にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
@@ -315,7 +315,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
         get_settings.cache_clear()
 
     def test_logging_config_applies_to_pre_existing_loggers(self) -> None:
-        """setup_logging()前に作成されたloggerにも設定が適用されること.
+        """setup_logging()前に作成されたloggerにも設定が適用されること
 
         Requirements 3.2: 設定がすべての既存loggerインスタンスに適用されること
         """
@@ -348,7 +348,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
         )
 
     def test_logging_config_applies_to_all_module_loggers(self) -> None:
-        """すべてのモジュールのloggerに設定が適用されること.
+        """すべてのモジュールのloggerに設定が適用されること
 
         Requirements 3.2: 設定がすべての既存loggerインスタンスに適用されること
         """
@@ -380,7 +380,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
             )
 
     def test_debug_logs_output_when_debug_enabled(self) -> None:
-        """debug=Trueの場合、DEBUGレベルのログが出力されること.
+        """debug=Trueの場合、DEBUGレベルのログが出力されること
 
         Requirements 3.2, 4.2: debug=TrueでDEBUGレベルのログが出力されること
         """
@@ -425,7 +425,7 @@ class TestLoggingConfigurationAppliestoExistingLoggers:
         )
 
     def test_debug_logs_suppressed_when_debug_disabled(self) -> None:
-        """debug=Falseの場合、DEBUGレベルのログが抑制されること.
+        """debug=Falseの場合、DEBUGレベルのログが抑制されること
 
         Requirements 3.2, 4.3: debug=FalseでDEBUGレベルのログが抑制されること
         """

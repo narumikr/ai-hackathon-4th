@@ -89,7 +89,7 @@ class Settings(DatabaseSettings):
     log_force_override: bool = False  # 既存のロガー設定を強制上書きするか
 
     def get_effective_log_level(self) -> str:
-        """debugフラグに基づいて有効なログレベルを取得.
+        """debugフラグに基づいて有効なログレベルを取得
 
         Requirements:
         - 4.2: debug=True の場合は DEBUG レベル
@@ -102,7 +102,7 @@ class Settings(DatabaseSettings):
     @field_validator("log_level")
     @classmethod
     def validate_log_level(cls, value: str) -> str:
-        """ログレベルの妥当性を検証."""
+        """ログレベルの妥当性を検証"""
         normalized = value.strip().upper()
         valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
         if normalized not in valid_levels:
@@ -112,14 +112,14 @@ class Settings(DatabaseSettings):
     @field_validator("google_cloud_project")
     @classmethod
     def validate_google_cloud_project(cls, value: str | None) -> str | None:
-        """Google Cloud Projectの検証（GCS使用時のみ必須）."""
+        """Google Cloud Projectの検証（GCS使用時のみ必須）"""
         # GCS使用時はチェックするが、ここでは緩く設定
         return value
 
     @field_validator("google_application_credentials")
     @classmethod
     def validate_credentials_path(cls, value: str | None) -> str | None:
-        """認証情報ファイルの存在チェック（設定されている場合のみ）."""
+        """認証情報ファイルの存在チェック（設定されている場合のみ）"""
         if value is None or not value.strip():
             # ADC (Application Default Credentials) を使用
             return None
@@ -130,11 +130,11 @@ class Settings(DatabaseSettings):
 
 @lru_cache
 def get_database_settings() -> DatabaseSettings:
-    """データベース設定のみ取得（Alembic、テスト用）."""
+    """データベース設定のみ取得（Alembic、テスト用）"""
     return DatabaseSettings()  # type: ignore[call-arg]
 
 
 @lru_cache
 def get_settings() -> Settings:
-    """設定のシングルトンインスタンスを取得."""
+    """設定のシングルトンインスタンスを取得"""
     return Settings()  # type: ignore[call-arg]

@@ -1,4 +1,4 @@
-"""アプリケーションのロギング設定."""
+"""アプリケーションのロギング設定"""
 
 import logging
 import sys
@@ -7,10 +7,10 @@ from app.config.settings import get_settings
 
 
 def setup_logging() -> None:
-    """アプリケーション全体のロギング設定を初期化.
+    """アプリケーション全体のロギング設定を初期化
 
     ルートロガーを設定し、すべてのモジュールで統一されたフォーマットで
-    ログが出力されるようにする。
+    ログが出力されるようにする
 
     ログレベルはsettings.debugフラグに基づいて決定される:
     - debug=True: DEBUG レベル

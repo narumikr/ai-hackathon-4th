@@ -1,16 +1,16 @@
-"""ロギングのプロパティベーステスト.
+"""ロギングのプロパティベーステスト
 
 Property 1: Unified Log Format
 **Validates: Requirements 2.1, 2.2, 2.3**
 
-任意のログメッセージに対して、出力フォーマットが統一されていることを検証する。
+任意のログメッセージに対して、出力フォーマットが統一されていることを検証する
 - タイムスタンプ、ログレベル、モジュール名が含まれること
 - フォーマットが一貫していること（timestamp - level - name - message）
 
 Property 2: Log Level Configuration Propagation
 **Validates: Requirements 3.2, 4.1**
 
-任意のloggerインスタンスに対して、設定されたログレベルが正しく適用されることを検証する。
+任意のloggerインスタンスに対して、設定されたログレベルが正しく適用されることを検証する
 - debug=True の場合は DEBUG レベル
 - debug=False の場合は INFO レベル
 """
@@ -29,7 +29,7 @@ from hypothesis import strategies as st
 
 
 def _valid_module_name() -> st.SearchStrategy[str]:
-    """有効なPythonモジュール名を生成するStrategy.
+    """有効なPythonモジュール名を生成するStrategy
 
     Pythonのモジュール名規則に従う:
     - 英字またはアンダースコアで始まる
@@ -51,7 +51,7 @@ def _valid_module_name() -> st.SearchStrategy[str]:
 
 
 def _valid_log_message() -> st.SearchStrategy[str]:
-    """有効なログメッセージを生成するStrategy.
+    """有効なログメッセージを生成するStrategy
 
     ログメッセージとして適切な文字列:
     - 空文字列ではない
@@ -73,7 +73,7 @@ def _valid_log_message() -> st.SearchStrategy[str]:
 
 
 def _valid_log_level() -> st.SearchStrategy[int]:
-    """有効なログレベルを生成するStrategy.
+    """有効なログレベルを生成するStrategy
 
     Pythonのloggingモジュールで定義されている標準ログレベル:
     - DEBUG (10)
@@ -98,7 +98,7 @@ def _valid_log_level() -> st.SearchStrategy[int]:
 
 @st.composite
 def _log_input(draw: st.DrawFn) -> tuple[str, str, int]:
-    """ログ入力データを生成するComposite Strategy.
+    """ログ入力データを生成するComposite Strategy
 
     Args:
         draw: Hypothesisの描画関数
@@ -116,7 +116,7 @@ def _log_input(draw: st.DrawFn) -> tuple[str, str, int]:
 
 
 def _setup_logging_with_capture() -> tuple[logging.Logger, io.StringIO]:
-    """ロギング設定を行い、出力をキャプチャするためのセットアップ.
+    """ロギング設定を行い、出力をキャプチャするためのセットアップ
 
     Returns:
         (root_logger, log_capture)のタプル
@@ -157,7 +157,7 @@ def _setup_logging_with_capture() -> tuple[logging.Logger, io.StringIO]:
 
 
 def _cleanup_logging() -> None:
-    """ロギング設定をクリーンアップ."""
+    """ロギング設定をクリーンアップ"""
     root_logger = logging.getLogger()
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
@@ -171,25 +171,25 @@ def _cleanup_logging() -> None:
 
 
 class TestUnifiedLogFormatProperty:
-    """Property 1: Unified Log Formatのプロパティベーステスト.
+    """Property 1: Unified Log Formatのプロパティベーステスト
 
     **Validates: Requirements 2.1, 2.2, 2.3**
 
-    任意のログメッセージに対して、出力フォーマットが統一されていることを検証する。
+    任意のログメッセージに対して、出力フォーマットが統一されていることを検証する
     """
 
     def setup_method(self) -> None:
-        """各テストの前にロガーをリセット."""
+        """各テストの前にロガーをリセット"""
         _cleanup_logging()
 
     def teardown_method(self) -> None:
-        """各テストの後にロガーをリセット."""
+        """各テストの後にロガーをリセット"""
         _cleanup_logging()
 
     @given(inputs=_log_input())
     @settings(max_examples=100)
     def test_property_log_output_contains_timestamp(self, inputs: tuple[str, str, int]) -> None:
-        """任意のログ出力にタイムスタンプが含まれることを検証.
+        """任意のログ出力にタイムスタンプが含まれることを検証
 
         **Validates: Requirements 2.1**
 
@@ -221,7 +221,7 @@ class TestUnifiedLogFormatProperty:
     @given(inputs=_log_input())
     @settings(max_examples=100)
     def test_property_log_output_contains_log_level(self, inputs: tuple[str, str, int]) -> None:
-        """任意のログ出力にログレベルが含まれることを検証.
+        """任意のログ出力にログレベルが含まれることを検証
 
         **Validates: Requirements 2.1**
 
@@ -252,7 +252,7 @@ class TestUnifiedLogFormatProperty:
     @given(inputs=_log_input())
     @settings(max_examples=100)
     def test_property_log_output_contains_module_name(self, inputs: tuple[str, str, int]) -> None:
-        """任意のログ出力にモジュール名が含まれることを検証.
+        """任意のログ出力にモジュール名が含まれることを検証
 
         **Validates: Requirements 2.1**
 
@@ -281,7 +281,7 @@ class TestUnifiedLogFormatProperty:
     @given(inputs=_log_input())
     @settings(max_examples=100)
     def test_property_log_format_is_consistent(self, inputs: tuple[str, str, int]) -> None:
-        """任意のログ出力が一貫したフォーマット（timestamp - level - name - message）であることを検証.
+        """任意のログ出力が一貫したフォーマット（timestamp - level - name - message）であることを検証
 
         **Validates: Requirements 2.2, 2.3**
 
@@ -338,7 +338,7 @@ class TestUnifiedLogFormatProperty:
         level1: int,
         level2: int,
     ) -> None:
-        """異なるモジュールからのログ出力が同じフォーマットであることを検証.
+        """異なるモジュールからのログ出力が同じフォーマットであることを検証
 
         **Validates: Requirements 2.2**
 
@@ -383,7 +383,7 @@ class TestUnifiedLogFormatProperty:
 
 
 def _setup_logging_with_debug_mode(debug: bool) -> None:
-    """指定されたdebugモードでロギング設定を初期化.
+    """指定されたdebugモードでロギング設定を初期化
 
     Args:
         debug: デバッグモードの有効/無効
@@ -406,27 +406,27 @@ def _setup_logging_with_debug_mode(debug: bool) -> None:
 
 
 class TestLogLevelConfigurationPropagationProperty:
-    """Property 2: Log Level Configuration Propagationのプロパティベーステスト.
+    """Property 2: Log Level Configuration Propagationのプロパティベーステスト
 
     **Validates: Requirements 3.2, 4.1**
 
-    任意のloggerインスタンスに対して、設定されたログレベルが正しく適用されることを検証する。
+    任意のloggerインスタンスに対して、設定されたログレベルが正しく適用されることを検証する
     - debug=True の場合は DEBUG レベル
     - debug=False の場合は INFO レベル
     """
 
     def setup_method(self) -> None:
-        """各テストの前にロガーをリセット."""
+        """各テストの前にロガーをリセット"""
         _cleanup_logging()
 
     def teardown_method(self) -> None:
-        """各テストの後にロガーをリセット."""
+        """各テストの後にロガーをリセット"""
         _cleanup_logging()
 
     @given(module_name=_valid_module_name())
     @settings(max_examples=100)
     def test_property_debug_true_sets_debug_level(self, module_name: str) -> None:
-        """debug=Trueの場合、任意のloggerインスタンスがDEBUGレベルになることを検証.
+        """debug=Trueの場合、任意のloggerインスタンスがDEBUGレベルになることを検証
 
         **Validates: Requirements 3.2, 4.1**
 
@@ -456,7 +456,7 @@ class TestLogLevelConfigurationPropagationProperty:
     @given(module_name=_valid_module_name())
     @settings(max_examples=100)
     def test_property_debug_false_sets_info_level(self, module_name: str) -> None:
-        """debug=Falseの場合、任意のloggerインスタンスがINFOレベルになることを検証.
+        """debug=Falseの場合、任意のloggerインスタンスがINFOレベルになることを検証
 
         **Validates: Requirements 3.2, 4.1**
 
@@ -491,7 +491,7 @@ class TestLogLevelConfigurationPropagationProperty:
     def test_property_all_loggers_have_consistent_level(
         self, module_names: list[str], debug_mode: bool
     ) -> None:
-        """複数のloggerインスタンスが同じ有効ログレベルを持つことを検証.
+        """複数のloggerインスタンスが同じ有効ログレベルを持つことを検証
 
         **Validates: Requirements 3.2**
 
@@ -525,7 +525,7 @@ class TestLogLevelConfigurationPropagationProperty:
     @given(module_name=_valid_module_name())
     @settings(max_examples=100)
     def test_property_debug_messages_output_when_debug_true(self, module_name: str) -> None:
-        """debug=Trueの場合、DEBUGレベルのメッセージが出力されることを検証.
+        """debug=Trueの場合、DEBUGレベルのメッセージが出力されることを検証
 
         **Validates: Requirements 3.2, 4.1**
 
@@ -572,7 +572,7 @@ class TestLogLevelConfigurationPropagationProperty:
     @given(module_name=_valid_module_name())
     @settings(max_examples=100)
     def test_property_debug_messages_suppressed_when_debug_false(self, module_name: str) -> None:
-        """debug=Falseの場合、DEBUGレベルのメッセージが抑制されることを検証.
+        """debug=Falseの場合、DEBUGレベルのメッセージが抑制されることを検証
 
         **Validates: Requirements 3.2, 4.1**
 

@@ -1,4 +1,4 @@
-"""ロギング設定のユニットテスト.
+"""ロギング設定のユニットテスト
 
 Requirements 2.1: ログフォーマットにタイムスタンプ、ログレベル、モジュール名が含まれること
 """
@@ -12,17 +12,17 @@ import pytest
 
 
 class TestSetupLogging:
-    """setup_logging()関数のテスト."""
+    """setup_logging()関数のテスト"""
 
     def setup_method(self) -> None:
-        """各テストの前にロガーをリセット."""
+        """各テストの前にロガーをリセット"""
         # ルートロガーのハンドラーをクリア
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
 
     def teardown_method(self) -> None:
-        """各テストの後にロガーをリセット."""
+        """各テストの後にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
@@ -32,7 +32,7 @@ class TestSetupLogging:
         get_settings.cache_clear()
 
     def test_setup_logging_configures_root_logger(self) -> None:
-        """setup_logging()がルートロガーを設定すること."""
+        """setup_logging()がルートロガーを設定すること"""
         from app.config.logging import setup_logging
 
         setup_logging()
@@ -41,7 +41,7 @@ class TestSetupLogging:
         assert len(root_logger.handlers) > 0, "ルートロガーにハンドラーが設定されていること"
 
     def test_setup_logging_sets_info_level_when_debug_false(self) -> None:
-        """debug=Falseの場合、INFOレベルが設定されること."""
+        """debug=Falseの場合、INFOレベルが設定されること"""
         from app.config.settings import Settings
 
         mock_settings = Settings(
@@ -59,7 +59,7 @@ class TestSetupLogging:
             assert root_logger.level == logging.INFO
 
     def test_setup_logging_sets_debug_level_when_debug_true(self) -> None:
-        """debug=Trueの場合、DEBUGレベルが設定されること."""
+        """debug=Trueの場合、DEBUGレベルが設定されること"""
         from app.config.settings import Settings
 
         mock_settings = Settings(
@@ -78,19 +78,19 @@ class TestSetupLogging:
 
 
 class TestLogFormat:
-    """ログフォーマットのテスト.
+    """ログフォーマットのテスト
 
     Requirements 2.1: ログフォーマットにタイムスタンプ、ログレベル、モジュール名が含まれること
     """
 
     def setup_method(self) -> None:
-        """各テストの前にロガーをリセット."""
+        """各テストの前にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
 
     def teardown_method(self) -> None:
-        """各テストの後にロガーをリセット."""
+        """各テストの後にロガーをリセット"""
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
@@ -99,7 +99,7 @@ class TestLogFormat:
         get_settings.cache_clear()
 
     def test_log_format_includes_timestamp(self) -> None:
-        """ログフォーマットにタイムスタンプが含まれること."""
+        """ログフォーマットにタイムスタンプが含まれること"""
         from app.config.settings import Settings
 
         mock_settings = Settings(
@@ -142,7 +142,7 @@ class TestLogFormat:
             )
 
     def test_log_format_includes_log_level(self) -> None:
-        """ログフォーマットにログレベルが含まれること."""
+        """ログフォーマットにログレベルが含まれること"""
         from app.config.settings import Settings
 
         mock_settings = Settings(
@@ -178,7 +178,7 @@ class TestLogFormat:
             assert "INFO" in log_output, f"ログにログレベルが含まれていること: {log_output}"
 
     def test_log_format_includes_module_name(self) -> None:
-        """ログフォーマットにモジュール名が含まれること."""
+        """ログフォーマットにモジュール名が含まれること"""
         from app.config.settings import Settings
 
         mock_settings = Settings(
@@ -216,7 +216,7 @@ class TestLogFormat:
             )
 
     def test_log_format_contains_all_required_elements(self) -> None:
-        """ログフォーマットにすべての必要な要素（タイムスタンプ、ログレベル、モジュール名）が含まれること.
+        """ログフォーマットにすべての必要な要素（タイムスタンプ、ログレベル、モジュール名）が含まれること
 
         Requirements 2.1: THE Log_Format SHALL include timestamp, log level, and module name
         """
