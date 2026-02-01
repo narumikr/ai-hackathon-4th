@@ -36,7 +36,6 @@ def test_detect_new_spots_with_new_spots() -> None:
     existing_spots = [
         TouristSpot(id="1", name="清水寺", description=None, user_notes=None),
     ]
-    
     result = _detect_new_spots(spot_details, existing_spots)
     assert result == ["二条城"]
 
@@ -55,7 +54,6 @@ def test_detect_new_spots_with_existing_only() -> None:
     existing_spots = [
         TouristSpot(id="1", name="清水寺", description=None, user_notes=None),
     ]
-    
     result = _detect_new_spots(spot_details, existing_spots)
     assert result == []
 
@@ -81,7 +79,6 @@ def test_detect_new_spots_with_duplicates_in_spot_details() -> None:
     existing_spots = [
         TouristSpot(id="1", name="清水寺", description=None, user_notes=None),
     ]
-    
     result = _detect_new_spots(spot_details, existing_spots)
     assert result == ["二条城"]  # 最初の出現のみ
 
@@ -89,9 +86,7 @@ def test_detect_new_spots_with_duplicates_in_spot_details() -> None:
 def test_create_tourist_spots_creates_spots() -> None:
     """TouristSpotの作成を確認"""
     new_spot_names = ["二条城", "伏見稲荷大社"]
-    
     result = _create_tourist_spots(new_spot_names)
-    
     assert len(result) == 2
     assert result[0].name == "二条城"
     assert result[1].name == "伏見稲荷大社"
@@ -104,8 +99,6 @@ def test_create_tourist_spots_creates_spots() -> None:
 def test_create_tourist_spots_generates_unique_ids() -> None:
     """IDの一意性を確認"""
     new_spot_names = ["スポット1", "スポット2", "スポット3"]
-    
     result = _create_tourist_spots(new_spot_names)
-    
     ids = [spot.id for spot in result]
     assert len(ids) == len(set(ids))  # すべてのIDが一意
