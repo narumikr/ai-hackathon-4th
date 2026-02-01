@@ -142,7 +142,7 @@ class IAIService(ABC):
     async def evaluate_travel_guide(
         self,
         guide_content: dict,
-        evaluation_schema: dict,
+        evaluation_schema: type[T],
         evaluation_prompt: str,
         *,
         system_instruction: str | None = None,
@@ -153,7 +153,7 @@ class IAIService(ABC):
 
         Args:
             guide_content: 評価対象の旅行ガイドデータ
-            evaluation_schema: 評価結果のスキーマ
+            evaluation_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
             evaluation_prompt: 評価プロンプト
             system_instruction: システム命令（オプション）
             temperature: 生成の多様性を制御するパラメータ（評価時は0推奨）

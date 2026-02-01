@@ -72,7 +72,7 @@ class FakeAIService(IAIService):
     async def evaluate_travel_guide(
         self,
         guide_content: dict,
-        evaluation_schema: dict,
+        evaluation_schema: type[T],
         evaluation_prompt: str,
         *,
         system_instruction: str | None = None,

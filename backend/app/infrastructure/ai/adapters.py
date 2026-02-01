@@ -204,7 +204,7 @@ class GeminiAIService(IAIService):
     async def evaluate_travel_guide(
         self,
         guide_content: dict,
-        evaluation_schema: dict,
+        evaluation_schema: type[T],
         evaluation_prompt: str,
         *,
         system_instruction: str | None = None,
@@ -215,7 +215,7 @@ class GeminiAIService(IAIService):
 
         Args:
             guide_content: 評価対象の旅行ガイドデータ
-            evaluation_schema: 評価結果のスキーマ
+            evaluation_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
             evaluation_prompt: 評価プロンプト
             system_instruction: システム命令（オプション）
             temperature: 生成の多様性を制御するパラメータ（評価時は0推奨）
@@ -226,7 +226,7 @@ class GeminiAIService(IAIService):
         """
         return await self.client.generate_content_with_schema(
             prompt=evaluation_prompt,
-            response_schema=evaluation_schema,  # type: ignore[arg-type]
+            response_schema=evaluation_schema,
             system_instruction=system_instruction,
             temperature=temperature if temperature is not None else 0.0,
             max_output_tokens=max_output_tokens

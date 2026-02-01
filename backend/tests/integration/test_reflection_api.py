@@ -1,6 +1,7 @@
 """Reflection API統合テスト"""
 
 import time
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -76,7 +77,7 @@ class StubAIService(IAIService):
     async def evaluate_travel_guide(
         self,
         guide_content: dict,
-        evaluation_schema: dict,
+        evaluation_schema: type[Any],
         evaluation_prompt: str,
         *,
         system_instruction: str | None = None,
