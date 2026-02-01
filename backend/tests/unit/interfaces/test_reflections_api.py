@@ -22,13 +22,13 @@ class TestUpdateReflectionStatus:
         検証: 振り返り生成ステータスがPROCESSINGになる
         """
         plan = TravelPlan(
-            id="plan-001",
-            user_id="user-001",
+            id="plan-京都-001",
+            user_id="user-太郎-001",
             title="京都旅行",
             destination="京都",
             spots=[
                 TouristSpot(
-                    id="spot-001",
+                    id="spot-清水寺-001",
                     name="清水寺",
                     description="清水の舞台で有名な寺院",
                 )
@@ -41,7 +41,7 @@ class TestUpdateReflectionStatus:
 
         _update_reflection_status(
             mock_repository,
-            "plan-001",
+            "plan-京都-001",
             GenerationStatus.PROCESSING,
             commit=False,
         )
@@ -55,13 +55,13 @@ class TestUpdateReflectionStatus:
         検証: 振り返り生成ステータスがSUCCEEDEDになる
         """
         plan = TravelPlan(
-            id="plan-001",
-            user_id="user-001",
+            id="plan-京都-001",
+            user_id="user-太郎-001",
             title="京都旅行",
             destination="京都",
             spots=[
                 TouristSpot(
-                    id="spot-001",
+                    id="spot-清水寺-001",
                     name="清水寺",
                     description="清水の舞台で有名な寺院",
                 )
@@ -74,7 +74,7 @@ class TestUpdateReflectionStatus:
 
         _update_reflection_status(
             mock_repository,
-            "plan-001",
+            "plan-京都-001",
             GenerationStatus.SUCCEEDED,
             commit=True,
         )
@@ -88,13 +88,13 @@ class TestUpdateReflectionStatus:
         検証: 振り返り生成ステータスがFAILEDになる
         """
         plan = TravelPlan(
-            id="plan-001",
-            user_id="user-001",
+            id="plan-京都-001",
+            user_id="user-太郎-001",
             title="京都旅行",
             destination="京都",
             spots=[
                 TouristSpot(
-                    id="spot-001",
+                    id="spot-清水寺-001",
                     name="清水寺",
                     description="清水の舞台で有名な寺院",
                 )
@@ -107,7 +107,7 @@ class TestUpdateReflectionStatus:
 
         _update_reflection_status(
             mock_repository,
-            "plan-001",
+            "plan-京都-001",
             GenerationStatus.FAILED,
             commit=True,
         )
@@ -126,7 +126,7 @@ class TestUpdateReflectionStatus:
         with pytest.raises(TravelPlanNotFoundError):
             _update_reflection_status(
                 mock_repository,
-                "non-existent-plan",
+                "plan-存在しない-001",
                 GenerationStatus.PROCESSING,
             )
 
