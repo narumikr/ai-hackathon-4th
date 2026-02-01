@@ -116,7 +116,14 @@ export default function ReflectionListPage() {
                 >
                   <div className="mb-4">
                     <div className="mb-2 flex items-start justify-between">
-                      <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                        {travel.reflectionGenerationStatus === 'failed' && (
+                          <span className="rounded-full bg-danger px-2 py-0.5 font-medium text-white text-xs">
+                            {STATUS_LABELS.GENERATION_FAILED}
+                          </span>
+                        )}
+                      </div>
                       {travel.reflectionGenerationStatus === 'processing' ? (
                         <span className="rounded-full bg-warning px-3 py-1 font-medium text-white text-xs">
                           {STATUS_LABELS.REFLECTION_PROCESSING}

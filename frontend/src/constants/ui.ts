@@ -242,6 +242,7 @@ export const STATUS_LABELS = {
   REFLECTION_CREATED: '作成済み',
   REFLECTION_PROCESSING: '生成中',
   ADDED_SPOT: '追加スポット',
+  GENERATION_FAILED: '生成失敗',
 } as const;
 
 /**

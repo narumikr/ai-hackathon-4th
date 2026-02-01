@@ -113,7 +113,14 @@ export default function TravelListPage() {
               >
                 <div className="mb-4 flex items-start justify-between">
                   <div>
-                    <h2 className="mb-1 font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                    <div className="mb-1 flex items-center gap-2">
+                      <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                      {travel.guideGenerationStatus === 'failed' && (
+                        <span className="rounded-full bg-danger px-2 py-0.5 font-medium text-white text-xs">
+                          {STATUS_LABELS.GENERATION_FAILED}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-neutral-500 text-sm">{travel.destination}</p>
                   </div>
                   <span
