@@ -81,9 +81,9 @@ _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     "required": ["overview", "timeline", "spotDetails", "checkpoints"],
 }
 
-_HISTORICAL_PROMPT_TEMPLATE = "travel_guide_historical_prompt.txt"
+_FACT_EXTRACTION_PROMPT_TEMPLATE = "travel_guide_fact_extraction_prompt.txt"
 _TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
-_HISTORICAL_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_historical_system_instruction.txt"
+_FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_fact_extraction_system_instruction.txt"
 _TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
 
 
@@ -278,15 +278,17 @@ class GenerateTravelGuideUseCase:
         self._plan_repository.save(travel_plan, commit=commit)
 
         try:
-            historical_prompt = _build_historical_info_prompt(travel_plan)
-            historical_info = await self._ai_service.generate_with_search(
-                prompt=historical_prompt,
-                system_instruction=render_template(_HISTORICAL_SYSTEM_INSTRUCTION_TEMPLATE),
+            # Step A: 事実抽出（出典候補付き）
+            fact_extraction_prompt = _build_fact_extraction_prompt(travel_plan)
+            extracted_facts = await self._ai_service.generate_with_search(
+                prompt=fact_extraction_prompt,
+                system_instruction=render_template(_FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE),
             )
-            if not historical_info or not historical_info.strip():
-                raise ValueError("historical_info must be a non-empty string.")
+            if not extracted_facts or not extracted_facts.strip():
+                raise ValueError("extracted_facts must be a non-empty string.")
 
-            guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
+            # Step B: 構造化生成（Step Aの出力を使用）
+            guide_prompt = _build_travel_guide_prompt(travel_plan, extracted_facts)
             response_schema = _build_travel_guide_schema()
             structured = await self._ai_service.generate_structured_data(
                 prompt=guide_prompt,
@@ -341,24 +343,24 @@ class GenerateTravelGuideUseCase:
         return TravelGuideDTO.from_entity(saved_guide)
 
 
-def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:
-    """歴史情報収集用のプロンプトを生成する"""
+def _build_fact_extraction_prompt(travel_plan: TravelPlan) -> str:
+    """事実抽出用のプロンプトを生成する（Step A）"""
     spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return render_template(
-        _HISTORICAL_PROMPT_TEMPLATE,
+        _FACT_EXTRACTION_PROMPT_TEMPLATE,
         destination=travel_plan.destination,
         spots_text=spots_text,
     )
 
 
-def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) -> str:
-    """旅行ガイド生成用のプロンプトを生成する"""
+def _build_travel_guide_prompt(travel_plan: TravelPlan, extracted_facts: str) -> str:
+    """旅行ガイド生成用のプロンプトを生成する（Step B）"""
     spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return render_template(
         _TRAVEL_GUIDE_PROMPT_TEMPLATE,
         destination=travel_plan.destination,
         spots_text=spots_text,
-        historical_info=historical_info,
+        extracted_facts=extracted_facts,
     )
 
 
