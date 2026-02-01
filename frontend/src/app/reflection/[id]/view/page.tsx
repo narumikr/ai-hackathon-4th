@@ -1,9 +1,10 @@
 'use client';
 
+import { GenerationStatusView } from '@/components/features/common';
 import { ReflectionViewer } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
-import { Button, LoadingSpinner } from '@/components/ui';
-import { BUTTON_LABELS, BUTTON_STATES, MESSAGES, PAGE_TITLES, STATUS_LABELS } from '@/constants';
+import { Button } from '@/components/ui';
+import { BUTTON_LABELS, MESSAGES, PAGE_TITLES, STATUS_LABELS } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
@@ -81,37 +82,15 @@ export default function ReflectionViewPage() {
   // 生成中の場合
   if (travel.reflectionGenerationStatus === 'processing') {
     return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 flex items-center justify-between">
-            <h1 className="font-bold text-2xl text-neutral-900">
-              {PAGE_TITLES.REFLECTION_PAMPHLET}
-            </h1>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
-                {isRefreshing ? (
-                  <>
-                    <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
-                    {BUTTON_STATES.UPDATING}
-                  </>
-                ) : (
-                  BUTTON_LABELS.UPDATE
-                )}
-              </Button>
-              <Link href="/reflection">
-                <Button variant="ghost">{BUTTON_LABELS.BACK}</Button>
-              </Link>
-            </div>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-warning-200 bg-warning-50 py-16">
-            <LoadingSpinner size="lg" variant="primary" className="mb-4" />
-            <p className="mb-2 font-semibold text-lg text-warning-800">
-              {STATUS_LABELS.REFLECTION_PROCESSING}
-            </p>
-            <p className="text-sm text-warning-700">{MESSAGES.GENERATING_REFLECTION_HINT}</p>
-          </div>
-        </Container>
-      </div>
+      <GenerationStatusView
+        title={PAGE_TITLES.REFLECTION_PAMPHLET}
+        status="processing"
+        statusLabel={STATUS_LABELS.REFLECTION_PROCESSING}
+        hintMessage={MESSAGES.GENERATING_REFLECTION_HINT}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        backHref="/reflection"
+      />
     );
   }
 

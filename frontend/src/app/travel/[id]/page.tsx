@@ -1,10 +1,10 @@
 'use client';
 
+import { GenerationStatusView } from '@/components/features/common';
 import { Container } from '@/components/layout';
-import { Button, Icon, LoadingSpinner, Modal } from '@/components/ui';
+import { Button, Icon, Modal } from '@/components/ui';
 import {
   BUTTON_LABELS,
-  BUTTON_STATES,
   CONFIRMATION_MESSAGES,
   DATE_LABELS,
   EMOJI_LABELS,
@@ -208,69 +208,31 @@ export default function TravelGuidePage() {
   // ガイド生成中の場合
   if (travel.guideGenerationStatus === 'processing') {
     return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 flex items-center justify-between">
-            <h1 className="font-bold text-2xl text-neutral-900">{PAGE_TITLES.TRAVEL_GUIDE}</h1>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
-                {isRefreshing ? (
-                  <>
-                    <LoadingSpinner size="sm" variant="secondary" className="mr-2" />
-                    {BUTTON_STATES.UPDATING}
-                  </>
-                ) : (
-                  BUTTON_LABELS.UPDATE
-                )}
-              </Button>
-              <Button variant="ghost" onClick={handleBack}>
-                {BUTTON_LABELS.BACK}
-              </Button>
-            </div>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-warning-200 bg-warning-50 py-16">
-            <LoadingSpinner size="lg" variant="primary" className="mb-4" />
-            <p className="mb-2 font-semibold text-lg text-warning-800">
-              {STATUS_LABELS.GUIDE_PROCESSING}
-            </p>
-            <p className="text-sm text-warning-700">{MESSAGES.GENERATING_GUIDE_HINT}</p>
-          </div>
-        </Container>
-      </div>
+      <GenerationStatusView
+        title={PAGE_TITLES.TRAVEL_GUIDE}
+        status="processing"
+        statusLabel={STATUS_LABELS.GUIDE_PROCESSING}
+        hintMessage={MESSAGES.GENERATING_GUIDE_HINT}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        onBack={handleBack}
+      />
     );
   }
 
   // ガイド生成失敗の場合
   if (travel.guideGenerationStatus === 'failed') {
     return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 flex items-center justify-between">
-            <h1 className="font-bold text-2xl text-neutral-900">{PAGE_TITLES.TRAVEL_GUIDE}</h1>
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={handleBack}>
-                {BUTTON_LABELS.BACK}
-              </Button>
-            </div>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-lg border border-danger-200 bg-danger-50 py-16">
-            <p className="mb-2 font-semibold text-danger-800 text-lg">
-              {STATUS_LABELS.GENERATION_FAILED}
-            </p>
-            <p className="mb-6 text-danger-700 text-sm">{MESSAGES.GUIDE_GENERATION_FAILED}</p>
-            <Button variant="primary" onClick={handleRetryGenerate} disabled={isRetrying}>
-              {isRetrying ? (
-                <>
-                  <LoadingSpinner size="sm" variant="primary" className="mr-2" />
-                  {MESSAGES.GENERATING}
-                </>
-              ) : (
-                BUTTON_LABELS.RETRY_GENERATE_GUIDE
-              )}
-            </Button>
-          </div>
-        </Container>
-      </div>
+      <GenerationStatusView
+        title={PAGE_TITLES.TRAVEL_GUIDE}
+        status="failed"
+        statusLabel={STATUS_LABELS.GENERATION_FAILED}
+        errorMessage={MESSAGES.GUIDE_GENERATION_FAILED}
+        retryLabel={BUTTON_LABELS.RETRY_GENERATE_GUIDE}
+        isRetrying={isRetrying}
+        onRetry={handleRetryGenerate}
+        onBack={handleBack}
+      />
     );
   }
 
