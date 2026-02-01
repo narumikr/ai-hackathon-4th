@@ -154,7 +154,7 @@ describe('SpotAdder', () => {
       const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
       const preventDefaultSpy = vi.spyOn(submitEvent, 'preventDefault');
 
-      form.dispatchEvent(submitEvent);
+      fireEvent(form, submitEvent);
 
       expect(preventDefaultSpy).toHaveBeenCalled();
     });
