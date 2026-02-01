@@ -45,10 +45,9 @@ Skillsは `.claude/skills/` に配置され、`.codex/skills/`、`.kilocode/skil
 
 ### 命名ルール
 
-1. 形式: `<type>/<issue-number>-<short-description>`
+1. 形式: `<type>/<short-description>`
 2. `<type>` は `feat` / `fix` / `chore` / `docs` / `ref` / `test` のいずれか
-3. `<issue-number>` は GitHub Issue 番号（必須）
-4. `<short-description>` は英小文字のkebab-case（スペース禁止、英数字とハイフンのみ）
+3. `<short-description>` は英小文字のkebab-case（スペース禁止、英数字とハイフンのみ）
 
 ## Pull Request 作成ポリシー
 
