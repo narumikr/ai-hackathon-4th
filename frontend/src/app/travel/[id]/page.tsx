@@ -77,13 +77,12 @@ export default function TravelGuidePage() {
     try {
       const apiClient = createApiClientFromEnv();
       await apiClient.generateTravelGuide({ request: { planId: id } });
-      // 生成開始後、最新の状態を取得
-      await fetchTravelPlan(true);
+      // 生成開始後、一覧ページへ戻る
+      router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message || MESSAGES.ERROR);
       console.error('Failed to retry guide generation:', apiError);
-    } finally {
       setIsRetrying(false);
     }
   };
