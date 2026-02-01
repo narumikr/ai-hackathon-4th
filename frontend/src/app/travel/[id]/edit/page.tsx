@@ -253,7 +253,7 @@ export default function TravelEditPage() {
                         variant="ghost"
                         onClick={() => handleRemoveSpot(spot.id)}
                         disabled={formData.spots.length <= 1}
-                        title={ARIA_LABELS.REMOVE_SPOT}
+                        aria-label={ARIA_LABELS.REMOVE_SPOT}
                       >
                         ✕
                       </Button>
