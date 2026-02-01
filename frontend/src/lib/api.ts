@@ -346,16 +346,13 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
       assertNonEmpty(planId, 'planId');
       assertNonEmpty(userId, 'userId');
       assertNonEmpty(spotId, 'spotId');
-      if (spotNote !== undefined && spotNote !== null) {
-        assertNonEmpty(spotNote, 'spotNote');
-      }
       assertNonEmptyFiles(files);
 
       const formData = new FormData();
       formData.append('planId', planId);
       formData.append('userId', userId);
       formData.append('spotId', spotId);
-      if (spotNote) {
+      if (spotNote?.trim()) {
         formData.append('spotNote', spotNote);
       }
       for (const file of files) {

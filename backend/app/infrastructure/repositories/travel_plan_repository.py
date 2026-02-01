@@ -113,6 +113,10 @@ class TravelPlanRepository(ITravelPlanRepository):
             self._session.delete(model)
             self._session.commit()
 
+    def begin_nested(self):
+        """ネストされたトランザクション（セーブポイント）を開始する."""
+        return self._session.begin_nested()
+
     def _to_entity(self, model: TravelPlanModel) -> TravelPlan:
         """SQLAlchemyモデル → ドメインエンティティ変換.
 

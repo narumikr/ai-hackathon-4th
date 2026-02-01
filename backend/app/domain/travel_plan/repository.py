@@ -1,6 +1,7 @@
 """TravelPlan Aggregateのリポジトリインターフェース"""
 
 from abc import ABC, abstractmethod
+from contextlib import AbstractContextManager
 
 from app.domain.travel_plan.entity import TravelPlan
 
@@ -56,4 +57,9 @@ class ITravelPlanRepository(ABC):
         Args:
             plan_id: 削除する旅行計画ID
         """
+        pass
+
+    @abstractmethod
+    def begin_nested(self) -> AbstractContextManager[None]:
+        """ネストされたトランザクション（セーブポイント）を開始する"""
         pass

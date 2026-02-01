@@ -15,7 +15,7 @@ from app.domain.travel_guide.value_objects import (
     HistoricalEvent,
     SpotDetail,
 )
-from app.domain.travel_plan.entity import TravelPlan
+from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
@@ -85,6 +85,75 @@ _FACT_EXTRACTION_PROMPT_TEMPLATE = "travel_guide_fact_extraction_prompt.txt"
 _TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
 _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_fact_extraction_system_instruction.txt"
 _TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
+
+
+def _normalize_spot_name(spot_name: str) -> str:
+    """スポット名を正規化する（空白文字のトリミングのみ）
+
+    Args:
+        spot_name: 正規化するスポット名
+
+    Returns:
+        正規化されたスポット名（前後の空白文字をトリミング）
+    """
+    return spot_name.strip()
+
+
+def _detect_new_spots(
+    spot_details: list[SpotDetail], existing_spots: list[TouristSpot]
+) -> list[str]:
+    """新規スポット名を検出する
+
+    spotDetailsから既存の旅行計画スポットに含まれない新規スポットを検出する。
+    spotDetails内の重複は最初の出現のみを保持する。
+
+    Args:
+        spot_details: AIが生成したスポット詳細リスト
+        existing_spots: 既存の旅行計画スポットリスト
+
+    Returns:
+        新規スポット名のリスト（spotDetailsの出現順序を保持）
+    """
+    # 既存スポット名を正規化してセットに格納
+    existing_normalized = {_normalize_spot_name(spot.name) for spot in existing_spots}
+
+    new_spot_names: list[str] = []
+    seen_new_normalized: set[str] = set()
+
+    for detail in spot_details:
+        normalized = _normalize_spot_name(detail.spot_name)
+        # 既存スポットに含まれず、かつ新規リストにも含まれない場合
+        if normalized not in existing_normalized and normalized not in seen_new_normalized:
+            new_spot_names.append(detail.spot_name)
+            seen_new_normalized.add(normalized)
+
+    return new_spot_names
+
+
+def _create_tourist_spots(new_spot_names: list[str]) -> list[TouristSpot]:
+    """新規スポット名からTouristSpotエンティティを作成する
+
+    Args:
+        new_spot_names: 新規スポット名のリスト
+
+    Returns:
+        TouristSpotエンティティのリスト
+    """
+    import uuid
+
+    new_spots: list[TouristSpot] = []
+
+    for spot_name in new_spot_names:
+        spot_id = str(uuid.uuid4())
+        new_spot = TouristSpot(
+            id=spot_id,
+            name=spot_name,
+            description=None,
+            user_notes=None,
+        )
+        new_spots.append(new_spot)
+
+    return new_spots
 
 
 def _require_str(value: object, field_name: str) -> str:
@@ -278,63 +347,79 @@ class GenerateTravelGuideUseCase:
         self._plan_repository.save(travel_plan, commit=commit)
 
         try:
-            # Step A: 事実抽出（出典候補付き）
-            fact_extraction_prompt = _build_fact_extraction_prompt(travel_plan)
-            extracted_facts = await self._ai_service.generate_with_search(
-                prompt=fact_extraction_prompt,
-                system_instruction=render_template(_FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE),
-            )
-            if not extracted_facts or not extracted_facts.strip():
-                raise ValueError("extracted_facts must be a non-empty string.")
-
-            # Step B: 構造化生成（Step Aの出力を使用）
-            guide_prompt = _build_travel_guide_prompt(travel_plan, extracted_facts)
-            response_schema = _build_travel_guide_schema()
-            structured = await self._ai_service.generate_structured_data(
-                prompt=guide_prompt,
-                response_schema=response_schema,
-                system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
-            )
-            if not isinstance(structured, dict):
-                raise ValueError("structured response must be a dict.")
-
-            overview = _require_str(structured.get("overview"), "overview")
-            _require_min_length(overview, "overview", 100)
-            timeline_items = _require_list(structured.get("timeline"), "timeline")
-            spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
-            checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
-
-            plan_spot_name_set = set(plan_spot_names)
-            spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
-            spot_detail_name_set = {detail.spot_name for detail in spot_details}
-            checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
-            allowed_related_spots_for_timeline = spot_detail_name_set | {travel_plan.destination}
-            timeline = _build_timeline(timeline_items, allowed_related_spots_for_timeline)
-
-            allowed_related_spots_for_compose = {travel_plan.destination}
-            generated_guide = self._composer.compose(
-                plan_id=travel_plan.id,
-                overview=overview,
-                timeline=timeline,
-                spot_details=spot_details,
-                checkpoints=checkpoints,
-                allowed_related_spots=allowed_related_spots_for_compose,
-            )
-
-            existing = self._guide_repository.find_by_plan_id(travel_plan.id)
-            if existing is None:
-                saved_guide = self._guide_repository.save(generated_guide, commit=commit)
-            else:
-                existing.update_guide(
-                    overview=generated_guide.overview,
-                    timeline=generated_guide.timeline,
-                    spot_details=generated_guide.spot_details,
-                    checkpoints=generated_guide.checkpoints,
+            with self._plan_repository.begin_nested():
+                # Step A: 事実抽出（出典候補付き）
+                fact_extraction_prompt = _build_fact_extraction_prompt(travel_plan)
+                extracted_facts = await self._ai_service.generate_with_search(
+                    prompt=fact_extraction_prompt,
+                    system_instruction=render_template(
+                        _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE
+                    ),
                 )
-                saved_guide = self._guide_repository.save(existing, commit=commit)
+                if not extracted_facts or not extracted_facts.strip():
+                    raise ValueError("extracted_facts must be a non-empty string.")
+
+                # Step B: 構造化生成（Step Aの出力を使用）
+                guide_prompt = _build_travel_guide_prompt(travel_plan, extracted_facts)
+                response_schema = _build_travel_guide_schema()
+                structured = await self._ai_service.generate_structured_data(
+                    prompt=guide_prompt,
+                    response_schema=response_schema,
+                    system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
+                )
+                if not isinstance(structured, dict):
+                    raise ValueError("structured response must be a dict.")
+
+                overview = _require_str(structured.get("overview"), "overview")
+                _require_min_length(overview, "overview", 100)
+                timeline_items = _require_list(structured.get("timeline"), "timeline")
+                spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
+                checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
+
+                plan_spot_name_set = set(plan_spot_names)
+                spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
+
+                # 新規スポット検出と追加
+                new_spot_names = _detect_new_spots(spot_details, travel_plan.spots)
+                if new_spot_names:
+                    new_spots = _create_tourist_spots(new_spot_names)
+                    updated_spots = travel_plan.spots + new_spots
+                    travel_plan.update_plan(spots=updated_spots)
+                    # commit=Falseで保存（最終的なステータス更新時に一括コミット）
+                    self._plan_repository.save(travel_plan, commit=False)
+
+                spot_detail_name_set = {detail.spot_name for detail in spot_details}
+                checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
+                allowed_related_spots_for_timeline = spot_detail_name_set | {
+                    travel_plan.destination
+                }
+                timeline = _build_timeline(timeline_items, allowed_related_spots_for_timeline)
+
+                allowed_related_spots_for_compose = {travel_plan.destination}
+                generated_guide = self._composer.compose(
+                    plan_id=travel_plan.id,
+                    overview=overview,
+                    timeline=timeline,
+                    spot_details=spot_details,
+                    checkpoints=checkpoints,
+                    allowed_related_spots=allowed_related_spots_for_compose,
+                )
+
+                existing = self._guide_repository.find_by_plan_id(travel_plan.id)
+                if existing is None:
+                    saved_guide = self._guide_repository.save(generated_guide, commit=False)
+                else:
+                    existing.update_guide(
+                        overview=generated_guide.overview,
+                        timeline=generated_guide.timeline,
+                        spot_details=generated_guide.spot_details,
+                        checkpoints=generated_guide.checkpoints,
+                    )
+                    saved_guide = self._guide_repository.save(existing, commit=False)
         except Exception:
-            travel_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
-            self._plan_repository.save(travel_plan, commit=commit)
+            failed_plan = self._plan_repository.find_by_id(travel_plan.id) or travel_plan
+            failed_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
+            self._plan_repository.save(failed_plan, commit=commit)
             raise
 
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
