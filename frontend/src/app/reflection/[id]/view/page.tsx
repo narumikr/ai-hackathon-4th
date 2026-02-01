@@ -1,6 +1,6 @@
 'use client';
 
-import { GenerationStatusView } from '@/components/features/common';
+import { ErrorDialog, GenerationStatusView } from '@/components/features/common';
 import { ReflectionViewer } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
 import { Button } from '@/components/ui';
@@ -68,13 +68,16 @@ export default function ReflectionViewPage() {
     return (
       <div className="py-8">
         <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
           <Link href="/reflection">
             <Button>{BUTTON_LABELS.BACK}</Button>
           </Link>
         </Container>
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={() => setError(null)}
+          title={MESSAGES.ERROR}
+          message={error || MESSAGES.TRAVEL_NOT_FOUND}
+        />
       </div>
     );
   }
@@ -98,13 +101,16 @@ export default function ReflectionViewPage() {
     return (
       <div className="py-8">
         <Container>
-          <div className="mb-6 rounded-lg border border-warning-200 bg-warning-50 p-4 text-warning-800">
-            {MESSAGES.REFLECTION_NOT_FOUND}
-          </div>
           <Link href="/reflection">
             <Button>{BUTTON_LABELS.BACK}</Button>
           </Link>
         </Container>
+        <ErrorDialog
+          isOpen={true}
+          onClose={() => setError(null)}
+          title={MESSAGES.ERROR}
+          message={MESSAGES.REFLECTION_NOT_FOUND}
+        />
       </div>
     );
   }

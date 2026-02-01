@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorDialog } from '@/components/features/common';
 import { Container } from '@/components/layout';
 import { Button, Icon, LoadingSpinner } from '@/components/ui';
 import {

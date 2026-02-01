@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorDialog } from '@/components/features/common';
 import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
 import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
@@ -81,13 +82,16 @@ export default function ReflectionDetailPage() {
     return (
       <div className="py-8">
         <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
           <Link href="/reflection">
             <Button>{BUTTON_LABELS.BACK}</Button>
           </Link>
         </Container>
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={() => setError(null)}
+          title={MESSAGES.ERROR}
+          message={error || MESSAGES.TRAVEL_NOT_FOUND}
+        />
       </div>
     );
   }

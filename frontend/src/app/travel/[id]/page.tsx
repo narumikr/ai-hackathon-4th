@@ -34,7 +34,6 @@ export default function TravelGuidePage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-  const [errorDialogMessage, setErrorDialogMessage] = useState<string | null>(null);
 
   const fetchTravelPlan = useCallback(
     async (isRefresh = false) => {
@@ -113,7 +112,7 @@ export default function TravelGuidePage() {
     } catch (err) {
       const apiError = toApiError(err);
       setIsDeleteModalOpen(false);
-      setErrorDialogMessage(ERROR_ALERTS.DELETE_FAILED(apiError.message));
+      setError(ERROR_ALERTS.DELETE_FAILED(apiError.message));
       console.error('Failed to delete travel plan:', apiError);
     } finally {
       setIsDeleting(false);
@@ -125,7 +124,7 @@ export default function TravelGuidePage() {
   };
 
   const handleErrorDialogClose = () => {
-    setErrorDialogMessage(null);
+    setError(null);
   };
 
   const handleComplete = async () => {
@@ -143,7 +142,7 @@ export default function TravelGuidePage() {
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
-      setErrorDialogMessage(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
+      setError(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
       console.error('Failed to complete travel plan:', apiError);
     } finally {
       setIsCompleting(false);
@@ -198,16 +197,21 @@ export default function TravelGuidePage() {
     );
   }
 
-  if (error || !travel) {
+  if (!travel) {
     return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
-          <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
-        </Container>
-      </div>
+      <>
+        <div className="py-8">
+          <Container>
+            <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
+          </Container>
+        </div>
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={() => setError(null)}
+          title={MESSAGES.ERROR}
+          message={error || MESSAGES.TRAVEL_NOT_FOUND}
+        />
+      </>
     );
   }
 
@@ -451,10 +455,10 @@ export default function TravelGuidePage() {
 
         {/* Error Dialog */}
         <ErrorDialog
-          isOpen={errorDialogMessage !== null}
+          isOpen={!!error}
           onClose={handleErrorDialogClose}
           title={MESSAGES.ERROR}
-          message={errorDialogMessage ?? ''}
+          message={error || ''}
         />
       </Container>
     </div>
