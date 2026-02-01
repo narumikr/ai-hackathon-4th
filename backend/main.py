@@ -1,5 +1,6 @@
 """FastAPI application entry point"""
 
+import logging
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -8,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.config.logging import setup_logging
 from app.config.settings import get_settings
 from app.interfaces.api.v1 import reflections, travel_guides, travel_plans, uploads
 from app.interfaces.middleware import (
@@ -17,22 +19,27 @@ from app.interfaces.middleware import (
     validation_exception_handler,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """アプリケーションのライフサイクル管理"""
+    # ロギング設定の初期化
+    setup_logging()
+
     # 起動時の処理
-    print("Starting up...")
+    logger.info("Starting up...")
 
     # Google Cloud認証情報の環境変数を設定
     settings = get_settings()
     if settings.google_application_credentials:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.google_application_credentials
-        print("Set GOOGLE_APPLICATION_CREDENTIALS.")
+        logger.info("Set GOOGLE_APPLICATION_CREDENTIALS.")
 
     yield
     # 終了時の処理
-    print("Shutting down...")
+    logger.info("Shutting down...")
 
 
 # 設定の読み込み
