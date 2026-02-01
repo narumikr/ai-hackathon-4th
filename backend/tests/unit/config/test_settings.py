@@ -1,4 +1,4 @@
-"""Settings設定のユニットテスト.
+"""Settings設定のユニットテスト
 
 Requirements 4.2: debug=True の場合は DEBUG レベル
 Requirements 4.3: debug=False の場合は INFO レベル以上
@@ -10,7 +10,7 @@ from app.config.settings import Settings
 
 
 class TestGetEffectiveLogLevel:
-    """get_effective_log_level()メソッドのテスト.
+    """get_effective_log_level()メソッドのテスト
 
     Requirements:
     - 4.2: WHEN debug mode is enabled THEN the Logger SHALL output DEBUG level messages
@@ -18,7 +18,7 @@ class TestGetEffectiveLogLevel:
     """
 
     def test_returns_debug_when_debug_is_true(self) -> None:
-        """debug=Trueの場合、DEBUGレベルが返されること.
+        """debug=Trueの場合、DEBUGレベルが返されること
 
         **Validates: Requirements 4.2**
         """
@@ -32,7 +32,7 @@ class TestGetEffectiveLogLevel:
         assert result == "DEBUG", "debug=Trueの場合、DEBUGレベルが返されること"
 
     def test_returns_info_when_debug_is_false(self) -> None:
-        """debug=Falseの場合、INFOレベルが返されること.
+        """debug=Falseの場合、INFOレベルが返されること
 
         **Validates: Requirements 4.3**
         """
@@ -46,7 +46,7 @@ class TestGetEffectiveLogLevel:
         assert result == "INFO", "debug=Falseの場合、INFOレベルが返されること"
 
     def test_returns_configured_log_level_when_debug_is_false(self) -> None:
-        """debug=Falseの場合、設定されたlog_levelが返されること.
+        """debug=Falseの場合、設定されたlog_levelが返されること
 
         **Validates: Requirements 4.3**
         """
@@ -61,7 +61,7 @@ class TestGetEffectiveLogLevel:
         assert result == "WARNING", "debug=Falseの場合、設定されたlog_levelが返されること"
 
     def test_debug_true_overrides_configured_log_level(self) -> None:
-        """debug=Trueの場合、設定されたlog_levelに関係なくDEBUGが返されること.
+        """debug=Trueの場合、設定されたlog_levelに関係なくDEBUGが返されること
 
         **Validates: Requirements 4.2**
         """
@@ -76,7 +76,7 @@ class TestGetEffectiveLogLevel:
         assert result == "DEBUG", "debug=Trueの場合、log_level設定に関係なくDEBUGが返されること"
 
     def test_default_log_level_is_info(self) -> None:
-        """デフォルトのlog_levelがINFOであること.
+        """デフォルトのlog_levelがINFOであること
 
         **Validates: Requirements 4.3**
         """
