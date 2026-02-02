@@ -64,7 +64,7 @@ describe('ErrorDialog', () => {
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
-    it('calls onClose only once per click', () => {
+    it('calls onClose for each click', () => {
       render(<ErrorDialog {...defaultProps} />);
 
       const button = screen.getByText(BUTTON_LABELS.CLOSE);
@@ -244,9 +244,10 @@ describe('ErrorDialog', () => {
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
-    it('calls onClose when overlay is clicked', () => {
+    it('calls onClose when clicking outside the content (overlay click)', () => {
       render(<ErrorDialog {...defaultProps} />);
 
+      // The dialog role is on the overlay element
       fireEvent.click(screen.getByRole('dialog'));
 
       expect(mockOnClose).toHaveBeenCalledTimes(1);
