@@ -65,15 +65,11 @@ vi.mock('@/components/features/reflection', () => ({
       {spot.isAdded && <span data-testid={`added-marker-${spot.id}`}>追加済み</span>}
     </div>
   ),
-  SpotAdder: () => (
-    <div data-testid="spot-adder">スポット追加エリア</div>
-  ),
+  SpotAdder: () => <div data-testid="spot-adder">スポット追加エリア</div>,
 }));
 
 // テスト用のモックデータ
-const createMockTravelPlan = (
-  overrides: Partial<TravelPlanResponse> = {}
-): TravelPlanResponse => ({
+const createMockTravelPlan = (overrides: Partial<TravelPlanResponse> = {}): TravelPlanResponse => ({
   id: 'test-plan-id',
   userId: 'user-1',
   title: '京都歴史探訪の旅',
@@ -112,9 +108,7 @@ describe('ReflectionDetailPage', () => {
           screen.getByRole('heading', { name: PAGE_TITLES.REFLECTION_CREATE })
         ).toBeInTheDocument();
       });
-      expect(
-        screen.getByText(PAGE_DESCRIPTIONS.REFLECTION_CREATE)
-      ).toBeInTheDocument();
+      expect(screen.getByText(PAGE_DESCRIPTIONS.REFLECTION_CREATE)).toBeInTheDocument();
     });
 
     it('戻るボタンが表示される', async () => {
@@ -126,9 +120,7 @@ describe('ReflectionDetailPage', () => {
 
       // 検証: 戻るボタンが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
       });
     });
 
@@ -200,9 +192,7 @@ describe('ReflectionDetailPage', () => {
 
       // 検証: キャンセルボタンが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.CANCEL })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.CANCEL })).toBeInTheDocument();
       });
     });
   });
@@ -232,9 +222,7 @@ describe('ReflectionDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText('旅行計画が見つかりません')).toBeInTheDocument();
       });
-      expect(
-        screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
     });
   });
 
@@ -367,9 +355,7 @@ describe('ReflectionDetailPage', () => {
 
       // 検証: 戻るボタンが正しいパスを持つ
       await waitFor(() => {
-        const backLink = screen
-          .getByRole('button', { name: BUTTON_LABELS.BACK })
-          .closest('a');
+        const backLink = screen.getByRole('button', { name: BUTTON_LABELS.BACK }).closest('a');
         expect(backLink).toHaveAttribute('href', '/reflection');
       });
     });
@@ -383,9 +369,7 @@ describe('ReflectionDetailPage', () => {
 
       // 検証: キャンセルボタンが正しいパスを持つ
       await waitFor(() => {
-        const cancelLink = screen
-          .getByRole('button', { name: BUTTON_LABELS.CANCEL })
-          .closest('a');
+        const cancelLink = screen.getByRole('button', { name: BUTTON_LABELS.CANCEL }).closest('a');
         expect(cancelLink).toHaveAttribute('href', '/reflection');
       });
     });

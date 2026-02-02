@@ -69,9 +69,7 @@ describe('ReflectionListPage', () => {
           screen.getByRole('heading', { name: PAGE_TITLES.REFLECTION_LIST })
         ).toBeInTheDocument();
       });
-      expect(
-        screen.getByText(PAGE_DESCRIPTIONS.REFLECTION_LIST)
-      ).toBeInTheDocument();
+      expect(screen.getByText(PAGE_DESCRIPTIONS.REFLECTION_LIST)).toBeInTheDocument();
     });
 
     it('更新ボタンが表示される', async () => {
@@ -83,9 +81,7 @@ describe('ReflectionListPage', () => {
 
       // 検証: 更新ボタンが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.UPDATE })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.UPDATE })).toBeInTheDocument();
       });
     });
 
@@ -122,9 +118,7 @@ describe('ReflectionListPage', () => {
   describe('空状態', () => {
     it('完了した旅行がない場合は空メッセージが表示される', async () => {
       // 準備: APIが空の配列を返す（または計画中のみ）
-      mockListTravelPlans.mockResolvedValue([
-        createMockTravelPlan({ status: 'planning' }),
-      ]);
+      mockListTravelPlans.mockResolvedValue([createMockTravelPlan({ status: 'planning' })]);
 
       // 実行: コンポーネントをレンダリング
       render(<ReflectionListPage />);
@@ -233,9 +227,7 @@ describe('ReflectionListPage', () => {
 
       // 検証: 生成中表示される
       await waitFor(() => {
-        const processingElements = screen.getAllByText(
-          STATUS_LABELS.REFLECTION_PROCESSING
-        );
+        const processingElements = screen.getAllByText(STATUS_LABELS.REFLECTION_PROCESSING);
         expect(processingElements.length).toBeGreaterThan(0);
       });
     });
@@ -254,9 +246,7 @@ describe('ReflectionListPage', () => {
 
       // 検証: 失敗バッジが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(STATUS_LABELS.GENERATION_FAILED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(STATUS_LABELS.GENERATION_FAILED)).toBeInTheDocument();
       });
     });
   });
@@ -264,12 +254,8 @@ describe('ReflectionListPage', () => {
   describe('一覧更新', () => {
     it('更新ボタンをクリックすると一覧が再取得される', async () => {
       // 準備: APIが旅行計画を返す
-      const initialTravels = [
-        createMockTravelPlan({ title: '初期の旅行' }),
-      ];
-      const updatedTravels = [
-        createMockTravelPlan({ title: '更新後の旅行' }),
-      ];
+      const initialTravels = [createMockTravelPlan({ title: '初期の旅行' })];
+      const updatedTravels = [createMockTravelPlan({ title: '更新後の旅行' })];
       mockListTravelPlans
         .mockResolvedValueOnce(initialTravels)
         .mockResolvedValueOnce(updatedTravels);

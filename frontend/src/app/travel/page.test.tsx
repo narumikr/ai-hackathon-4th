@@ -63,13 +63,9 @@ describe('TravelListPage', () => {
 
       // 検証: タイトルと説明が表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('heading', { name: PAGE_TITLES.TRAVEL_LIST })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: PAGE_TITLES.TRAVEL_LIST })).toBeInTheDocument();
       });
-      expect(
-        screen.getByText(PAGE_DESCRIPTIONS.TRAVEL_LIST)
-      ).toBeInTheDocument();
+      expect(screen.getByText(PAGE_DESCRIPTIONS.TRAVEL_LIST)).toBeInTheDocument();
     });
 
     it('新規作成ボタンが表示される', async () => {
@@ -92,9 +88,7 @@ describe('TravelListPage', () => {
   describe('ローディング状態', () => {
     it('データ取得中はローディングメッセージが表示される', () => {
       // 準備: APIが解決しないPromiseを返す（ローディング状態を維持）
-      mockListTravelPlans.mockImplementation(
-        () => new Promise(() => {})
-      );
+      mockListTravelPlans.mockImplementation(() => new Promise(() => {}));
 
       // 実行: コンポーネントをレンダリング
       render(<TravelListPage />);
@@ -153,9 +147,7 @@ describe('TravelListPage', () => {
 
     it('計画中ステータスのラベルが正しく表示される', async () => {
       // 準備: 計画中の旅行計画を返す
-      const mockTravels = [
-        createMockTravelPlan({ status: 'planning' }),
-      ];
+      const mockTravels = [createMockTravelPlan({ status: 'planning' })];
       mockListTravelPlans.mockResolvedValue(mockTravels);
 
       // 実行: コンポーネントをレンダリング
@@ -169,9 +161,7 @@ describe('TravelListPage', () => {
 
     it('完了ステータスのラベルが正しく表示される', async () => {
       // 準備: 完了した旅行計画を返す
-      const mockTravels = [
-        createMockTravelPlan({ status: 'completed' }),
-      ];
+      const mockTravels = [createMockTravelPlan({ status: 'completed' })];
       mockListTravelPlans.mockResolvedValue(mockTravels);
 
       // 実行: コンポーネントをレンダリング
@@ -185,9 +175,7 @@ describe('TravelListPage', () => {
 
     it('生成失敗バッジが表示される', async () => {
       // 準備: 生成失敗の旅行計画を返す
-      const mockTravels = [
-        createMockTravelPlan({ guideGenerationStatus: 'failed' }),
-      ];
+      const mockTravels = [createMockTravelPlan({ guideGenerationStatus: 'failed' })];
       mockListTravelPlans.mockResolvedValue(mockTravels);
 
       // 実行: コンポーネントをレンダリング
@@ -195,17 +183,13 @@ describe('TravelListPage', () => {
 
       // 検証: 生成失敗バッジが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(STATUS_LABELS.GENERATION_FAILED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(STATUS_LABELS.GENERATION_FAILED)).toBeInTheDocument();
       });
     });
 
     it('生成中の場合は詳細ボタンが無効になる', async () => {
       // 準備: 生成中の旅行計画を返す
-      const mockTravels = [
-        createMockTravelPlan({ guideGenerationStatus: 'processing' }),
-      ];
+      const mockTravels = [createMockTravelPlan({ guideGenerationStatus: 'processing' })];
       mockListTravelPlans.mockResolvedValue(mockTravels);
 
       // 実行: コンポーネントをレンダリング
@@ -252,9 +236,7 @@ describe('TravelListPage', () => {
   describe('エラー状態', () => {
     it('API呼び出しが失敗した場合エラーダイアログが表示される', async () => {
       // 準備: APIがエラーをスローする
-      mockListTravelPlans.mockRejectedValue(
-        new Error('ネットワークエラー')
-      );
+      mockListTravelPlans.mockRejectedValue(new Error('ネットワークエラー'));
 
       // 実行: コンポーネントをレンダリング
       render(<TravelListPage />);
@@ -269,12 +251,8 @@ describe('TravelListPage', () => {
   describe('一覧更新', () => {
     it('更新ボタンをクリックすると一覧が再取得される', async () => {
       // 準備: APIが旅行計画を返す
-      const initialTravels = [
-        createMockTravelPlan({ title: '初期の旅行' }),
-      ];
-      const updatedTravels = [
-        createMockTravelPlan({ title: '更新後の旅行' }),
-      ];
+      const initialTravels = [createMockTravelPlan({ title: '初期の旅行' })];
+      const updatedTravels = [createMockTravelPlan({ title: '更新後の旅行' })];
       mockListTravelPlans
         .mockResolvedValueOnce(initialTravels)
         .mockResolvedValueOnce(updatedTravels);
@@ -304,9 +282,7 @@ describe('TravelListPage', () => {
   describe('ナビゲーション', () => {
     it('詳細ボタンのリンクが正しいパスを持つ', async () => {
       // 準備: APIが旅行計画を返す
-      const mockTravels = [
-        createMockTravelPlan({ id: 'test-plan-id' }),
-      ];
+      const mockTravels = [createMockTravelPlan({ id: 'test-plan-id' })];
       mockListTravelPlans.mockResolvedValue(mockTravels);
 
       // 実行: コンポーネントをレンダリング
@@ -337,9 +313,7 @@ describe('TravelListPage', () => {
 
       // 検証: 編集リンクが正しいパスを持つ
       await waitFor(() => {
-        const editLink = screen
-          .getByRole('button', { name: BUTTON_LABELS.EDIT })
-          .closest('a');
+        const editLink = screen.getByRole('button', { name: BUTTON_LABELS.EDIT }).closest('a');
         expect(editLink).toHaveAttribute('href', '/travel/test-plan-id/edit');
       });
     });
@@ -354,7 +328,7 @@ describe('TravelListPage', () => {
       // 検証: 新規作成リンクが正しいパスを持つ
       await waitFor(() => {
         const createLinks = screen.getAllByRole('link');
-        const newTravelLink = createLinks.find((link) =>
+        const newTravelLink = createLinks.find(link =>
           link.getAttribute('href')?.includes('/travel/new')
         );
         expect(newTravelLink).toHaveAttribute('href', '/travel/new');

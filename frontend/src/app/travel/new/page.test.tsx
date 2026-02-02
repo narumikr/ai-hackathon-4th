@@ -55,12 +55,8 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       // 検証: タイトルと説明が表示される
-      expect(
-        screen.getByRole('heading', { name: PAGE_TITLES.TRAVEL_NEW })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(PAGE_DESCRIPTIONS.TRAVEL_NEW)
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: PAGE_TITLES.TRAVEL_NEW })).toBeInTheDocument();
+      expect(screen.getByText(PAGE_DESCRIPTIONS.TRAVEL_NEW)).toBeInTheDocument();
     });
 
     it('フォーム項目が表示される', () => {
@@ -78,12 +74,8 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       // 検証: プレースホルダーが表示される
-      expect(
-        screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE)
-      ).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION)
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION)).toBeInTheDocument();
     });
 
     it('初期状態で3つのスポット入力欄が表示される', () => {
@@ -120,9 +112,7 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       // 検証: ボタンが表示される
-      expect(
-        screen.getByRole('button', { name: BUTTON_LABELS.CANCEL })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: BUTTON_LABELS.CANCEL })).toBeInTheDocument();
       expect(
         screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_GUIDE })
       ).toBeInTheDocument();
@@ -143,9 +133,7 @@ describe('TravelNewPage', () => {
     it('目的地を入力できる', () => {
       // 実行: コンポーネントをレンダリングして入力
       render(<TravelNewPage />);
-      const destinationInput = screen.getByPlaceholderText(
-        PLACEHOLDERS.DESTINATION
-      );
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
       typeInInput(destinationInput, '京都府');
 
       // 検証: 入力値が反映される
@@ -209,9 +197,7 @@ describe('TravelNewPage', () => {
         name: ARIA_LABELS.REMOVE_SPOT,
       });
       fireEvent.click(removeButtons[0]);
-      fireEvent.click(
-        screen.getAllByRole('button', { name: ARIA_LABELS.REMOVE_SPOT })[0]
-      );
+      fireEvent.click(screen.getAllByRole('button', { name: ARIA_LABELS.REMOVE_SPOT })[0]);
 
       // 検証: 残りの削除ボタンが無効
       const lastRemoveButton = screen.getByRole('button', {
@@ -225,9 +211,7 @@ describe('TravelNewPage', () => {
     it('タイトルが空の場合はエラーツールチップが表示される', async () => {
       // 実行: コンポーネントをレンダリングし、目的地のみ入力して送信
       render(<TravelNewPage />);
-      const destinationInput = screen.getByPlaceholderText(
-        PLACEHOLDERS.DESTINATION
-      );
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
       typeInInput(destinationInput, '京都府');
 
       const submitButton = screen.getByRole('button', {
@@ -237,9 +221,7 @@ describe('TravelNewPage', () => {
 
       // 検証: タイトルエラーが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)).toBeInTheDocument();
       });
     });
 
@@ -256,9 +238,7 @@ describe('TravelNewPage', () => {
 
       // 検証: 目的地エラーが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(TOOLTIP_MESSAGES.DESTINATION_REQUIRED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(TOOLTIP_MESSAGES.DESTINATION_REQUIRED)).toBeInTheDocument();
       });
     });
 
@@ -272,9 +252,7 @@ describe('TravelNewPage', () => {
 
       // 検証: エラーが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)).toBeInTheDocument();
       });
 
       // 実行: タイトルを入力
@@ -283,9 +261,7 @@ describe('TravelNewPage', () => {
 
       // 検証: タイトルエラーが消える
       await waitFor(() => {
-        expect(
-          screen.queryByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)).not.toBeInTheDocument();
       });
     });
   });
@@ -300,9 +276,7 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       const titleInput = screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE);
-      const destinationInput = screen.getByPlaceholderText(
-        PLACEHOLDERS.DESTINATION
-      );
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
       const spotInputs = screen.getAllByPlaceholderText(PLACEHOLDERS.SPOT_1);
 
       typeInInput(titleInput, '京都歴史探訪の旅');
@@ -345,9 +319,7 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       const titleInput = screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE);
-      const destinationInput = screen.getByPlaceholderText(
-        PLACEHOLDERS.DESTINATION
-      );
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
 
       typeInInput(titleInput, '京都歴史探訪の旅');
       typeInInput(destinationInput, '京都府');
@@ -373,8 +345,7 @@ describe('TravelNewPage', () => {
     it('送信中はボタンが無効になりローディング表示される', async () => {
       // 準備: APIモック（遅延させる）
       mockCreateTravelPlan.mockImplementation(
-        () =>
-          new Promise((resolve) => setTimeout(() => resolve({ id: 'id' }), 100))
+        () => new Promise(resolve => setTimeout(() => resolve({ id: 'id' }), 100))
       );
       mockGenerateTravelGuide.mockResolvedValue({});
 
@@ -382,9 +353,7 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       const titleInput = screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE);
-      const destinationInput = screen.getByPlaceholderText(
-        PLACEHOLDERS.DESTINATION
-      );
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
 
       typeInInput(titleInput, 'テスト旅行');
       typeInInput(destinationInput, 'テスト目的地');
@@ -395,12 +364,8 @@ describe('TravelNewPage', () => {
       fireEvent.click(submitButton);
 
       // 検証: ローディング状態
-      expect(
-        screen.getByRole('button', { name: MESSAGES.LOADING })
-      ).toBeDisabled();
-      expect(
-        screen.getByRole('button', { name: BUTTON_LABELS.CANCEL })
-      ).toBeDisabled();
+      expect(screen.getByRole('button', { name: MESSAGES.LOADING })).toBeDisabled();
+      expect(screen.getByRole('button', { name: BUTTON_LABELS.CANCEL })).toBeDisabled();
 
       // 待機: 処理完了
       await waitFor(() => {
@@ -418,9 +383,7 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       const titleInput = screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE);
-      const destinationInput = screen.getByPlaceholderText(
-        PLACEHOLDERS.DESTINATION
-      );
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
 
       typeInInput(titleInput, 'テスト旅行');
       typeInInput(destinationInput, 'テスト目的地');
@@ -445,9 +408,7 @@ describe('TravelNewPage', () => {
       render(<TravelNewPage />);
 
       const titleInput = screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE);
-      const destinationInput = screen.getByPlaceholderText(
-        PLACEHOLDERS.DESTINATION
-      );
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
 
       typeInInput(titleInput, 'テスト旅行');
       typeInInput(destinationInput, 'テスト目的地');

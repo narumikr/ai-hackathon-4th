@@ -42,9 +42,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 // テスト用のモックデータ
-const createMockTravelPlan = (
-  overrides: Partial<TravelPlanResponse> = {}
-): TravelPlanResponse => ({
+const createMockTravelPlan = (overrides: Partial<TravelPlanResponse> = {}): TravelPlanResponse => ({
   id: 'test-plan-id',
   userId: 'demo-user',
   title: '京都歴史探訪の旅',
@@ -94,9 +92,7 @@ describe('TravelEditPage', () => {
 
       // 検証: タイトルが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('heading', { name: PAGE_TITLES.TRAVEL_EDIT })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: PAGE_TITLES.TRAVEL_EDIT })).toBeInTheDocument();
       });
     });
 
@@ -124,9 +120,7 @@ describe('TravelEditPage', () => {
 
       // 検証: 既存のタイトルと目的地が入力欄に表示される
       await waitFor(() => {
-        expect(
-          screen.getByDisplayValue('京都歴史探訪の旅')
-        ).toBeInTheDocument();
+        expect(screen.getByDisplayValue('京都歴史探訪の旅')).toBeInTheDocument();
       });
       expect(screen.getByDisplayValue('京都府')).toBeInTheDocument();
     });
@@ -154,13 +148,9 @@ describe('TravelEditPage', () => {
 
       // 検証: ボタンが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
       });
-      expect(
-        screen.getByRole('button', { name: BUTTON_LABELS.UPDATE })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: BUTTON_LABELS.UPDATE })).toBeInTheDocument();
     });
   });
 
@@ -294,9 +284,7 @@ describe('TravelEditPage', () => {
 
       // 検証: エラーが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(TOOLTIP_MESSAGES.TITLE_REQUIRED)).toBeInTheDocument();
       });
     });
 
@@ -323,9 +311,7 @@ describe('TravelEditPage', () => {
 
       // 検証: エラーが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(TOOLTIP_MESSAGES.DESTINATION_REQUIRED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(TOOLTIP_MESSAGES.DESTINATION_REQUIRED)).toBeInTheDocument();
       });
     });
   });
@@ -379,10 +365,7 @@ describe('TravelEditPage', () => {
       // 準備: APIモック（遅延させる）
       mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
       mockUpdateTravelPlan.mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve({ id: 'test-plan-id' }), 100)
-          )
+        () => new Promise(resolve => setTimeout(() => resolve({ id: 'test-plan-id' }), 100))
       );
       mockGenerateTravelGuide.mockResolvedValue({});
 
@@ -401,12 +384,8 @@ describe('TravelEditPage', () => {
       fireEvent.click(updateButton);
 
       // 検証: ローディング状態
-      expect(
-        screen.getByRole('button', { name: MESSAGES.LOADING })
-      ).toBeDisabled();
-      expect(
-        screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-      ).toBeDisabled();
+      expect(screen.getByRole('button', { name: MESSAGES.LOADING })).toBeDisabled();
+      expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeDisabled();
 
       // 待機: 処理完了
       await waitFor(() => {
@@ -425,9 +404,7 @@ describe('TravelEditPage', () => {
 
       // 検証: 戻るボタンが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
       });
     });
 
@@ -467,9 +444,7 @@ describe('TravelEditPage', () => {
 
       // 検証: データが読み込まれるのを待つ
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
       });
 
       // 実行: 戻るボタンをクリック

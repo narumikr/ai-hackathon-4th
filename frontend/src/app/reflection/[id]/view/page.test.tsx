@@ -91,7 +91,7 @@ vi.mock('@/components/features/reflection', () => ({
     <div data-testid="reflection-viewer">
       <span data-testid="travel-title">{travel.title}</span>
       <span data-testid="travel-summary">{pamphlet.travelSummary}</span>
-      {pamphlet.spotReflections.map((spot) => (
+      {pamphlet.spotReflections.map(spot => (
         <div key={spot.spotName} data-testid={`spot-${spot.spotName}`}>
           <span>{spot.spotName}</span>
           <span>{spot.reflection}</span>
@@ -110,7 +110,8 @@ vi.mock('@/components/features/reflection', () => ({
 const createMockPamphlet = (
   overrides: Partial<ReflectionPamphletResponse> = {}
 ): ReflectionPamphletResponse => ({
-  travelSummary: '京都での素晴らしい歴史探訪でした。金閣寺と清水寺を巡り、日本の歴史と文化を深く学びました。',
+  travelSummary:
+    '京都での素晴らしい歴史探訪でした。金閣寺と清水寺を巡り、日本の歴史と文化を深く学びました。',
   spotReflections: [
     {
       spotName: '金閣寺',
@@ -129,9 +130,7 @@ const createMockPamphlet = (
   ...overrides,
 });
 
-const createMockTravelPlan = (
-  overrides: Partial<TravelPlanResponse> = {}
-): TravelPlanResponse => ({
+const createMockTravelPlan = (overrides: Partial<TravelPlanResponse> = {}): TravelPlanResponse => ({
   id: 'test-plan-id',
   userId: 'user-1',
   title: '京都歴史探訪の旅',
@@ -181,9 +180,7 @@ describe('ReflectionViewPage', () => {
       await waitFor(() => {
         expect(screen.getByTestId('error-dialog')).toHaveTextContent('旅行計画が見つかりません');
       });
-      expect(
-        screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
     });
 
     it('振り返りが見つからない場合エラーダイアログが表示される', async () => {
@@ -280,9 +277,7 @@ describe('ReflectionViewPage', () => {
 
       // 検証: 戻るボタンが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
       });
     });
 
@@ -350,7 +345,9 @@ describe('ReflectionViewPage', () => {
 
       // 検証: 提案が表示される
       await waitFor(() => {
-        expect(screen.getByTestId('suggestion-0')).toHaveTextContent('奈良の東大寺を訪れて大仏を見る');
+        expect(screen.getByTestId('suggestion-0')).toHaveTextContent(
+          '奈良の東大寺を訪れて大仏を見る'
+        );
       });
       expect(screen.getByTestId('suggestion-1')).toHaveTextContent('姫路城で城郭建築を学ぶ');
       expect(screen.getByTestId('suggestion-2')).toHaveTextContent('伏見稲荷大社の千本鳥居を歩く');
@@ -367,9 +364,7 @@ describe('ReflectionViewPage', () => {
 
       // 検証: 戻るボタンが正しいパスを持つ
       await waitFor(() => {
-        const backLink = screen
-          .getByRole('button', { name: BUTTON_LABELS.BACK })
-          .closest('a');
+        const backLink = screen.getByRole('button', { name: BUTTON_LABELS.BACK }).closest('a');
         expect(backLink).toHaveAttribute('href', '/reflection');
       });
     });

@@ -54,9 +54,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 // テスト用のモックデータ
-const createMockTravelPlan = (
-  overrides: Partial<TravelPlanResponse> = {}
-): TravelPlanResponse => ({
+const createMockTravelPlan = (overrides: Partial<TravelPlanResponse> = {}): TravelPlanResponse => ({
   id: 'test-plan-id',
   userId: 'demo-user',
   title: '京都歴史探訪の旅',
@@ -279,9 +277,7 @@ describe('TravelGuidePage', () => {
         ).toBeInTheDocument();
       });
 
-      fireEvent.click(
-        screen.getByRole('button', { name: BUTTON_LABELS.RETRY_GENERATE_GUIDE })
-      );
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.RETRY_GENERATE_GUIDE }));
 
       // 検証: APIが呼ばれ、一覧に戻る
       await waitFor(() => {
@@ -318,9 +314,7 @@ describe('TravelGuidePage', () => {
 
       // 検証: 編集ボタンが表示される
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.EDIT })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.EDIT })).toBeInTheDocument();
       });
     });
 
@@ -339,9 +333,7 @@ describe('TravelGuidePage', () => {
         ).toBeInTheDocument();
       });
 
-      fireEvent.click(
-        screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE })
-      );
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE }));
 
       // 検証: APIが呼ばれる
       await waitFor(() => {
@@ -426,9 +418,7 @@ describe('TravelGuidePage', () => {
 
       // 検証: 削除ボタンをクリック
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.DELETE })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.DELETE })).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.DELETE }));
@@ -449,9 +439,7 @@ describe('TravelGuidePage', () => {
 
       // 実行: 削除ボタンをクリック
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.DELETE })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.DELETE })).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.DELETE }));
@@ -485,9 +473,7 @@ describe('TravelGuidePage', () => {
 
       // 実行: 削除ボタンをクリック
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.DELETE })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.DELETE })).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.DELETE }));
@@ -502,9 +488,7 @@ describe('TravelGuidePage', () => {
 
       // 検証: モーダルが閉じる
       await waitFor(() => {
-        expect(
-          screen.queryByText(CONFIRMATION_MESSAGES.DELETE_TRAVEL)
-        ).not.toBeInTheDocument();
+        expect(screen.queryByText(CONFIRMATION_MESSAGES.DELETE_TRAVEL)).not.toBeInTheDocument();
       });
     });
   });
@@ -519,9 +503,7 @@ describe('TravelGuidePage', () => {
 
       // 検証: 戻るボタンをクリック
       await waitFor(() => {
-        expect(
-          screen.getByRole('button', { name: BUTTON_LABELS.BACK })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.BACK }));
@@ -539,9 +521,7 @@ describe('TravelGuidePage', () => {
 
       // 検証: 編集リンクが正しいパスを持つ
       await waitFor(() => {
-        const editLink = screen
-          .getByRole('button', { name: BUTTON_LABELS.EDIT })
-          .closest('a');
+        const editLink = screen.getByRole('button', { name: BUTTON_LABELS.EDIT }).closest('a');
         expect(editLink).toHaveAttribute('href', '/travel/test-plan-id/edit');
       });
     });
