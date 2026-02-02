@@ -69,7 +69,7 @@ export default function TravelEditPage() {
     };
 
     fetchTravelPlan();
-  }, [id]);
+  }, [id, componentId]);
 
   const handleBack = () => {
     router.push('/travel');
@@ -172,7 +172,6 @@ export default function TravelEditPage() {
         <ErrorDialog
           isOpen={!!error}
           onClose={() => setError(null)}
-            
           title={MESSAGES.ERROR}
           message={error || MESSAGES.TRAVEL_NOT_FOUND}
         />

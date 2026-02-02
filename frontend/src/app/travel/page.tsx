@@ -2,11 +2,10 @@
 
 import { ErrorDialog } from '@/components/features/common';
 import { Container } from '@/components/layout';
-import { Button, Icon } from '@/components/ui';
+import { Button } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
-  EMOJI_LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
