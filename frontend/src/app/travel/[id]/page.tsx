@@ -184,6 +184,9 @@ export default function TravelGuidePage() {
               <p className="text-lg text-neutral-600">{travel.destination}</p>
               <p className="mt-2 text-neutral-500 text-sm">
                 {DATE_LABELS.CREATED_DATE} {formatDate(travel.createdAt)}
+                <span className="ml-4">
+                  {DATE_LABELS.UPDATED_DATE} {formatDate(travel.updatedAt)}
+                </span>
               </p>
             </div>
             {!isCompleted && (
