@@ -110,10 +110,10 @@ export default function ReflectionViewPage() {
           </Container>
         </div>
         <ErrorDialog
-          isOpen={true}
+          isOpen={!!error}
           onClose={() => setError(null)}
           title={MESSAGES.ERROR}
-          message={MESSAGES.REFLECTION_NOT_FOUND}
+          message={error ?? MESSAGES.REFLECTION_NOT_FOUND}
         />
       </>
     );
