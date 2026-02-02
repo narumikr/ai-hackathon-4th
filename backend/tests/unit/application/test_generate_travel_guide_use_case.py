@@ -26,11 +26,11 @@ class FakeAIService(IAIService):
 
     def __init__(
         self,
-        historical_info: str,
+        extracted_facts: str,
         structured_data: dict[str, Any] | list[dict[str, Any]],
         evaluation_data: dict[str, Any] | list[dict[str, Any]] | None = None,
     ) -> None:
-        self.historical_info = historical_info
+        self.extracted_facts = extracted_facts
         self.structured_data = structured_data
         self.evaluation_data = evaluation_data
         self.call_count = 0
@@ -54,7 +54,7 @@ class FakeAIService(IAIService):
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> str:
-        return self.historical_info
+        return self.extracted_facts
 
     async def analyze_image(
         self,
@@ -290,7 +290,7 @@ async def test_generate_travel_guide_use_case_creates_guide(
     plan_repository = TravelPlanRepository(db_session)
     guide_repository = TravelGuideRepository(db_session)
     ai_service = FakeAIService(
-        historical_info="京都の歴史情報を検索結果から取得。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]\n\n### 金閣寺\n- 1397年創建 [出典: 金閣寺公式サイト]",
         structured_data=_structured_guide_payload(),
     )
 
@@ -330,7 +330,7 @@ async def test_generate_travel_guide_use_case_allows_recommended_spots(
     plan_repository = TravelPlanRepository(db_session)
     guide_repository = TravelGuideRepository(db_session)
     ai_service = FakeAIService(
-        historical_info="京都全体とおすすめスポットの歴史情報。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]\n\n### 金閣寺\n- 1397年創建 [出典: 金閣寺公式サイト]\n\n## 追加のおすすめスポット\n\n### 二条城\n- 1603年築城 [出典: 二条城公式サイト]",
         structured_data=_structured_guide_payload_with_recommendations(),
     )
 
@@ -366,7 +366,7 @@ async def test_generate_travel_guide_use_case_rejects_short_overview(
         "overview": "短い概要。",
     }
     ai_service = FakeAIService(
-        historical_info="京都の歴史情報を検索結果から取得。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
         structured_data=short_overview_payload,
     )
 
@@ -407,7 +407,7 @@ async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
         ],
     }
     ai_service = FakeAIService(
-        historical_info="京都全体とおすすめスポットの歴史情報。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]\n\n### 金閣寺\n- 1397年創建 [出典: 金閣寺公式サイト]\n\n## 追加のおすすめスポット\n\n### 二条城\n- 1603年築城 [出典: 二条城公式サイト]",
         structured_data=broken_timeline_payload,
     )
 
@@ -440,7 +440,7 @@ async def test_generate_travel_guide_use_case_updates_existing_guide(
     plan_repository = TravelPlanRepository(db_session)
     guide_repository = TravelGuideRepository(db_session)
     ai_service = FakeAIService(
-        historical_info="再生成用の歴史情報を取得。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建（再生成） [出典: 清水寺公式サイト]",
         structured_data=_structured_guide_payload(),
     )
 
@@ -467,7 +467,7 @@ async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session
     plan_repository = TravelPlanRepository(db_session)
     guide_repository = TravelGuideRepository(db_session)
     ai_service = FakeAIService(
-        historical_info="京都の歴史情報を検索結果から取得。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
         structured_data=_structured_guide_payload(),
     )
 
@@ -519,7 +519,7 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
     plan_repository = TravelPlanRepository(db_session)
     guide_repository = TravelGuideRepository(db_session)
     ai_service = FakeAIService(
-        historical_info="重複スポットの歴史情報。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 重複スポットの事実 [出典: テスト]",
         structured_data=_structured_guide_payload(),
     )
 
@@ -545,7 +545,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
     plan_repository = TravelPlanRepository(db_session)
     guide_repository = TravelGuideRepository(db_session)
     ai_service = FakeAIService(
-        historical_info="京都の歴史情報を検索結果から取得。",
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
         structured_data=[],
     )
 
@@ -658,7 +658,7 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
     }
 
     ai_service = FakeAIService(
-        historical_info="京都の歴史情報を検索結果から取得。",
+        extracted_facts="京都の歴史情報を検索結果から取得。",
         structured_data=[first_payload, second_payload],
         evaluation_data=[
             # 初回評価: 不合格
@@ -766,7 +766,7 @@ async def test_generate_travel_guide_proceeds_after_retry_failure(
     }
 
     ai_service = FakeAIService(
-        historical_info="京都の歴史情報を検索結果から取得。",
+        extracted_facts="京都の歴史情報を検索結果から取得。",
         structured_data=payload,
         evaluation_data={
             # 両方とも不合格
