@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import copy
 from typing import Any
+
+from pydantic import ValidationError
 
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.ports.ai_service import IAIService
@@ -19,6 +20,7 @@ from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
+from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
 from app.prompts import render_template
 
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
@@ -361,14 +363,19 @@ class GenerateTravelGuideUseCase:
 
                 # Step B: 構造化生成（Step Aの出力を使用）
                 guide_prompt = _build_travel_guide_prompt(travel_plan, extracted_facts)
-                response_schema = _build_travel_guide_schema()
                 structured = await self._ai_service.generate_structured_data(
                     prompt=guide_prompt,
-                    response_schema=response_schema,
+                    response_schema=TravelGuideResponseSchema,
                     system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
                 )
                 if not isinstance(structured, dict):
                     raise ValueError("structured response must be a dict.")
+
+                # レスポンスバリデーション
+                try:
+                    TravelGuideResponseSchema.model_validate(structured)
+                except ValidationError as e:
+                    raise ValueError(f"Invalid AI response structure: {e}") from e
 
                 overview = _require_str(structured.get("overview"), "overview")
                 _require_min_length(overview, "overview", 100)
@@ -447,9 +454,3 @@ def _build_travel_guide_prompt(travel_plan: TravelPlan, extracted_facts: str) ->
         spots_text=spots_text,
         extracted_facts=extracted_facts,
     )
-
-
-def _build_travel_guide_schema() -> dict[str, Any]:
-    """旅行ガイド生成用のスキーマを構築する"""
-    schema = copy.deepcopy(_TRAVEL_GUIDE_SCHEMA)
-    return schema

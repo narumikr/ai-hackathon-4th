@@ -1,9 +1,16 @@
 """AIサービスのアダプタ実装"""
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from app.application.ports.ai_service import IAIService
 from app.infrastructure.ai.gemini_client import GeminiClient
+
+if TYPE_CHECKING:
+    from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+T = TypeVar("T", bound="GeminiResponseSchema")
 
 
 class GeminiAIService(IAIService):
@@ -131,7 +138,7 @@ class GeminiAIService(IAIService):
         self,
         prompt: str,
         image_uri: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -142,13 +149,13 @@ class GeminiAIService(IAIService):
         Args:
             prompt: 画像に対する質問・指示
             image_uri: 画像のURI（GCS URIまたはHTTPS URL）
-            response_schema: レスポンスのJSONスキーマ
+            response_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
             system_instruction: システム命令（オプション）
             temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨、Noneの場合は0.0を使用）
             max_output_tokens: 最大出力トークン数（Noneの場合は設定値を使用）
 
         Returns:
-            dict[str, Any]: スキーマに従った構造化データ
+            dict[str, Any]: スキーマに従った構造化データ（dict形式）
         """
         return await self.client.generate_content_with_schema(
             prompt=prompt,
@@ -165,7 +172,7 @@ class GeminiAIService(IAIService):
     async def generate_structured_data(
         self,
         prompt: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -175,13 +182,13 @@ class GeminiAIService(IAIService):
 
         Args:
             prompt: 生成プロンプト
-            response_schema: レスポンスのJSONスキーマ
+            response_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
             system_instruction: システム命令（オプション）
             temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨、Noneの場合は0.0を使用）
             max_output_tokens: 最大出力トークン数（Noneの場合は設定値を使用）
 
         Returns:
-            dict[str, Any]: スキーマに従った構造化データ
+            dict[str, Any]: スキーマに従った構造化データ（dict形式）
         """
         return await self.client.generate_content_with_schema(
             prompt=prompt,

@@ -1,8 +1,10 @@
 """Vertex AI Gemini APIクライアント実装"""
 
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from google import genai
 from google.api_core import exceptions as google_exceptions
@@ -13,6 +15,11 @@ from app.infrastructure.ai.exceptions import (
     AIServiceInvalidRequestError,
     AIServiceQuotaExceededError,
 )
+
+if TYPE_CHECKING:
+    from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+T = TypeVar("T", bound="GeminiResponseSchema")
 
 
 class GeminiClient:
@@ -145,7 +152,7 @@ class GeminiClient:
     async def generate_content_with_schema(
         self,
         prompt: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         tools: list[str] | None = None,
@@ -159,7 +166,7 @@ class GeminiClient:
 
         Args:
             prompt: 生成プロンプト
-            response_schema: レスポンスのJSONスキーマ
+            response_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
             system_instruction: システム命令（オプション）
             tools: 使用するツールのリスト（構造化出力では未対応）
             temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨）
@@ -169,7 +176,7 @@ class GeminiClient:
             max_retries: 最大リトライ回数
 
         Returns:
-            dict[str, Any]: スキーマに従った構造化データ
+            dict[str, Any]: スキーマに従った構造化データ（dict形式）
 
         Raises:
             AIServiceConnectionError: 接続エラー
@@ -179,13 +186,16 @@ class GeminiClient:
         if tools:
             raise AIServiceInvalidRequestError("Tools are not supported for structured output.")
 
+        # PydanticモデルからJSON Schemaを生成
+        json_schema = response_schema.model_json_schema(mode="serialization")
+
         # GenerateContentConfigの作成（JSON出力モード）
         generation_config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             temperature=temperature,
             max_output_tokens=max_output_tokens,
             response_mime_type="application/json",
-            response_json_schema=response_schema,
+            response_json_schema=json_schema,
         )
 
         contents = self._prepare_contents(prompt, images)

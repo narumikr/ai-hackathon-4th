@@ -38,7 +38,6 @@ def test_health_returns_ok(monkeypatch):
     assert response.json() == {"status": "ok"}
 
 
-
 class TestNoPrintStatements:
     """main.pyにprint文が存在しないことを確認するテスト.
 

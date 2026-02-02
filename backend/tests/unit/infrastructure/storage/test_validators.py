@@ -72,9 +72,7 @@ def test_validate_image_format_無効なMIMEタイプ():
     file_data = b"dummy data"
     content_type = "image/gif"  # GIFはサポート外
 
-    with pytest.raises(
-        UnsupportedImageFormatError, match="サポートされていないMIMEタイプです"
-    ):
+    with pytest.raises(UnsupportedImageFormatError, match="サポートされていないMIMEタイプです"):
         validate_image_format(file_data, content_type)
 
 

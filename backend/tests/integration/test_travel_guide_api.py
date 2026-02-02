@@ -1,17 +1,24 @@
 """TravelGuide API統合テスト"""
 
-import time
+from __future__ import annotations
 
-from sqlalchemy.orm import sessionmaker
+import time
+from typing import TYPE_CHECKING, TypeVar
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.application.ports.ai_service import IAIService
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.persistence.models import TravelGuideModel, TravelPlanModel
 from app.interfaces.api.dependencies import get_ai_service_dependency
 from main import app
+
+if TYPE_CHECKING:
+    from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+T = TypeVar("T", bound="GeminiResponseSchema")
 
 
 class StubAIService(IAIService):
@@ -53,7 +60,7 @@ class StubAIService(IAIService):
         self,
         prompt: str,
         image_uri: str,
-        response_schema: dict,
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -69,7 +76,7 @@ class StubAIService(IAIService):
     async def generate_structured_data(
         self,
         prompt: str,
-        response_schema: dict,
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -81,30 +88,30 @@ class StubAIService(IAIService):
                 {
                     "year": 778,
                     "event": "清水寺創建",
-                    "significance": "奈良時代末期の創建",
+                    "significance": "奈良時代末期の創建から続く歴史的寺院の始まり。",
                     "relatedSpots": ["清水寺"],
                 },
                 {
                     "year": 1397,
                     "event": "金閣寺創建",
-                    "significance": "室町幕府の象徴的建築",
+                    "significance": "室町幕府の象徴的建築として建立され、文化の中心地となる。",
                     "relatedSpots": ["金閣寺"],
                 },
             ],
             "spotDetails": [
                 {
                     "spotName": "清水寺",
-                    "historicalBackground": "平安京遷都以前からの歴史を持つ",
+                    "historicalBackground": "平安京遷都以前からの歴史を持つ古刹で、長い歴史を今に伝える。",
                     "highlights": ["清水の舞台", "音羽の滝"],
                     "recommendedVisitTime": "早朝",
-                    "historicalSignificance": "信仰と文化の中心地",
+                    "historicalSignificance": "信仰と文化の中心地として、京都の歴史において重要な役割を果たした。",
                 },
                 {
                     "spotName": "金閣寺",
-                    "historicalBackground": "足利義満の別荘として建立",
+                    "historicalBackground": "足利義満の別荘として建立された寺院で、室町文化の粋を集めた建築物。",
                     "highlights": ["金色の舎利殿", "鏡湖池"],
                     "recommendedVisitTime": "午後",
-                    "historicalSignificance": "室町文化の象徴",
+                    "historicalSignificance": "室町文化の象徴として、日本建築史において極めて重要な位置を占める。",
                 },
             ],
             "checkpoints": [
@@ -168,9 +175,7 @@ def test_generate_travel_guide(
     assert data["guideGenerationStatus"] == "processing"
 
     # 実行: GET /api/v1/travel-plans/{id}
-    status_response = api_client.get(
-        f"/api/v1/travel-plans/{sample_travel_plan.id}"
-    )
+    status_response = api_client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}")
 
     # 検証: ジョブ完了後にガイドが作成される
     assert status_response.status_code == 200
@@ -182,9 +187,7 @@ def test_generate_travel_guide(
         if status_data["guideGenerationStatus"] == "succeeded":
             break
         time.sleep(0.01)
-        status_data = api_client.get(
-            f"/api/v1/travel-plans/{sample_travel_plan.id}"
-        ).json()
+        status_data = api_client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}").json()
 
     assert status_data["guideGenerationStatus"] == "succeeded"
 

@@ -560,12 +560,9 @@ class TestLogLevelConfigurationPropagationProperty:
             log_output = log_capture.getvalue()
 
             assert debug_message in log_output, (
-                f"debug=True の場合、DEBUGメッセージが出力されること。"
-                f"出力: {log_output}"
+                f"debug=True の場合、DEBUGメッセージが出力されること。出力: {log_output}"
             )
-            assert "DEBUG" in log_output, (
-                f"出力にDEBUGレベルが含まれること。出力: {log_output}"
-            )
+            assert "DEBUG" in log_output, f"出力にDEBUGレベルが含まれること。出力: {log_output}"
         finally:
             _cleanup_logging()
 
@@ -610,12 +607,10 @@ class TestLogLevelConfigurationPropagationProperty:
             log_output = log_capture.getvalue()
 
             assert debug_message not in log_output, (
-                f"debug=False の場合、DEBUGメッセージが抑制されること。"
-                f"出力: {log_output}"
+                f"debug=False の場合、DEBUGメッセージが抑制されること。出力: {log_output}"
             )
             assert info_message in log_output, (
-                f"debug=False の場合でも、INFOメッセージは出力されること。"
-                f"出力: {log_output}"
+                f"debug=False の場合でも、INFOメッセージは出力されること。出力: {log_output}"
             )
         finally:
             _cleanup_logging()

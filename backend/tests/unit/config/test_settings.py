@@ -4,8 +4,6 @@ Requirements 4.2: debug=True の場合は DEBUG レベル
 Requirements 4.3: debug=False の場合は INFO レベル以上
 """
 
-import pytest
-
 from app.config.settings import Settings
 
 
