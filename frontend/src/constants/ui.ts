@@ -189,6 +189,7 @@ export const BUTTON_LABELS = {
   REMOVE: '削除',
   SAVE: '保存',
   CANCEL: 'キャンセル',
+  CLOSE: '閉じる',
   BACK: '戻る',
   NEXT: '次へ',
   SUBMIT: '送信',
@@ -196,6 +197,7 @@ export const BUTTON_LABELS = {
   PDF_EXPORT: 'PDF出力',
   TRAVEL_COMPLETE: '旅行完了',
   GENERATE_GUIDE: '旅行ガイドを生成',
+  RETRY_GENERATE_GUIDE: '再生成する',
   GENERATE_REFLECTION: '振り返りパンフレットを生成',
   ADD_SPOT: '＋ スポットを追加',
   ADD: '追加',
@@ -213,7 +215,7 @@ export const BUTTON_LABELS = {
  */
 export const MESSAGES = {
   NO_TRAVELS: '旅行計画がありません。新しい旅行を作成してください。',
-  NO_REFLECTIONS: '振り返りがありません。完了した旅行から振り返りを作成してください。',
+  NO_REFLECTIONS: '振り返りがありません。計画中の旅行を完了させて振り返りを作成してください。',
   LOADING: '読み込み中...',
   ERROR: 'エラーが発生しました。',
   TRAVEL_NOT_FOUND: '旅行が見つかりません',
@@ -225,6 +227,7 @@ export const MESSAGES = {
   GENERATING_REFLECTION: '振り返り生成準備中です',
   GENERATING_REFLECTION_HINT:
     '振り返りパンフレットを生成しています。更新ボタンで状態を確認できます。',
+  GENERATING_GUIDE_HINT: '旅行ガイドを生成しています。更新ボタンで状態を確認できます。',
   PROCESSING: '処理中',
   GENERATING: '生成中...',
   GUIDE_NOT_GENERATED: '旅行ガイドはまだ生成されていません。',
@@ -241,7 +244,9 @@ export const STATUS_LABELS = {
   COMPLETED: '完了',
   REFLECTION_CREATED: '作成済み',
   REFLECTION_PROCESSING: '生成中',
+  GUIDE_PROCESSING: '生成中',
   ADDED_SPOT: '追加スポット',
+  GENERATION_FAILED: '生成失敗',
 } as const;
 
 /**
