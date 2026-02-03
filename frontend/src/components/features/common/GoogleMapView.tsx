@@ -135,7 +135,7 @@ export function GoogleMapView({
   if (loadError) {
     return (
       <div
-        className={`flex items-center justify-center bg-neutral-100 rounded-xl ${className}`}
+        className={`flex items-center justify-center rounded-xl bg-neutral-100 ${className}`}
         style={{ height }}
       >
         <p className="text-neutral-600">マップの読み込みに失敗しました</p>
@@ -146,7 +146,7 @@ export function GoogleMapView({
   if (!isLoaded) {
     return (
       <div
-        className={`flex items-center justify-center bg-neutral-100 rounded-xl ${className}`}
+        className={`flex items-center justify-center rounded-xl bg-neutral-100 ${className}`}
         style={{ height }}
       >
         <LoadingSpinner size="lg" />
@@ -157,10 +157,10 @@ export function GoogleMapView({
   return (
     <div className={`relative ${className}`}>
       {isSearching && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 rounded-xl">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
           <div className="flex flex-col items-center gap-2">
             <LoadingSpinner size="md" />
-            <p className="text-sm text-neutral-600">スポットを検索中...</p>
+            <p className="text-neutral-600 text-sm">スポットを検索中...</p>
           </div>
         </div>
       )}
