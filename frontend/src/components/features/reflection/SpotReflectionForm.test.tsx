@@ -196,6 +196,69 @@ describe('SpotReflectionForm', () => {
     });
   });
 
+  describe('image removal handling', () => {
+    it('calls onUpdate with removed image when delete button is clicked', () => {
+      const spot = createMockSpot({
+        photos: [
+          { url: 'https://example.com/image1.jpg', id: '1' },
+          { url: 'https://example.com/image2.jpg', id: '2' },
+        ],
+      });
+
+      render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
+
+      // 削除ボタンは画像プレビューに表示される
+      const removeButtons = screen.getAllByRole('button', { name: /削除/i });
+      expect(removeButtons).toHaveLength(2);
+
+      // 最初の画像を削除
+      fireEvent.click(removeButtons[0]);
+
+      // onUpdateが正しいパラメータで呼ばれることを検証
+      expect(mockOnUpdate).toHaveBeenCalledWith(spot.id, {
+        photos: [{ url: 'https://example.com/image2.jpg', id: '2' }],
+      });
+    });
+
+    it('calls onUpdate with empty array when last image is removed', () => {
+      const spot = createMockSpot({
+        photos: [{ url: 'https://example.com/image1.jpg', id: '1' }],
+      });
+
+      render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
+
+      const removeButton = screen.getByRole('button', { name: /削除/i });
+      fireEvent.click(removeButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith(spot.id, {
+        photos: [],
+      });
+    });
+
+    it('removes correct image when middle image is deleted', () => {
+      const spot = createMockSpot({
+        photos: [
+          { url: 'url1', id: '1' },
+          { url: 'url2', id: '2' },
+          { url: 'url3', id: '3' },
+        ],
+      });
+
+      render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
+
+      const removeButtons = screen.getAllByRole('button', { name: /削除/i });
+      // 中央の画像を削除（index 1）
+      fireEvent.click(removeButtons[1]);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith(spot.id, {
+        photos: [
+          { url: 'url1', id: '1' },
+          { url: 'url3', id: '3' },
+        ],
+      });
+    });
+  });
+
   describe('comment handling', () => {
     it('calls onUpdate when comment changes', () => {
       const spot = createMockSpot();

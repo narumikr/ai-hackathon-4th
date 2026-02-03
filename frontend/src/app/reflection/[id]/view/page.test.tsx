@@ -41,13 +41,22 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/components/features/common', () => ({
   ErrorDialog: ({
     isOpen,
+    onClose,
     message,
   }: {
     isOpen: boolean;
     onClose: () => void;
     title: string;
     message: string;
-  }) => (isOpen ? <div data-testid="error-dialog">{message}</div> : null),
+  }) =>
+    isOpen ? (
+      <div data-testid="error-dialog">
+        {message}
+        <button type="button" onClick={onClose}>
+          閉じる
+        </button>
+      </div>
+    ) : null,
   GenerationStatusView: ({
     title,
     statusLabel,
@@ -381,6 +390,30 @@ describe('ReflectionViewPage', () => {
       // 検証: 正しい引数でAPIが呼び出される
       await waitFor(() => {
         expect(mockGetTravelPlan).toHaveBeenCalledWith({ planId: 'test-plan-id' });
+      });
+    });
+  });
+
+  describe('エラーダイアログ操作', () => {
+    it('エラーダイアログを閉じることができる', async () => {
+      // 準備: APIがエラーをスローする
+      mockGetTravelPlan.mockRejectedValue(new Error('旅行計画が見つかりません'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<ReflectionViewPage />);
+
+      // 検証: エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByText('旅行計画が見つかりません')).toBeInTheDocument();
+      });
+
+      // 実行: 閉じるボタンをクリック
+      const closeButtons = screen.getAllByRole('button', { name: /閉じる/i });
+      fireEvent.click(closeButtons[closeButtons.length - 1]);
+
+      // 検証: エラーダイアログが閉じる
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: MESSAGES.ERROR })).not.toBeInTheDocument();
       });
     });
   });

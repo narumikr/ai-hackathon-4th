@@ -10,6 +10,7 @@ import {
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   SECTION_TITLES,
+  TOOLTIP_MESSAGES,
 } from '@/constants';
 import type { TravelPlanResponse } from '@/types';
 
@@ -389,4 +390,54 @@ describe('ReflectionDetailPage', () => {
       });
     });
   });
+
+  describe('エラーダイアログ操作', () => {
+    it('エラーダイアログを閉じることができる', async () => {
+      // 準備: APIがエラーをスローする
+      mockGetTravelPlan.mockRejectedValue(new Error('データ取得エラー'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<ReflectionDetailPage />);
+
+      // 検証: エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByText('データ取得エラー')).toBeInTheDocument();
+      });
+
+      // 実行: 閉じるボタンをクリック
+      const closeButtons = screen.getAllByRole('button', { name: /閉じる/i });
+      fireEvent.click(closeButtons[closeButtons.length - 1]);
+
+      // 検証: エラーダイアログが閉じる
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: MESSAGES.ERROR })).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('写真バリデーション', () => {
+    it('写真なしで送信するとツールチップが表示される', async () => {
+      // 準備: 旅行計画を返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+
+      // 実行: コンポーネントをレンダリング
+      render(<ReflectionDetailPage />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION })
+        ).toBeInTheDocument();
+      });
+
+      // 実行: 写真を追加せずに送信ボタンをクリック
+      const submitButton = screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION });
+      fireEvent.click(submitButton);
+
+      // 検証: ツールチップが表示される
+      await waitFor(() => {
+        expect(screen.getByText(TOOLTIP_MESSAGES.PHOTO_REQUIRED)).toBeInTheDocument();
+      });
+    });
+  });
+
 });

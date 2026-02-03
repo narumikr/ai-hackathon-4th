@@ -454,4 +454,122 @@ describe('TravelEditPage', () => {
       expect(mockPush).toHaveBeenCalledWith('/travel');
     });
   });
+
+  describe('スポット編集', () => {
+    it('既存のスポット名を変更できる', async () => {
+      // 準備: APIが旅行計画を返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelEditPage />);
+
+      // 検証: 既存のスポットが読み込まれるのを待つ
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('金閣寺')).toBeInTheDocument();
+      });
+
+      // 実行: スポット名を変更
+      const spotInput = screen.getByDisplayValue('金閣寺');
+      typeInInput(spotInput, '銀閣寺');
+
+      // 検証: スポット名が変更される
+      expect(screen.getByDisplayValue('銀閣寺')).toBeInTheDocument();
+      expect(screen.queryByDisplayValue('金閣寺')).not.toBeInTheDocument();
+    });
+
+    it('変更したスポット名が更新APIに渡される', async () => {
+      // 準備: APIモック
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockUpdateTravelPlan.mockResolvedValue({ id: 'test-plan-id' });
+      mockGenerateTravelGuide.mockResolvedValue({});
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelEditPage />);
+
+      // 検証: 既存のスポットが読み込まれるのを待つ
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('金閣寺')).toBeInTheDocument();
+      });
+
+      // 実行: スポット名を変更
+      const spotInput = screen.getByDisplayValue('金閣寺');
+      typeInInput(spotInput, '銀閣寺');
+
+      // 実行: 更新ボタンをクリック
+      const updateButton = screen.getByRole('button', { name: BUTTON_LABELS.UPDATE });
+      fireEvent.click(updateButton);
+
+      // 検証: 変更されたスポット名がAPIに渡される
+      await waitFor(() => {
+        expect(mockUpdateTravelPlan).toHaveBeenCalledWith({
+          planId: 'test-plan-id',
+          request: {
+            title: '京都歴史探訪の旅',
+            destination: '京都府',
+            spots: [{ name: '銀閣寺' }, { name: '清水寺' }],
+          },
+        });
+      });
+    });
+  });
+
+  describe('ガイド生成エラー', () => {
+    it('ガイド生成が失敗した場合はエラーダイアログが表示される', async () => {
+      // 準備: 更新は成功、ガイド生成は失敗
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockUpdateTravelPlan.mockResolvedValue({ id: 'test-plan-id' });
+      mockGenerateTravelGuide.mockRejectedValue(new Error('ガイド生成に失敗しました'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelEditPage />);
+
+      // 検証: データが読み込まれるのを待つ
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('京都歴史探訪の旅')).toBeInTheDocument();
+      });
+
+      // 実行: 更新ボタンをクリック
+      const updateButton = screen.getByRole('button', { name: BUTTON_LABELS.UPDATE });
+      fireEvent.click(updateButton);
+
+      // 検証: エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByText(/ガイド生成に失敗しました/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('エラーダイアログ操作', () => {
+    it('エラーダイアログを閉じることができる', async () => {
+      // 準備: 更新APIがエラーを返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockUpdateTravelPlan.mockRejectedValue(new Error('更新エラー'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelEditPage />);
+
+      // 検証: データが読み込まれるのを待つ
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('京都歴史探訪の旅')).toBeInTheDocument();
+      });
+
+      // 実行: 更新ボタンをクリックしてエラーを発生させる
+      const updateButton = screen.getByRole('button', { name: BUTTON_LABELS.UPDATE });
+      fireEvent.click(updateButton);
+
+      // エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: MESSAGES.ERROR })).toBeInTheDocument();
+      });
+
+      // 閉じるボタンをクリック（複数ある場合は最後のものがダイアログ内のボタン）
+      const closeButtons = screen.getAllByRole('button', { name: /閉じる/i });
+      fireEvent.click(closeButtons[closeButtons.length - 1]);
+
+      // エラーダイアログが閉じる
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: MESSAGES.ERROR })).not.toBeInTheDocument();
+      });
+    });
+  });
 });

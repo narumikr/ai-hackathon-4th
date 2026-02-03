@@ -341,5 +341,27 @@ describe('ReflectionListPage', () => {
         expect(screen.getByText('ネットワークエラー')).toBeInTheDocument();
       });
     });
+
+    it('エラーダイアログを閉じることができる', async () => {
+      // 準備: APIがエラーをスローする
+      mockListTravelPlans.mockRejectedValue(new Error('ネットワークエラー'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<ReflectionListPage />);
+
+      // 検証: エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByText('ネットワークエラー')).toBeInTheDocument();
+      });
+
+      // 実行: 閉じるボタンをクリック
+      const closeButtons = screen.getAllByRole('button', { name: /閉じる/i });
+      fireEvent.click(closeButtons[closeButtons.length - 1]);
+
+      // 検証: エラーダイアログが閉じる
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: MESSAGES.ERROR })).not.toBeInTheDocument();
+      });
+    });
   });
 });

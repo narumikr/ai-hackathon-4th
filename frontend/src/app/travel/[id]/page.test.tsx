@@ -540,5 +540,215 @@ describe('TravelGuidePage', () => {
         expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
       });
     });
+
+    it('削除API失敗時はエラーダイアログが表示される', async () => {
+      // 準備: 削除APIがエラーを返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockDeleteTravelPlan.mockRejectedValue(new Error('削除に失敗しました'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 削除ボタンをクリック
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.DELETE })).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.DELETE }));
+
+      // モーダル内の削除ボタンをクリック
+      await waitFor(() => {
+        expect(screen.getByText(CONFIRMATION_MESSAGES.DELETE_TRAVEL)).toBeInTheDocument();
+      });
+      const modalDeleteButtons = screen.getAllByRole('button', { name: BUTTON_LABELS.DELETE });
+      fireEvent.click(modalDeleteButtons[1]);
+
+      // 検証: エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByText(/削除に失敗しました/)).toBeInTheDocument();
+      });
+    });
+
+    it('旅行完了API失敗時はエラーダイアログが表示される', async () => {
+      // 準備: 完了APIがエラーを返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan({ status: 'planning' }));
+      mockUpdateTravelPlan.mockRejectedValue(new Error('完了処理に失敗しました'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 完了ボタンをクリック
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE })
+        ).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE }));
+
+      // 検証: エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByText(/完了処理に失敗しました/)).toBeInTheDocument();
+      });
+    });
+
+    it('エラーダイアログを閉じることができる', async () => {
+      // 準備: APIがエラーを返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan({ status: 'planning' }));
+      mockUpdateTravelPlan.mockRejectedValue(new Error('テスト用エラー'));
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 完了ボタンをクリックしてエラーを発生させる
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE })
+        ).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE }));
+
+      // エラーダイアログが表示される（モーダルタイトルで確認）
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: MESSAGES.ERROR })).toBeInTheDocument();
+      });
+
+      // 閉じるボタンをクリック（複数ある場合は最後のものがダイアログ内のボタン）
+      const closeButtons = screen.getAllByRole('button', { name: /閉じる/i });
+      fireEvent.click(closeButtons[closeButtons.length - 1]);
+
+      // エラーダイアログが閉じる（モーダルタイトルがなくなる）
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: MESSAGES.ERROR })).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('振り返りボタンの動作', () => {
+    it('振り返り生成失敗時はデフォルトの旅行完了ボタンラベルが使用される', async () => {
+      // 準備: 振り返り生成失敗の旅行計画
+      // 注意: ソースコードではfailedステータスが明示的に扱われていないため、
+      // デフォルトのTRAVEL_COMPLETEラベルが使用される
+      mockGetTravelPlan.mockResolvedValue(
+        createMockTravelPlan({
+          status: 'completed',
+          reflectionGenerationStatus: 'failed',
+        })
+      );
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 検証: 完了した旅行でfailedステータスの場合、ボタンは無効化されずに存在する
+      await waitFor(() => {
+        // failedの場合、デフォルトラベル（TRAVEL_COMPLETE）が表示される
+        const button = screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE });
+        expect(button).toBeInTheDocument();
+        expect(button).not.toBeDisabled();
+      });
+    });
+
+    it('振り返り作成ボタンをクリックすると振り返り作成ページに遷移する', async () => {
+      // 準備: 振り返り未作成の完了した旅行計画
+      mockGetTravelPlan.mockResolvedValue(
+        createMockTravelPlan({
+          status: 'completed',
+          reflectionGenerationStatus: 'not_started',
+        })
+      );
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 振り返り作成ボタンをクリック
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: BUTTON_LABELS.CREATE_REFLECTION })
+        ).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.CREATE_REFLECTION }));
+
+      // 検証: 振り返り作成ページに遷移
+      expect(mockPush).toHaveBeenCalledWith('/reflection/test-plan-id');
+    });
+
+    it('振り返り表示ボタンをクリックすると振り返り表示ページに遷移する', async () => {
+      // 準備: 振り返り作成済みの旅行計画
+      mockGetTravelPlan.mockResolvedValue(
+        createMockTravelPlan({
+          status: 'completed',
+          reflectionGenerationStatus: 'succeeded',
+        })
+      );
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 振り返り表示ボタンをクリック
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: BUTTON_LABELS.VIEW_REFLECTION })
+        ).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.VIEW_REFLECTION }));
+
+      // 検証: 振り返り表示ページに遷移
+      expect(mockPush).toHaveBeenCalledWith('/reflection/test-plan-id/view');
+    });
+  });
+
+  describe('ボタン無効化状態', () => {
+    it('削除処理中は削除ボタンが無効化される', async () => {
+      // 準備: 削除APIが遅延するPromiseを返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockDeleteTravelPlan.mockImplementation(
+        () => new Promise(resolve => setTimeout(resolve, 1000))
+      );
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 削除ボタンをクリック
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.DELETE })).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.DELETE }));
+
+      // モーダル内の削除ボタンをクリック
+      await waitFor(() => {
+        expect(screen.getByText(CONFIRMATION_MESSAGES.DELETE_TRAVEL)).toBeInTheDocument();
+      });
+      const modalDeleteButtons = screen.getAllByRole('button', { name: BUTTON_LABELS.DELETE });
+      fireEvent.click(modalDeleteButtons[1]);
+
+      // 検証: 削除中はボタンが無効化されている
+      await waitFor(() => {
+        const disabledButtons = screen.getAllByRole('button', { name: new RegExp(MESSAGES.LOADING) });
+        expect(disabledButtons.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('完了処理中は完了ボタンが無効化される', async () => {
+      // 準備: 完了APIが遅延するPromiseを返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan({ status: 'planning' }));
+      mockUpdateTravelPlan.mockImplementation(
+        () => new Promise(resolve => setTimeout(resolve, 1000))
+      );
+
+      // 実行: コンポーネントをレンダリング
+      render(<TravelGuidePage />);
+
+      // 完了ボタンをクリック
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE })
+        ).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.TRAVEL_COMPLETE }));
+
+      // 検証: 処理中はボタンが無効化されてローディング表示になる
+      await waitFor(() => {
+        const loadingButton = screen.getByRole('button', { name: MESSAGES.LOADING });
+        expect(loadingButton).toBeDisabled();
+      });
+    });
   });
 });

@@ -439,4 +439,39 @@ describe('TravelNewPage', () => {
       expect(mockPush).toHaveBeenCalledWith('/travel');
     });
   });
+
+  describe('エラーダイアログ操作', () => {
+    it('エラーダイアログを閉じることができる', async () => {
+      // 準備: APIがエラーをスローする
+      mockCreateTravelPlan.mockRejectedValue(new Error('サーバーエラー'));
+
+      // 実行: コンポーネントをレンダリングしてフォームを送信
+      render(<TravelNewPage />);
+
+      const titleInput = screen.getByPlaceholderText(PLACEHOLDERS.TRAVEL_TITLE);
+      const destinationInput = screen.getByPlaceholderText(PLACEHOLDERS.DESTINATION);
+
+      typeInInput(titleInput, 'テスト旅行');
+      typeInInput(destinationInput, 'テスト目的地');
+
+      const submitButton = screen.getByRole('button', {
+        name: BUTTON_LABELS.GENERATE_GUIDE,
+      });
+      fireEvent.click(submitButton);
+
+      // 検証: エラーダイアログが表示される
+      await waitFor(() => {
+        expect(screen.getByText('サーバーエラー')).toBeInTheDocument();
+      });
+
+      // 実行: 閉じるボタンをクリック
+      const closeButtons = screen.getAllByRole('button', { name: /閉じる/i });
+      fireEvent.click(closeButtons[closeButtons.length - 1]);
+
+      // 検証: エラーダイアログが閉じる
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: MESSAGES.ERROR })).not.toBeInTheDocument();
+      });
+    });
+  });
 });
