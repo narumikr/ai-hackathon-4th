@@ -334,6 +334,7 @@ export const SECTION_TITLES = {
   TOURIST_SPOTS: '観光スポット',
   HIGHLIGHTS: 'ハイライト',
   NEXT_TRIP_SUGGESTIONS: '次の旅行の提案',
+  MAP: 'マップ',
 } as const;
 
 /**
@@ -451,4 +452,5 @@ export const EMOJI_LABELS = {
   UPLOAD: 'アップロード',
   NOTE: 'メモ',
   HINT: 'ヒント',
+  MAP: 'マップ',
 } as const;

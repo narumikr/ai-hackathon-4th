@@ -1,6 +1,7 @@
 'use client';
 
 import { Container } from '@/components/layout';
+import { GoogleMapView } from '@/components/features/common';
 import { Button, Icon, Modal } from '@/components/ui';
 import {
   BUTTON_LABELS,
@@ -228,6 +229,20 @@ export default function TravelGuidePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* マップ */}
+          {travel.spots.length > 0 && (
+            <div className="mt-6">
+              <h3 className="mb-4 flex items-center gap-2 font-semibold text-lg text-neutral-900">
+                <Icon name="map" size="md" label={EMOJI_LABELS.MAP} /> {SECTION_TITLES.MAP}
+              </h3>
+              <GoogleMapView
+                spots={travel.spots.map(spot => spot.name)}
+                destination={travel.destination}
+                height="350px"
+              />
             </div>
           )}
         </section>
