@@ -333,6 +333,7 @@ class GenerateTravelGuideUseCase:
             TravelPlanNotFoundError: 旅行計画が見つからない場合
             ValueError: 入力や生成結果が不正な場合
         """
+        logger.debug("GenerateTravelGuideUseCase started", extra={"plan_id": plan_id})
         validate_required_str(plan_id, "plan_id")
 
         travel_plan = self._plan_repository.find_by_id(plan_id)
@@ -346,6 +347,14 @@ class GenerateTravelGuideUseCase:
             raise ValueError("spots must not be empty.")
 
         plan_spot_names = [spot.name for spot in travel_plan.spots]
+        logger.debug(
+            "Travel plan validated for guide generation",
+            extra={
+                "plan_id": plan_id,
+                "destination": travel_plan.destination,
+                "spot_count": len(plan_spot_names),
+            },
+        )
         duplicate_spots = {
             spot_name for spot_name in plan_spot_names if plan_spot_names.count(spot_name) > 1
         }
@@ -354,10 +363,18 @@ class GenerateTravelGuideUseCase:
 
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.PROCESSING)
         self._plan_repository.save(travel_plan, commit=commit)
+        logger.debug(
+            "Guide status set to processing in use case",
+            extra={"plan_id": plan_id},
+        )
 
         try:
             with self._plan_repository.begin_nested():
                 # Step A: 事実抽出（出典候補付き）
+                logger.debug(
+                    "Starting fact extraction",
+                    extra={"plan_id": plan_id},
+                )
                 fact_extraction_prompt = _build_fact_extraction_prompt(travel_plan)
                 extracted_facts = await self._ai_service.generate_with_search(
                     prompt=fact_extraction_prompt,
@@ -367,12 +384,35 @@ class GenerateTravelGuideUseCase:
                 )
                 if not extracted_facts or not extracted_facts.strip():
                     raise ValueError("extracted_facts must be a non-empty string.")
+                logger.debug(
+                    "Fact extraction completed",
+                    extra={"plan_id": plan_id, "facts_length": len(extracted_facts)},
+                )
 
                 # 初回生成（Step Aの出力を使用）
+                logger.debug(
+                    "Starting travel guide generation",
+                    extra={"plan_id": plan_id},
+                )
                 structured = await self._generate_guide_data(travel_plan, extracted_facts)
+                logger.debug(
+                    "Travel guide generation completed",
+                    extra={
+                        "plan_id": plan_id,
+                        "structured_keys": sorted(structured.keys()),
+                    },
+                )
 
                 # 評価
+                logger.debug(
+                    "Starting travel guide evaluation",
+                    extra={"plan_id": plan_id},
+                )
                 evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
+                logger.debug(
+                    "Travel guide evaluation completed",
+                    extra={"plan_id": plan_id},
+                )
 
                 # 評価結果を解析
                 is_valid = self._check_evaluation_result(evaluation)
@@ -384,9 +424,17 @@ class GenerateTravelGuideUseCase:
                         "Travel guide evaluation failed. Reasons: %s. Retrying once...",
                         "; ".join(failure_reasons),
                     )
+                    logger.debug(
+                        "Retrying travel guide generation after evaluation failure",
+                        extra={"plan_id": plan_id},
+                    )
                     structured = await self._generate_guide_data(travel_plan, extracted_facts)
 
                     # 再評価（ログ出力のみ、再生成は行わない）
+                    logger.debug(
+                        "Re-evaluating travel guide after retry",
+                        extra={"plan_id": plan_id},
+                    )
                     re_evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
                     re_is_valid = self._check_evaluation_result(re_evaluation)
                     if not re_is_valid:
@@ -421,6 +469,10 @@ class GenerateTravelGuideUseCase:
                     travel_plan.update_plan(spots=updated_spots)
                     # commit=Falseで保存（最終的なステータス更新時に一括コミット）
                     self._plan_repository.save(travel_plan, commit=False)
+                    logger.debug(
+                        "New spots detected and added",
+                        extra={"plan_id": plan_id, "new_spot_count": len(new_spot_names)},
+                    )
 
                 spot_detail_name_set = {detail.spot_name for detail in spot_details}
                 checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
@@ -451,6 +503,10 @@ class GenerateTravelGuideUseCase:
                     )
                     saved_guide = self._guide_repository.save(existing, commit=False)
         except Exception:
+            logger.exception(
+                "Travel guide generation failed in use case",
+                extra={"plan_id": plan_id},
+            )
             failed_plan = self._plan_repository.find_by_id(travel_plan.id) or travel_plan
             failed_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
             self._plan_repository.save(failed_plan, commit=commit)
@@ -458,6 +514,10 @@ class GenerateTravelGuideUseCase:
 
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
         self._plan_repository.save(travel_plan, commit=commit)
+        logger.debug(
+            "Guide status set to succeeded in use case",
+            extra={"plan_id": plan_id},
+        )
 
         return TravelGuideDTO.from_entity(saved_guide)
 
@@ -473,6 +533,13 @@ class GenerateTravelGuideUseCase:
         Returns:
             評価結果
         """
+        logger.debug(
+            "Evaluating guide data with AI",
+            extra={
+                "required_spot_count": len(required_spot_names),
+                "guide_key_count": len(guide_data.keys()),
+            },
+        )
         guide_data_json = json.dumps(guide_data, ensure_ascii=False, indent=2)
         required_spots_text = "\n".join([f"- {name}" for name in required_spot_names])
         prompt = render_template(
@@ -552,6 +619,14 @@ class GenerateTravelGuideUseCase:
         Returns:
             生成された構造化データ
         """
+        logger.debug(
+            "Generating guide data with AI",
+            extra={
+                "destination": travel_plan.destination,
+                "spot_count": len(travel_plan.spots),
+                "facts_length": len(extracted_facts),
+            },
+        )
         guide_prompt = _build_travel_guide_prompt(travel_plan, extracted_facts)
         structured = await self._ai_service.generate_structured_data(
             prompt=guide_prompt,
