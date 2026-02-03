@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { vi } from 'vitest';
 
-import { EMOJI_LABELS, FORM_LABELS, LABELS, SECTION_TITLES } from '@/constants';
+import { DATE_LABELS, EMOJI_LABELS, FORM_LABELS, SECTION_TITLES } from '@/constants';
 import type { ReflectionPamphletResponse, TravelPlanResponse } from '@/types';
 import { ReflectionViewer } from './ReflectionViewer';
 
@@ -72,13 +72,13 @@ describe('ReflectionViewer', () => {
       expect(within(overviewContainer as HTMLElement).getByText('奈良')).toBeInTheDocument();
     });
 
-    it('renders completed date', () => {
+    it('renders created date', () => {
       const travel = createMockTravel();
       const pamphlet = createMockPamphlet();
 
       render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      expect(screen.getByText(new RegExp(LABELS.COMPLETED_DATE))).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(DATE_LABELS.CREATED_DATE))).toBeInTheDocument();
     });
 
     it('renders spot memories section title', () => {
@@ -203,14 +203,14 @@ describe('ReflectionViewer', () => {
       expect(pinIcons.length).toBeGreaterThan(0);
     });
 
-    it('renders checkmark icon for completion', () => {
+    it('renders calendar icon for created date', () => {
       const travel = createMockTravel();
       const pamphlet = createMockPamphlet();
 
       render(<ReflectionViewer travel={travel} pamphlet={pamphlet} />);
 
-      const checkIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CHECKMARK });
-      expect(checkIcons.length).toBeGreaterThan(0);
+      const calendarIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CALENDAR });
+      expect(calendarIcons.length).toBeGreaterThan(0);
     });
   });
 
@@ -403,16 +403,16 @@ describe('ReflectionViewer', () => {
 
       // Check that icon images have alt text (filter out photo preview images)
       const pinIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.PIN });
-      const checkIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CHECKMARK });
+      const calendarIcons = screen.getAllByRole('img', { name: EMOJI_LABELS.CALENDAR });
 
       expect(pinIcons.length).toBeGreaterThan(0);
-      expect(checkIcons.length).toBeGreaterThan(0);
+      expect(calendarIcons.length).toBeGreaterThan(0);
 
       pinIcons.forEach(icon => {
         expect(icon).toHaveAttribute('alt', EMOJI_LABELS.PIN);
       });
-      checkIcons.forEach(icon => {
-        expect(icon).toHaveAttribute('alt', EMOJI_LABELS.CHECKMARK);
+      calendarIcons.forEach(icon => {
+        expect(icon).toHaveAttribute('alt', EMOJI_LABELS.CALENDAR);
       });
     });
   });

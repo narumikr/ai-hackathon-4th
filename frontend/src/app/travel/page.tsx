@@ -1,11 +1,11 @@
 'use client';
 
+import { ErrorDialog } from '@/components/features/common';
 import { Container } from '@/components/layout';
-import { Button, Icon } from '@/components/ui';
+import { Button } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
-  EMOJI_LABELS,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
@@ -84,21 +84,12 @@ export default function TravelListPage() {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error}
-          </div>
-        )}
-
         {isLoading ? (
           <div className="py-16 text-center">
             <p className="text-neutral-600">{MESSAGES.LOADING}</p>
           </div>
         ) : !hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4">
-              <Icon name="study" size="xl" label={EMOJI_LABELS.BOOK} />
-            </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_TRAVELS}</p>
             <Link href="/travel/new">
               <Button>{BUTTON_LABELS.CREATE_NEW_TRAVEL}</Button>
@@ -113,7 +104,14 @@ export default function TravelListPage() {
               >
                 <div className="mb-4 flex items-start justify-between">
                   <div>
-                    <h2 className="mb-1 font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                    <div className="mb-1 flex items-center gap-2">
+                      <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                      {travel.guideGenerationStatus === 'failed' && (
+                        <span className="rounded-full bg-danger px-2 py-0.5 font-medium text-white text-xs">
+                          {STATUS_LABELS.GENERATION_FAILED}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-neutral-500 text-sm">{travel.destination}</p>
                   </div>
                   <span
@@ -153,6 +151,14 @@ export default function TravelListPage() {
           </div>
         )}
       </Container>
+
+      {/* エラーダイアログ */}
+      <ErrorDialog
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title={MESSAGES.ERROR}
+        message={error || ''}
+      />
     </div>
   );
 }

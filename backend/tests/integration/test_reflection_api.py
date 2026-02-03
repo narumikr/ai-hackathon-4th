@@ -1,6 +1,7 @@
 """Reflection API統合テスト"""
 
 import time
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -71,6 +72,34 @@ class StubAIService(IAIService):
             "historicalElements": ["清水の舞台"],
             "landmarks": ["清水寺本堂"],
             "confidence": 0.9,
+        }
+
+    async def evaluate_travel_guide(
+        self,
+        guide_content: dict,
+        evaluation_schema: type[Any],
+        evaluation_prompt: str,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict:
+        """旅行ガイドの評価（スタブ：常に合格を返す）"""
+        return {
+            "spotEvaluations": [
+                {
+                    "spotName": "清水寺",
+                    "hasCitation": True,
+                    "citationExample": "清水寺公式サイト",
+                },
+                {
+                    "spotName": "金閣寺",
+                    "hasCitation": True,
+                    "citationExample": "金閣寺公式サイト",
+                },
+            ],
+            "hasHistoricalComparison": True,
+            "historicalComparisonExample": "同時期のヨーロッパでは...",
         }
 
     async def generate_structured_data(

@@ -69,6 +69,32 @@ class FakeAIService(IAIService):
     ) -> dict[str, Any]:
         raise NotImplementedError
 
+    async def evaluate_travel_guide(
+        self,
+        guide_content: dict,
+        evaluation_schema: type[T],
+        evaluation_prompt: str,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict:
+        """旅行ガイドの評価（テスト用：常に合格を返す）"""
+        return {
+            "spotEvaluations": [
+                {
+                    "spotName": spot["spotName"],
+                    "hasCitation": True,
+                    "citationExample": "テスト用出典",
+                }
+                for spot in guide_content.get("spotDetails", [])
+            ],
+            "hasHistoricalComparison": True,
+            "historicalComparisonExample": "テスト用歴史的対比",
+            "allSpotsIncluded": True,
+            "missingSpots": [],
+        }
+
     async def generate_structured_data(
         self,
         prompt: str,
@@ -78,6 +104,24 @@ class FakeAIService(IAIService):
         temperature: float | None = None,
         max_output_tokens: int | None = None,
     ) -> dict[str, Any]:
+        # 評価用のプロンプトかどうかを判定
+        if "評価してください" in prompt or "評価基準" in prompt:
+            # 評価結果を返す（全て合格）
+            spot_details = self.structured_data.get("spotDetails", [])
+            return {
+                "spotEvaluations": [
+                    {
+                        "spotName": spot["spotName"],
+                        "hasCitation": True,
+                        "citationExample": "テスト用出典",
+                    }
+                    for spot in spot_details
+                ],
+                "hasHistoricalComparison": True,
+                "historicalComparisonExample": "テスト用歴史的対比",
+                "allSpotsIncluded": True,
+                "missingSpots": [],
+            }
         return self.structured_data
 
 

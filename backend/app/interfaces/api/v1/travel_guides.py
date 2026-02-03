@@ -110,6 +110,7 @@ async def generate_travel_guide(
         HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）など
     """
     plan_id = request.plan_id
+    logger.debug("Travel guide generation requested", extra={"plan_id": plan_id})
 
     plan_repository = TravelPlanRepository(db)
     travel_plan = plan_repository.find_by_id(plan_id)
@@ -118,8 +119,20 @@ async def generate_travel_guide(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Travel plan not found: {plan_id}",
         )
+    logger.debug(
+        "Travel plan loaded for guide generation",
+        extra={
+            "plan_id": plan_id,
+            "guide_status": travel_plan.guide_generation_status,
+            "spot_count": len(travel_plan.spots),
+        },
+    )
 
     if travel_plan.guide_generation_status == GenerationStatus.PROCESSING:
+        logger.debug(
+            "Travel guide generation already processing",
+            extra={"plan_id": plan_id},
+        )
         dto = TravelPlanDTO.from_entity(travel_plan)
         return TravelPlanResponse(**dto.__dict__)
 
@@ -128,8 +141,16 @@ async def generate_travel_guide(
         plan_id,
         GenerationStatus.PROCESSING,
     )
+    logger.debug(
+        "Travel guide status updated to processing",
+        extra={"plan_id": plan_id},
+    )
 
     background_tasks.add_task(_run_travel_guide_generation, plan_id, ai_service, db.get_bind())
+    logger.debug(
+        "Travel guide generation background task scheduled",
+        extra={"plan_id": plan_id},
+    )
 
     updated_plan = plan_repository.find_by_id(plan_id)
     dto = TravelPlanDTO.from_entity(updated_plan or travel_plan)
@@ -141,6 +162,10 @@ async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bin
     session_maker = sessionmaker(autocommit=False, autoflush=False, bind=bind)
     db = session_maker()
     try:
+        logger.debug(
+            "Travel guide background task started",
+            extra={"plan_id": plan_id},
+        )
         plan_repository = TravelPlanRepository(db)
         guide_repository = TravelGuideRepository(db)
         use_case = GenerateTravelGuideUseCase(
@@ -148,7 +173,11 @@ async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bin
             guide_repository=guide_repository,
             ai_service=ai_service,
         )
-        await use_case.execute(plan_id=plan_id)
+        guide_dto = await use_case.execute(plan_id=plan_id)
+        logger.debug(
+            "Travel guide generation completed",
+            extra={"plan_id": plan_id, "guide_id": guide_dto.id},
+        )
     except Exception:
         logger.exception("Failed to generate travel guide", extra={"plan_id": plan_id})
         try:

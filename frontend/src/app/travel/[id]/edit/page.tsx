@@ -1,4 +1,5 @@
 'use client';
+import { ErrorDialog } from '@/components/features/common';
 import { Container } from '@/components/layout';
 import { Button, TextField, Tooltip } from '@/components/ui';
 import {
@@ -68,7 +69,7 @@ export default function TravelEditPage() {
     };
 
     fetchTravelPlan();
-  }, [id]);
+  }, [id, componentId]);
 
   const handleBack = () => {
     router.push('/travel');
@@ -162,14 +163,19 @@ export default function TravelEditPage() {
 
   if (error || !travel) {
     return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
-          <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
-        </Container>
-      </div>
+      <>
+        <div className="py-8">
+          <Container>
+            <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
+          </Container>
+        </div>
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={() => setError(null)}
+          title={MESSAGES.ERROR}
+          message={error || MESSAGES.TRAVEL_NOT_FOUND}
+        />
+      </>
     );
   }
 
@@ -182,13 +188,6 @@ export default function TravelEditPage() {
           </div>
 
           <div className="rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
-            {/* エラーメッセージ */}
-            {error && (
-              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            )}
-
             <form className="space-y-6" onSubmit={e => e.preventDefault()}>
               {/* Title */}
               <div>
@@ -294,6 +293,14 @@ export default function TravelEditPage() {
           </div>
         </div>
       </Container>
+
+      {/* エラーダイアログ */}
+      <ErrorDialog
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title={MESSAGES.ERROR}
+        message={error || ''}
+      />
     </div>
   );
 }

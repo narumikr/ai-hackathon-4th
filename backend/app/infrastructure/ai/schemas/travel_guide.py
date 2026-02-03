@@ -14,7 +14,7 @@ class HistoricalEventSchema(GeminiResponseSchema):
 
     year: Annotated[int, Field(description="歴史的出来事の発生年（西暦）")]
     event: Annotated[str, Field(description="歴史的出来事の名称", min_length=1)]
-    significance: Annotated[str, Field(description="歴史的意義の説明", min_length=10)]
+    significance: Annotated[str, Field(description="歴史的意義の説明", min_length=5)]
     related_spots: Annotated[
         list[str],
         Field(
@@ -39,7 +39,7 @@ class SpotDetailSchema(GeminiResponseSchema):
     spot_name: Annotated[str, Field(description="観光スポット名", min_length=1, alias="spotName")]
     historical_background: Annotated[
         str,
-        Field(description="歴史的背景の詳細説明", min_length=10, alias="historicalBackground"),
+        Field(description="歴史的背景の詳細説明", min_length=5, alias="historicalBackground"),
     ]
     highlights: Annotated[
         list[str],
@@ -55,7 +55,7 @@ class SpotDetailSchema(GeminiResponseSchema):
     ]
     historical_significance: Annotated[
         str,
-        Field(description="歴史的意義の説明", min_length=10, alias="historicalSignificance"),
+        Field(description="歴史的意義の説明", min_length=5, alias="historicalSignificance"),
     ]
 
     @field_validator("highlights")
@@ -77,7 +77,7 @@ class CheckpointSchema(GeminiResponseSchema):
     ]
     historical_context: Annotated[
         str,
-        Field(description="歴史的コンテキストの説明", min_length=10, alias="historicalContext"),
+        Field(description="歴史的コンテキストの説明", min_length=5, alias="historicalContext"),
     ]
 
     @field_validator("checkpoints")

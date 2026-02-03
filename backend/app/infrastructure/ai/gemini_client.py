@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from google import genai
 from google.api_core import exceptions as google_exceptions
+from google.genai import errors as genai_errors
 from google.genai import types
 
 from app.infrastructure.ai.exceptions import (
@@ -140,6 +141,19 @@ class GeminiClient:
                 # 不正な引数エラー（400）- リトライしない
                 raise AIServiceInvalidRequestError(f"Invalid request: {e}") from e
 
+            except genai_errors.ClientError as e:
+                if self._is_rate_limit_error(e):
+                    if attempt == max_retries - 1:
+                        raise AIServiceQuotaExceededError(f"API quota exceeded: {e}") from e
+                    await self._exponential_backoff(attempt)
+                    continue
+                raise AIServiceInvalidRequestError(f"Invalid request: {e}") from e
+
+            except genai_errors.ServerError as e:
+                if attempt == max_retries - 1:
+                    raise AIServiceConnectionError(f"Service unavailable: {e}") from e
+                await self._exponential_backoff(attempt)
+
             except google_exceptions.GoogleAPIError as e:
                 # その他のGoogleAPIエラー
                 if attempt == max_retries - 1:
@@ -241,6 +255,19 @@ class GeminiClient:
                 # JSONパースエラー - リトライしない
                 raise AIServiceInvalidRequestError(f"Invalid JSON response: {e}") from e
 
+            except genai_errors.ClientError as e:
+                if self._is_rate_limit_error(e):
+                    if attempt == max_retries - 1:
+                        raise AIServiceQuotaExceededError(f"API quota exceeded: {e}") from e
+                    await self._exponential_backoff(attempt)
+                    continue
+                raise AIServiceInvalidRequestError(f"Invalid request: {e}") from e
+
+            except genai_errors.ServerError as e:
+                if attempt == max_retries - 1:
+                    raise AIServiceConnectionError(f"Service unavailable: {e}") from e
+                await self._exponential_backoff(attempt)
+
             except google_exceptions.GoogleAPIError as e:
                 if attempt == max_retries - 1:
                     raise AIServiceConnectionError(f"Google API error: {e}") from e
@@ -307,6 +334,12 @@ class GeminiClient:
         if text is None or (isinstance(text, str) and not text.strip()):
             raise AIServiceInvalidRequestError("Response text is empty.")
         return text
+
+    def _is_rate_limit_error(self, error: Exception) -> bool:
+        """レート制限やクォータ超過のエラーか判定する"""
+        if not isinstance(error, genai_errors.APIError):
+            return False
+        return bool(error.code == 429 or error.status == "RESOURCE_EXHAUSTED")
 
     async def _exponential_backoff(self, attempt: int) -> None:
         """指数バックオフを実行する

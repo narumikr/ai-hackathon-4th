@@ -1,6 +1,7 @@
 """AI APIレスポンス用Pydanticスキーマ"""
 
 from .base import GeminiResponseSchema
+from .evaluation import SpotEvaluation, TravelGuideEvaluationSchema
 from .reflection import ReflectionPamphletResponseSchema, SpotReflectionSchema
 from .travel_guide import (
     CheckpointSchema,
@@ -17,4 +18,6 @@ __all__ = [
     "CheckpointSchema",
     "ReflectionPamphletResponseSchema",
     "SpotReflectionSchema",
+    "TravelGuideEvaluationSchema",
+    "SpotEvaluation",
 ]

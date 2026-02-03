@@ -1,12 +1,12 @@
 'use client';
 
+import { ErrorDialog } from '@/components/features/common';
 import { Container } from '@/components/layout';
 import { Button, Icon, LoadingSpinner } from '@/components/ui';
 import {
   BUTTON_LABELS,
   BUTTON_STATES,
   DEFAULT_USER_ID,
-  EMOJI_LABELS,
   HINTS,
   LABELS,
   MESSAGES,
@@ -84,21 +84,12 @@ export default function ReflectionListPage() {
           </Button>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error}
-          </div>
-        )}
-
         {isLoading ? (
           <div className="py-16 text-center">
             <p className="text-neutral-600">{MESSAGES.LOADING}</p>
           </div>
         ) : !hasTravels ? (
           <div className="py-16 text-center">
-            <div className="mb-4">
-              <Icon name="photo" size="xl" label={EMOJI_LABELS.CAMERA} />
-            </div>
             <p className="mb-6 text-neutral-600">{MESSAGES.NO_REFLECTIONS}</p>
             <Link href="/travel">
               <Button>{BUTTON_LABELS.VIEW_TRAVEL_LIST_ALT}</Button>
@@ -116,7 +107,14 @@ export default function ReflectionListPage() {
                 >
                   <div className="mb-4">
                     <div className="mb-2 flex items-start justify-between">
-                      <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-semibold text-neutral-900 text-xl">{travel.title}</h2>
+                        {travel.reflectionGenerationStatus === 'failed' && (
+                          <span className="rounded-full bg-danger px-2 py-0.5 font-medium text-white text-xs">
+                            {STATUS_LABELS.GENERATION_FAILED}
+                          </span>
+                        )}
+                      </div>
                       {travel.reflectionGenerationStatus === 'processing' ? (
                         <span className="rounded-full bg-warning px-3 py-1 font-medium text-white text-xs">
                           {STATUS_LABELS.REFLECTION_PROCESSING}
@@ -171,6 +169,14 @@ export default function ReflectionListPage() {
           </ul>
         </div>
       </Container>
+
+      {/* エラーダイアログ */}
+      <ErrorDialog
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        title={MESSAGES.ERROR}
+        message={error || ''}
+      />
     </div>
   );
 }

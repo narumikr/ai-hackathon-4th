@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorDialog, GenerationStatusView } from '@/components/features/common';
 import { Container } from '@/components/layout';
 import { GoogleMapView } from '@/components/features/common';
 import { Button, Icon, Modal } from '@/components/ui';
@@ -11,13 +12,15 @@ import {
   ERROR_ALERTS,
   LABELS,
   MESSAGES,
+  PAGE_TITLES,
   SECTION_TITLES,
+  STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function TravelGuidePage() {
   const router = useRouter();
@@ -26,16 +29,22 @@ export default function TravelGuidePage() {
 
   const [travel, setTravel] = useState<TravelPlanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
 
-  useEffect(() => {
-    const fetchTravelPlan = async () => {
+  const fetchTravelPlan = useCallback(
+    async (isRefresh = false) => {
       if (!id) return;
 
-      setIsLoading(true);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
 
       try {
@@ -48,11 +57,36 @@ export default function TravelGuidePage() {
         console.error('Failed to fetch travel plan:', apiError);
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
       }
-    };
+    },
+    [id]
+  );
 
-    fetchTravelPlan();
-  }, [id]);
+  useEffect(() => {
+    fetchTravelPlan(false);
+  }, [fetchTravelPlan]);
+
+  const handleRefresh = () => {
+    fetchTravelPlan(true);
+  };
+
+  const handleRetryGenerate = async () => {
+    if (!id) return;
+
+    setIsRetrying(true);
+    try {
+      const apiClient = createApiClientFromEnv();
+      await apiClient.generateTravelGuide({ request: { planId: id } });
+      // 生成開始後、一覧ページへ戻る
+      router.push('/travel');
+    } catch (err) {
+      const apiError = toApiError(err);
+      setError(apiError.message || MESSAGES.ERROR);
+      console.error('Failed to retry guide generation:', apiError);
+      setIsRetrying(false);
+    }
+  };
 
   const isCompleted = travel?.status === 'completed';
 
@@ -78,7 +112,8 @@ export default function TravelGuidePage() {
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
-      alert(ERROR_ALERTS.DELETE_FAILED(apiError.message));
+      setIsDeleteModalOpen(false);
+      setError(ERROR_ALERTS.DELETE_FAILED(apiError.message));
       console.error('Failed to delete travel plan:', apiError);
     } finally {
       setIsDeleting(false);
@@ -87,6 +122,10 @@ export default function TravelGuidePage() {
 
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
+  };
+
+  const handleErrorDialogClose = () => {
+    setError(null);
   };
 
   const handleComplete = async () => {
@@ -104,7 +143,7 @@ export default function TravelGuidePage() {
       router.push('/travel');
     } catch (err) {
       const apiError = toApiError(err);
-      alert(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
+      setError(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
       console.error('Failed to complete travel plan:', apiError);
     } finally {
       setIsCompleting(false);
@@ -159,16 +198,52 @@ export default function TravelGuidePage() {
     );
   }
 
-  if (error || !travel) {
+  if (!travel) {
     return (
-      <div className="py-8">
-        <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
-          <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
-        </Container>
-      </div>
+      <>
+        <div className="py-8">
+          <Container>
+            <Button onClick={handleBack}>{BUTTON_LABELS.BACK}</Button>
+          </Container>
+        </div>
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={() => setError(null)}
+          title={MESSAGES.ERROR}
+          message={error || MESSAGES.TRAVEL_NOT_FOUND}
+        />
+      </>
+    );
+  }
+
+  // ガイド生成中の場合
+  if (travel.guideGenerationStatus === 'processing') {
+    return (
+      <GenerationStatusView
+        title={PAGE_TITLES.TRAVEL_GUIDE}
+        status="processing"
+        statusLabel={STATUS_LABELS.GUIDE_PROCESSING}
+        hintMessage={MESSAGES.GENERATING_GUIDE_HINT}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        onBack={handleBack}
+      />
+    );
+  }
+
+  // ガイド生成失敗の場合
+  if (travel.guideGenerationStatus === 'failed') {
+    return (
+      <GenerationStatusView
+        title={PAGE_TITLES.TRAVEL_GUIDE}
+        status="failed"
+        statusLabel={STATUS_LABELS.GENERATION_FAILED}
+        errorMessage={MESSAGES.GUIDE_GENERATION_FAILED}
+        retryLabel={BUTTON_LABELS.RETRY_GENERATE_GUIDE}
+        isRetrying={isRetrying}
+        onRetry={handleRetryGenerate}
+        onBack={handleBack}
+      />
     );
   }
 
@@ -185,6 +260,9 @@ export default function TravelGuidePage() {
               <p className="text-lg text-neutral-600">{travel.destination}</p>
               <p className="mt-2 text-neutral-500 text-sm">
                 {DATE_LABELS.CREATED_DATE} {formatDate(travel.createdAt)}
+                <span className="ml-4">
+                  {DATE_LABELS.UPDATED_DATE} {formatDate(travel.updatedAt)}
+                </span>
               </p>
             </div>
             {!isCompleted && (
@@ -339,11 +417,7 @@ export default function TravelGuidePage() {
         {/* ガイド未生成の場合 */}
         {!hasGuide && (
           <section className="mb-12 rounded-lg border border-primary-200 bg-primary-50 p-6">
-            <p className="text-center text-primary-900">
-              {MESSAGES.GUIDE_NOT_GENERATED}
-              {travel.guideGenerationStatus === 'processing' && MESSAGES.GUIDE_GENERATING}
-              {travel.guideGenerationStatus === 'failed' && MESSAGES.GUIDE_GENERATION_FAILED}
-            </p>
+            <p className="text-center text-primary-900">{MESSAGES.GUIDE_NOT_GENERATED}</p>
           </section>
         )}
 
@@ -396,6 +470,14 @@ export default function TravelGuidePage() {
             </div>
           </div>
         </Modal>
+
+        {/* Error Dialog */}
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={handleErrorDialogClose}
+          title={MESSAGES.ERROR}
+          message={error || ''}
+        />
       </Container>
     </div>
   );

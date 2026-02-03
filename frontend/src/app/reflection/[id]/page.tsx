@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorDialog } from '@/components/features/common';
 import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
 import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
@@ -7,7 +8,6 @@ import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
   EMOJI_LABELS,
-  ERROR_ALERTS,
   FORM_LABELS,
   HINTS,
   LABELS,
@@ -81,13 +81,16 @@ export default function ReflectionDetailPage() {
     return (
       <div className="py-8">
         <Container>
-          <div className="mb-6 rounded-lg border border-danger-200 bg-danger-50 p-4 text-danger-800">
-            {error || MESSAGES.TRAVEL_NOT_FOUND}
-          </div>
           <Link href="/reflection">
             <Button>{BUTTON_LABELS.BACK}</Button>
           </Link>
         </Container>
+        <ErrorDialog
+          isOpen={!!error}
+          onClose={() => setError(null)}
+          title={MESSAGES.ERROR}
+          message={error || MESSAGES.TRAVEL_NOT_FOUND}
+        />
       </div>
     );
   }
@@ -169,8 +172,7 @@ export default function ReflectionDetailPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setIsSubmitting(false);
-      // TODO: Issue #187 のエラー表示コンポーネント実装後、画面内でエラーを表示するようにする
-      console.error(ERROR_ALERTS.REFLECTION_CREATE_FAILED(apiError.message));
+      setError(apiError.message);
     }
   };
 
@@ -271,6 +273,14 @@ export default function ReflectionDetailPage() {
             message={MESSAGES.GENERATING_REFLECTION}
             showSpinner
             closable={false}
+          />
+
+          {/* エラーダイアログ */}
+          <ErrorDialog
+            isOpen={!!error}
+            onClose={() => setError(null)}
+            title={MESSAGES.ERROR}
+            message={error || ''}
           />
 
           {/* 注意事項 */}
