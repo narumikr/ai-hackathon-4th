@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui';
-import { EMOJI_LABELS, FORM_LABELS, LABELS, SECTION_TITLES } from '@/constants';
+import { DATE_LABELS, EMOJI_LABELS, FORM_LABELS, SECTION_TITLES } from '@/constants';
 import type {
   ReflectionPamphletResponse,
   ReflectionPhotoResponse,
@@ -67,8 +67,8 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
             <Icon name="pin" size="sm" label={EMOJI_LABELS.PIN} /> {travel.destination}
           </span>
           <span className="flex items-center gap-1">
-            <Icon name="check" size="sm" label={EMOJI_LABELS.CHECKMARK} /> {LABELS.COMPLETED_DATE}{' '}
-            {formatDate(travel.updatedAt)}
+            <Icon name="calendar" size="sm" label={EMOJI_LABELS.CALENDAR} />{' '}
+            {DATE_LABELS.CREATED_DATE} {formatDate(travel.createdAt)}
           </span>
         </div>
       </div>
