@@ -60,6 +60,11 @@
    - 表記ゆれ（例: 「東京タワー」と「東京tower」）は絶対に避ける
    - 別名や通称は使用せず、一つの正式名称に統一する
    - 旅行先全体に関連する出来事の場合、relatedSpots に「{destination}」を使用する
+
+5. 出力の簡潔性（重要）
+   - historicalBackground / historicalSignificance / historicalContext / significance はそれぞれ120〜200文字程度に収める
+   - highlights / checkpoints は1項目あたり30文字以内を目安にする
+   - 文字数超過が見込まれる場合は情報を要約して短くする
 </output_structure_requirements>
 
 <step_by_step_process>
