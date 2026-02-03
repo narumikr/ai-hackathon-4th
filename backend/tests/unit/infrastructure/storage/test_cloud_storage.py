@@ -1,6 +1,6 @@
 """CloudStorageServiceのユニットテスト"""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from google.api_core import exceptions as google_exceptions
@@ -45,7 +45,9 @@ async def test_upload_file_成功(cloud_storage, mock_storage_client):
 
     # モックのBlob設定
     mock_blob = MagicMock()
-    mock_blob.generate_signed_url.return_value = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
+    mock_blob.generate_signed_url.return_value = (
+        "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
+    )
     mock_bucket.blob.return_value = mock_blob
 
     # テストデータ（JPEG画像のマジックバイト）
@@ -81,7 +83,9 @@ async def test_upload_file_リトライ成功(cloud_storage, mock_storage_client
 
     # モックのBlob設定
     mock_blob = MagicMock()
-    mock_blob.generate_signed_url.return_value = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
+    mock_blob.generate_signed_url.return_value = (
+        "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
+    )
     mock_bucket.blob.return_value = mock_blob
 
     # 1回目は失敗、2回目は成功
@@ -149,7 +153,9 @@ async def test_get_file_url_成功(cloud_storage, mock_storage_client):
 
     # モックのBlob設定
     mock_blob = MagicMock()
-    mock_blob.generate_signed_url.return_value = "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
+    mock_blob.generate_signed_url.return_value = (
+        "https://storage.googleapis.com/test-bucket/travels/123/image.jpg?X-Goog-Signature=..."
+    )
     mock_blob.exists.return_value = True
     mock_bucket.blob.return_value = mock_blob
 

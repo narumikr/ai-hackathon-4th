@@ -22,7 +22,6 @@ from app.domain.travel_guide.value_objects import SpotDetail
 from app.infrastructure.ai.adapters import GeminiAIService
 from app.infrastructure.ai.gemini_client import GeminiClient
 
-
 # --- Hypothesisカスタム戦略定義 ---
 
 MIN_HISTORICAL_BACKGROUND_LENGTH = 10
@@ -33,9 +32,7 @@ MIN_HISTORICAL_BACKGROUND_LENGTH = 10
 """
 
 
-def _non_empty_printable_text(
-    min_size: int = 1, max_size: int = 50
-) -> st.SearchStrategy[str]:
+def _non_empty_printable_text(min_size: int = 1, max_size: int = 50) -> st.SearchStrategy[str]:
     """非空のprintable文字列を生成するStrategy
 
     Hypothesis Strategy: テストデータ生成の設計図
@@ -81,9 +78,7 @@ def _travel_destination_inputs(draw: st.DrawFn) -> tuple[str, str | None]:
     prompt = f"Provide historical information about {destination}"
 
     # オプショナルなシステム命令
-    system_instruction = draw(
-        st.one_of(st.none(), _non_empty_printable_text(max_size=120))
-    )
+    system_instruction = draw(st.one_of(st.none(), _non_empty_printable_text(max_size=120)))
 
     return prompt, system_instruction
 
@@ -198,7 +193,7 @@ async def test_property_web_search_execution(inputs: tuple[str, str | None]) -> 
 @given(inputs=_spot_info_inputs())
 @settings(max_examples=100)
 async def test_property_historical_background_summarization(
-    inputs: tuple[str, dict[str, Any]]
+    inputs: tuple[str, dict[str, Any]],
 ) -> None:
     """Property 6: Historical background summarizationを検証する
 
@@ -267,9 +262,7 @@ async def test_property_historical_background_summarization(
     assert spot_detail.historical_background.strip() != ""
 
     # 検証6: historical_backgroundが最小限の長さを持つこと（汎用的すぎる応答を排除）
-    assert (
-        len(spot_detail.historical_background) >= MIN_HISTORICAL_BACKGROUND_LENGTH
-    )
+    assert len(spot_detail.historical_background) >= MIN_HISTORICAL_BACKGROUND_LENGTH
 
 
 # --- Property 7: Historical highlights organization ---
@@ -279,7 +272,7 @@ async def test_property_historical_background_summarization(
 @given(inputs=_spot_info_inputs())
 @settings(max_examples=100)
 async def test_property_historical_highlights_organization(
-    inputs: tuple[str, dict[str, Any]]
+    inputs: tuple[str, dict[str, Any]],
 ) -> None:
     """Property 7: Historical highlights organizationを検証する
 

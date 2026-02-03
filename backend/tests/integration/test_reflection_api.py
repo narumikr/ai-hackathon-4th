@@ -1,6 +1,7 @@
 """Reflection API統合テスト"""
 
 import time
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -71,6 +72,34 @@ class StubAIService(IAIService):
             "historicalElements": ["清水の舞台"],
             "landmarks": ["清水寺本堂"],
             "confidence": 0.9,
+        }
+
+    async def evaluate_travel_guide(
+        self,
+        guide_content: dict,
+        evaluation_schema: type[Any],
+        evaluation_prompt: str,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict:
+        """旅行ガイドの評価（スタブ：常に合格を返す）"""
+        return {
+            "spotEvaluations": [
+                {
+                    "spotName": "清水寺",
+                    "hasCitation": True,
+                    "citationExample": "清水寺公式サイト",
+                },
+                {
+                    "spotName": "金閣寺",
+                    "hasCitation": True,
+                    "citationExample": "金閣寺公式サイト",
+                },
+            ],
+            "hasHistoricalComparison": True,
+            "historicalComparisonExample": "同時期のヨーロッパでは...",
         }
 
     async def generate_structured_data(
@@ -229,9 +258,7 @@ def test_upload_images_clears_spot_note_when_empty(
     empty_files = [
         ("files", ("kyoto-2.jpg", b"dummy-bytes", "image/jpeg")),
     ]
-    empty_response = api_client.post(
-        "/api/v1/spot-reflections", data=empty_data, files=empty_files
-    )
+    empty_response = api_client.post("/api/v1/spot-reflections", data=empty_data, files=empty_files)
     assert empty_response.status_code == 204
 
     db_session.expire_all()
@@ -262,9 +289,7 @@ def test_create_reflection(
     }
 
     files = [("files", ("kiyomizu.jpg", b"dummy-bytes", "image/jpeg"))]
-    upload_response = api_client.post(
-        "/api/v1/spot-reflections", data=upload_data, files=files
-    )
+    upload_response = api_client.post("/api/v1/spot-reflections", data=upload_data, files=files)
     assert upload_response.status_code == 204
 
     response = api_client.post(
@@ -277,17 +302,13 @@ def test_create_reflection(
 
     assert response.status_code == 204
 
-    status_data = api_client.get(
-        f"/api/v1/travel-plans/{sample_travel_plan.id}"
-    ).json()
+    status_data = api_client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}").json()
 
     for _ in range(20):
         if status_data["reflectionGenerationStatus"] == "succeeded":
             break
         time.sleep(0.01)
-        status_data = api_client.get(
-            f"/api/v1/travel-plans/{sample_travel_plan.id}"
-        ).json()
+        status_data = api_client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}").json()
 
     assert status_data["reflectionGenerationStatus"] == "succeeded"
 
@@ -322,9 +343,7 @@ def test_create_reflection_accepts_empty_user_notes(
     }
 
     files = [("files", ("kiyomizu.jpg", b"dummy-bytes", "image/jpeg"))]
-    upload_response = api_client.post(
-        "/api/v1/spot-reflections", data=upload_data, files=files
-    )
+    upload_response = api_client.post("/api/v1/spot-reflections", data=upload_data, files=files)
     assert upload_response.status_code == 204
 
     response = api_client.post(
@@ -339,9 +358,7 @@ def test_create_reflection_accepts_empty_user_notes(
     assert response.status_code == 204
 
     for _ in range(20):
-        status_data = api_client.get(
-            f"/api/v1/travel-plans/{sample_travel_plan.id}"
-        ).json()
+        status_data = api_client.get(f"/api/v1/travel-plans/{sample_travel_plan.id}").json()
         if status_data["reflectionGenerationStatus"] == "succeeded":
             break
         time.sleep(0.01)

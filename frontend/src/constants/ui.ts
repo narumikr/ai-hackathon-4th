@@ -37,6 +37,7 @@ export const ERROR_ALERTS = {
  */
 export const DATE_LABELS = {
   CREATED_DATE: '作成日:',
+  UPDATED_DATE: '更新日:',
 } as const;
 
 /**

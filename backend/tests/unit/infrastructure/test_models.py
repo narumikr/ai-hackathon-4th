@@ -3,7 +3,6 @@
 import uuid
 
 import pytest
-
 from sqlalchemy.orm import Session
 
 from app.infrastructure.persistence.models import (

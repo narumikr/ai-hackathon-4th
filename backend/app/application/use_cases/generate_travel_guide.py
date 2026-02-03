@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-import copy
+import json
+import logging
 from typing import Any
+
+from pydantic import ValidationError
 
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.ports.ai_service import IAIService
@@ -19,6 +22,8 @@ from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
+from app.infrastructure.ai.schemas.evaluation import TravelGuideEvaluationSchema
+from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
 from app.prompts import render_template
 
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
@@ -81,10 +86,14 @@ _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     "required": ["overview", "timeline", "spotDetails", "checkpoints"],
 }
 
-_HISTORICAL_PROMPT_TEMPLATE = "travel_guide_historical_prompt.txt"
+_FACT_EXTRACTION_PROMPT_TEMPLATE = "travel_guide_fact_extraction_prompt.txt"
 _TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
-_HISTORICAL_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_historical_system_instruction.txt"
+_FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_fact_extraction_system_instruction.txt"
 _TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
+_EVALUATION_PROMPT_TEMPLATE = "travel_guide_evaluation_prompt.txt"
+_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_evaluation_system_instruction.txt"
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -324,6 +333,7 @@ class GenerateTravelGuideUseCase:
             TravelPlanNotFoundError: 旅行計画が見つからない場合
             ValueError: 入力や生成結果が不正な場合
         """
+        logger.debug("GenerateTravelGuideUseCase started", extra={"plan_id": plan_id})
         validate_required_str(plan_id, "plan_id")
 
         travel_plan = self._plan_repository.find_by_id(plan_id)
@@ -337,6 +347,14 @@ class GenerateTravelGuideUseCase:
             raise ValueError("spots must not be empty.")
 
         plan_spot_names = [spot.name for spot in travel_plan.spots]
+        logger.debug(
+            "Travel plan validated for guide generation",
+            extra={
+                "plan_id": plan_id,
+                "destination": travel_plan.destination,
+                "spot_count": len(plan_spot_names),
+            },
+        )
         duplicate_spots = {
             spot_name for spot_name in plan_spot_names if plan_spot_names.count(spot_name) > 1
         }
@@ -345,26 +363,94 @@ class GenerateTravelGuideUseCase:
 
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.PROCESSING)
         self._plan_repository.save(travel_plan, commit=commit)
+        logger.debug(
+            "Guide status set to processing in use case",
+            extra={"plan_id": plan_id},
+        )
 
         try:
             with self._plan_repository.begin_nested():
-                historical_prompt = _build_historical_info_prompt(travel_plan)
-                historical_info = await self._ai_service.generate_with_search(
-                    prompt=historical_prompt,
-                    system_instruction=render_template(_HISTORICAL_SYSTEM_INSTRUCTION_TEMPLATE),
+                # Step A: 事実抽出（出典候補付き）
+                logger.debug(
+                    "Starting fact extraction",
+                    extra={"plan_id": plan_id},
                 )
-                if not historical_info or not historical_info.strip():
-                    raise ValueError("historical_info must be a non-empty string.")
+                fact_extraction_prompt = _build_fact_extraction_prompt(travel_plan)
+                extracted_facts = await self._ai_service.generate_with_search(
+                    prompt=fact_extraction_prompt,
+                    system_instruction=render_template(
+                        _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE
+                    ),
+                )
+                if not extracted_facts or not extracted_facts.strip():
+                    raise ValueError("extracted_facts must be a non-empty string.")
+                logger.debug(
+                    "Fact extraction completed",
+                    extra={"plan_id": plan_id, "facts_length": len(extracted_facts)},
+                )
 
-                guide_prompt = _build_travel_guide_prompt(travel_plan, historical_info)
-                response_schema = _build_travel_guide_schema()
-                structured = await self._ai_service.generate_structured_data(
-                    prompt=guide_prompt,
-                    response_schema=response_schema,
-                    system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
+                # 初回生成（Step Aの出力を使用）
+                logger.debug(
+                    "Starting travel guide generation",
+                    extra={"plan_id": plan_id},
                 )
-                if not isinstance(structured, dict):
-                    raise ValueError("structured response must be a dict.")
+                structured = await self._generate_guide_data(travel_plan, extracted_facts)
+                logger.debug(
+                    "Travel guide generation completed",
+                    extra={
+                        "plan_id": plan_id,
+                        "structured_keys": sorted(structured.keys()),
+                    },
+                )
+
+                # 評価
+                logger.debug(
+                    "Starting travel guide evaluation",
+                    extra={"plan_id": plan_id},
+                )
+                evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
+                logger.debug(
+                    "Travel guide evaluation completed",
+                    extra={"plan_id": plan_id},
+                )
+
+                # 評価結果を解析
+                is_valid = self._check_evaluation_result(evaluation)
+
+                # 不合格の場合は1回だけ再生成
+                if not is_valid:
+                    failure_reasons = self._get_failure_reasons(evaluation)
+                    logger.warning(
+                        "Travel guide evaluation failed. Reasons: %s. Retrying once...",
+                        "; ".join(failure_reasons),
+                    )
+                    logger.debug(
+                        "Retrying travel guide generation after evaluation failure",
+                        extra={"plan_id": plan_id},
+                    )
+                    structured = await self._generate_guide_data(travel_plan, extracted_facts)
+
+                    # 再評価（ログ出力のみ、再生成は行わない）
+                    logger.debug(
+                        "Re-evaluating travel guide after retry",
+                        extra={"plan_id": plan_id},
+                    )
+                    re_evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
+                    re_is_valid = self._check_evaluation_result(re_evaluation)
+                    if not re_is_valid:
+                        re_failure_reasons = self._get_failure_reasons(re_evaluation)
+                        logger.warning(
+                            "Travel guide evaluation failed after retry. Reasons: %s. Proceeding anyway.",
+                            "; ".join(re_failure_reasons),
+                        )
+                    else:
+                        logger.info("Travel guide evaluation passed after retry.")
+
+                # レスポンスバリデーション
+                try:
+                    TravelGuideResponseSchema.model_validate(structured)
+                except ValidationError as e:
+                    raise ValueError(f"Invalid AI response structure: {e}") from e
 
                 overview = _require_str(structured.get("overview"), "overview")
                 _require_min_length(overview, "overview", 100)
@@ -383,6 +469,10 @@ class GenerateTravelGuideUseCase:
                     travel_plan.update_plan(spots=updated_spots)
                     # commit=Falseで保存（最終的なステータス更新時に一括コミット）
                     self._plan_repository.save(travel_plan, commit=False)
+                    logger.debug(
+                        "New spots detected and added",
+                        extra={"plan_id": plan_id, "new_spot_count": len(new_spot_names)},
+                    )
 
                 spot_detail_name_set = {detail.spot_name for detail in spot_details}
                 checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
@@ -413,6 +503,10 @@ class GenerateTravelGuideUseCase:
                     )
                     saved_guide = self._guide_repository.save(existing, commit=False)
         except Exception:
+            logger.exception(
+                "Travel guide generation failed in use case",
+                extra={"plan_id": plan_id},
+            )
             failed_plan = self._plan_repository.find_by_id(travel_plan.id) or travel_plan
             failed_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
             self._plan_repository.save(failed_plan, commit=commit)
@@ -420,32 +514,146 @@ class GenerateTravelGuideUseCase:
 
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
         self._plan_repository.save(travel_plan, commit=commit)
+        logger.debug(
+            "Guide status set to succeeded in use case",
+            extra={"plan_id": plan_id},
+        )
 
         return TravelGuideDTO.from_entity(saved_guide)
 
+    async def _evaluate_guide_data(
+        self, guide_data: dict[str, Any], required_spot_names: list[str]
+    ) -> dict[str, Any]:
+        """旅行ガイドデータを評価する
 
-def _build_historical_info_prompt(travel_plan: TravelPlan) -> str:
-    """歴史情報収集用のプロンプトを生成する"""
+        Args:
+            guide_data: 評価対象の旅行ガイドデータ
+            required_spot_names: 旅行計画に含まれるべきスポット名のリスト
+
+        Returns:
+            評価結果
+        """
+        logger.debug(
+            "Evaluating guide data with AI",
+            extra={
+                "required_spot_count": len(required_spot_names),
+                "guide_key_count": len(guide_data.keys()),
+            },
+        )
+        guide_data_json = json.dumps(guide_data, ensure_ascii=False, indent=2)
+        required_spots_text = "\n".join([f"- {name}" for name in required_spot_names])
+        prompt = render_template(
+            _EVALUATION_PROMPT_TEMPLATE,
+            guide_data=guide_data_json,
+            required_spots=required_spots_text,
+        )
+        system_instruction = render_template(_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE)
+
+        return await self._ai_service.generate_structured_data(
+            prompt=prompt,
+            response_schema=TravelGuideEvaluationSchema,
+            system_instruction=system_instruction,
+        )
+
+    def _check_evaluation_result(self, evaluation: dict[str, Any]) -> bool:
+        """評価結果が合格かどうかをチェックする
+
+        Args:
+            evaluation: AIサービスからの評価結果
+
+        Returns:
+            合格の場合True
+        """
+        spot_evaluations = evaluation.get("spotEvaluations", [])
+        has_historical_comparison = evaluation.get("hasHistoricalComparison", False)
+        all_spots_included = evaluation.get("allSpotsIncluded", False)
+
+        # 全てのスポットが含まれ、全てのスポットに出典があり、歴史的対比もある場合のみ合格
+        all_spots_have_citation = all(spot.get("hasCitation", False) for spot in spot_evaluations)
+
+        return all_spots_included and all_spots_have_citation and has_historical_comparison
+
+    def _get_failure_reasons(self, evaluation: dict[str, Any]) -> list[str]:
+        """評価結果から不合格の理由を取得する
+
+        Args:
+            evaluation: AIサービスからの評価結果
+
+        Returns:
+            不合格の理由のリスト
+        """
+        reasons: list[str] = []
+
+        # スポット漏れチェック
+        if not evaluation.get("allSpotsIncluded", False):
+            missing_spots = evaluation.get("missingSpots", [])
+            if missing_spots:
+                reasons.append(f"spotDetailsに含まれていないスポット: {', '.join(missing_spots)}")
+
+        # 出典チェック
+        spot_evaluations = evaluation.get("spotEvaluations", [])
+        missing_citations = [
+            spot.get("spotName", "")
+            for spot in spot_evaluations
+            if not spot.get("hasCitation", False)
+        ]
+
+        if missing_citations:
+            reasons.append(f"出典が不足しているスポット: {', '.join(missing_citations)}")
+
+        # 歴史的対比チェック
+        if not evaluation.get("hasHistoricalComparison", False):
+            reasons.append("overviewに歴史の有名な話題との対比が含まれていません")
+
+        return reasons
+
+    async def _generate_guide_data(
+        self, travel_plan: TravelPlan, extracted_facts: str
+    ) -> dict[str, Any]:
+        """旅行ガイドデータを生成する
+
+        Args:
+            travel_plan: 旅行計画
+            extracted_facts: 事実抽出結果
+
+        Returns:
+            生成された構造化データ
+        """
+        logger.debug(
+            "Generating guide data with AI",
+            extra={
+                "destination": travel_plan.destination,
+                "spot_count": len(travel_plan.spots),
+                "facts_length": len(extracted_facts),
+            },
+        )
+        guide_prompt = _build_travel_guide_prompt(travel_plan, extracted_facts)
+        structured = await self._ai_service.generate_structured_data(
+            prompt=guide_prompt,
+            response_schema=TravelGuideResponseSchema,
+            system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
+        )
+        if not isinstance(structured, dict):
+            raise ValueError("structured response must be a dict.")
+        return structured
+
+
+def _build_fact_extraction_prompt(travel_plan: TravelPlan) -> str:
+    """事実抽出用のプロンプトを生成する（Step A）"""
     spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return render_template(
-        _HISTORICAL_PROMPT_TEMPLATE,
+        _FACT_EXTRACTION_PROMPT_TEMPLATE,
         destination=travel_plan.destination,
         spots_text=spots_text,
     )
 
 
-def _build_travel_guide_prompt(travel_plan: TravelPlan, historical_info: str) -> str:
-    """旅行ガイド生成用のプロンプトを生成する"""
+def _build_travel_guide_prompt(travel_plan: TravelPlan, extracted_facts: str) -> str:
+    """旅行ガイド生成用のプロンプトを生成する（Step B）"""
     spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return render_template(
         _TRAVEL_GUIDE_PROMPT_TEMPLATE,
         destination=travel_plan.destination,
         spots_text=spots_text,
-        historical_info=historical_info,
+        extracted_facts=extracted_facts,
     )
-
-
-def _build_travel_guide_schema() -> dict[str, Any]:
-    """旅行ガイド生成用のスキーマを構築する"""
-    schema = copy.deepcopy(_TRAVEL_GUIDE_SCHEMA)
-    return schema

@@ -1,7 +1,14 @@
 """AIサービスのポートインターフェース"""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
+
+if TYPE_CHECKING:
+    from app.infrastructure.ai.schemas.base import GeminiResponseSchema
+
+T = TypeVar("T", bound="GeminiResponseSchema")
 
 
 class IAIService(ABC):
@@ -86,7 +93,7 @@ class IAIService(ABC):
         self,
         prompt: str,
         image_uri: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -97,13 +104,13 @@ class IAIService(ABC):
         Args:
             prompt: 画像に対する質問・指示
             image_uri: 画像のURI（GCS URIまたはHTTPS URL）
-            response_schema: レスポンスのJSONスキーマ
+            response_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
             system_instruction: システム命令（オプション）
             temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨、Noneの場合は0.0を使用）
             max_output_tokens: 最大出力トークン数（Noneの場合は実装のデフォルト値を使用）
 
         Returns:
-            dict[str, Any]: スキーマに従った構造化データ
+            dict[str, Any]: スキーマに従った構造化データ（dict形式）
         """
         pass
 
@@ -111,7 +118,7 @@ class IAIService(ABC):
     async def generate_structured_data(
         self,
         prompt: str,
-        response_schema: dict[str, Any],
+        response_schema: type[T],
         *,
         system_instruction: str | None = None,
         temperature: float | None = None,
@@ -121,12 +128,41 @@ class IAIService(ABC):
 
         Args:
             prompt: 生成プロンプト
-            response_schema: レスポンスのJSONスキーマ
+            response_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
             system_instruction: システム命令（オプション）
             temperature: 生成の多様性を制御するパラメータ（構造化出力時は0推奨、Noneの場合は0.0を使用）
             max_output_tokens: 最大出力トークン数（Noneの場合は実装のデフォルト値を使用）
 
         Returns:
-            dict[str, Any]: スキーマに従った構造化データ
+            dict[str, Any]: スキーマに従った構造化データ（dict形式）
+        """
+        pass
+
+    @abstractmethod
+    async def evaluate_travel_guide(
+        self,
+        guide_content: dict,
+        evaluation_schema: type[T],
+        evaluation_prompt: str,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+    ) -> dict:
+        """旅行ガイドの品質を評価する
+
+        Args:
+            guide_content: 評価対象の旅行ガイドデータ
+            evaluation_schema: PydanticスキーマクラスのType（GeminiResponseSchemaのサブクラス）
+            evaluation_prompt: 評価プロンプト
+            system_instruction: システム命令（オプション）
+            temperature: 生成の多様性を制御するパラメータ（評価時は0推奨）
+            max_output_tokens: 最大出力トークン数（オプション）
+
+        Returns:
+            dict: 評価結果
+                - spotEvaluations: 各スポットの評価結果のリスト
+                - hasHistoricalComparison: 歴史的対比の有無
+                - historicalComparisonExample: 歴史的対比の例
         """
         pass

@@ -143,9 +143,7 @@ def test_create_travel_plan_with_null_spots(api_client: TestClient):
     assert response.status_code == 422
 
 
-def test_get_travel_plan(
-    api_client: TestClient, sample_travel_plan: TravelPlanModel
-):
+def test_get_travel_plan(api_client: TestClient, sample_travel_plan: TravelPlanModel):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: GET /api/v1/travel-plans/{id}
     検証: ステータスコード200、レスポンスデータ
@@ -229,9 +227,7 @@ def test_get_travel_plan_not_found(api_client: TestClient):
     assert response.status_code == 404
 
 
-def test_list_travel_plans(
-    api_client: TestClient, sample_travel_plan: TravelPlanModel
-):
+def test_list_travel_plans(api_client: TestClient, sample_travel_plan: TravelPlanModel):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: GET /api/v1/travel-plans?user_id={id}
     検証: ステータスコード200、レスポンスリスト
@@ -239,9 +235,7 @@ def test_list_travel_plans(
     # 前提条件: テスト用DBセッションとサンプルデータ
 
     # 実行: GET /api/v1/travel-plans?user_id={id}
-    response = api_client.get(
-        f"/api/v1/travel-plans?user_id={sample_travel_plan.user_id}"
-    )
+    response = api_client.get(f"/api/v1/travel-plans?user_id={sample_travel_plan.user_id}")
 
     # 検証: ステータスコード200、レスポンスリスト
     assert response.status_code == 200
@@ -265,9 +259,7 @@ def test_list_travel_plans(
     assert data[0]["reflectionGenerationStatus"] == sample_travel_plan.reflection_generation_status
 
 
-def test_update_travel_plan(
-    api_client: TestClient, sample_travel_plan: TravelPlanModel
-):
+def test_update_travel_plan(api_client: TestClient, sample_travel_plan: TravelPlanModel):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: PUT /api/v1/travel-plans/{id}
     検証: ステータスコード200、更新されたデータ
@@ -281,9 +273,7 @@ def test_update_travel_plan(
     }
 
     # 実行: PUT /api/v1/travel-plans/{id}
-    response = api_client.put(
-        f"/api/v1/travel-plans/{sample_travel_plan.id}", json=update_data
-    )
+    response = api_client.put(f"/api/v1/travel-plans/{sample_travel_plan.id}", json=update_data)
 
     # 検証: ステータスコード200、更新されたデータ
     assert response.status_code == 200
@@ -295,9 +285,7 @@ def test_update_travel_plan(
     assert data["reflectionGenerationStatus"] == "not_started"
 
 
-def test_update_travel_plan_status(
-    api_client: TestClient, sample_travel_plan: TravelPlanModel
-):
+def test_update_travel_plan_status(api_client: TestClient, sample_travel_plan: TravelPlanModel):
     """前提条件: テスト用DBセッションとサンプルデータ
     実行: PUT /api/v1/travel-plans/{id} でstatus更新
     検証: ステータスコード200、statusが更新される
@@ -310,9 +298,7 @@ def test_update_travel_plan_status(
     }
 
     # 実行: PUT /api/v1/travel-plans/{id}
-    response = api_client.put(
-        f"/api/v1/travel-plans/{sample_travel_plan.id}", json=update_data
-    )
+    response = api_client.put(f"/api/v1/travel-plans/{sample_travel_plan.id}", json=update_data)
 
     # 検証: ステータスコード200、statusが更新される
     assert response.status_code == 200
