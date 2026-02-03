@@ -439,5 +439,4 @@ describe('ReflectionDetailPage', () => {
       });
     });
   });
-
 });

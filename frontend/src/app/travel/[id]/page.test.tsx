@@ -721,7 +721,9 @@ describe('TravelGuidePage', () => {
 
       // 検証: 削除中はボタンが無効化されている
       await waitFor(() => {
-        const disabledButtons = screen.getAllByRole('button', { name: new RegExp(MESSAGES.LOADING) });
+        const disabledButtons = screen.getAllByRole('button', {
+          name: new RegExp(MESSAGES.LOADING),
+        });
         expect(disabledButtons.length).toBeGreaterThan(0);
       });
     });
