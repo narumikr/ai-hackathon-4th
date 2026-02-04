@@ -96,4 +96,35 @@
     accent-color: var(--color-danger);
   }
 }
+
+/* Print Styles for PDF Export */
+@media print {
+  /* Hide navigation and footer */
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+
+  /* Remove background colors for better printing */
+  body {
+    background-color: white !important;
+  }
+
+  /* Ensure content breaks properly */
+  .break-inside-avoid {
+    break-inside: avoid;
+  }
+
+  /* Adjust page margins */
+  @page {
+    margin: 1cm;
+  }
+
+  /* Ensure images print properly */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+}
 /* stylelint-enable at-rule-no-unknown */
