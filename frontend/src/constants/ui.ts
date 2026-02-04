@@ -235,6 +235,8 @@ export const MESSAGES = {
   GUIDE_GENERATING: '現在生成中です...',
   GUIDE_GENERATION_FAILED: 'ガイドの生成に失敗しました。',
   NO_SPOTS_REGISTERED: '観光スポットが登録されていません。',
+  MAP_LOAD_ERROR: 'マップの読み込みに失敗しました',
+  SEARCHING_SPOTS: 'スポットを検索中...',
 } as const;
 
 /**

@@ -4,6 +4,7 @@ import { GoogleMap, InfoWindow, Marker, useJsApiLoader } from '@react-google-map
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MESSAGES } from '@/constants';
 
 export interface SpotLocation {
   name: string;
@@ -138,7 +139,7 @@ export function GoogleMapView({
         className={`flex items-center justify-center rounded-xl bg-neutral-100 ${className}`}
         style={{ height }}
       >
-        <p className="text-neutral-600">マップの読み込みに失敗しました</p>
+        <p className="text-neutral-600">{MESSAGES.MAP_LOAD_ERROR}</p>
       </div>
     );
   }
@@ -160,7 +161,7 @@ export function GoogleMapView({
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
           <div className="flex flex-col items-center gap-2">
             <LoadingSpinner size="md" />
-            <p className="text-neutral-600 text-sm">スポットを検索中...</p>
+            <p className="text-neutral-600 text-sm">{MESSAGES.SEARCHING_SPOTS}</p>
           </div>
         </div>
       )}
