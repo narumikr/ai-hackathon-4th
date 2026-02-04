@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from google import genai
@@ -53,6 +54,7 @@ class GeminiClient:
             location=location,
             http_options=types.HttpOptions(api_version="v1"),
         ).aio
+        self._logger = logging.getLogger(__name__)
 
     async def generate_content(
         self,
@@ -226,7 +228,22 @@ class GeminiClient:
                     timeout=timeout,
                 )
                 # JSONをパースして返す
-                return json.loads(self._extract_text(response))
+                extracted_text = self._extract_text(response)
+                try:
+                    return json.loads(extracted_text)
+                except (json.JSONDecodeError, ValueError) as e:
+                    if attempt == max_retries - 1:
+                        raise AIServiceInvalidRequestError(f"Invalid JSON response: {e}") from e
+                    self._logger.warning(
+                        "Invalid JSON response from Gemini. retry=%s/%s, length=%s, head=%r, tail=%r",
+                        attempt + 1,
+                        max_retries,
+                        len(extracted_text),
+                        extracted_text[:200],
+                        extracted_text[-200:],
+                    )
+                    await self._exponential_backoff(attempt)
+                    continue
 
             except TimeoutError as e:
                 if attempt == max_retries - 1:
@@ -250,10 +267,6 @@ class GeminiClient:
 
             except google_exceptions.InvalidArgument as e:
                 raise AIServiceInvalidRequestError(f"Invalid request: {e}") from e
-
-            except (json.JSONDecodeError, ValueError) as e:
-                # JSONパースエラー - リトライしない
-                raise AIServiceInvalidRequestError(f"Invalid JSON response: {e}") from e
 
             except genai_errors.ClientError as e:
                 if self._is_rate_limit_error(e):

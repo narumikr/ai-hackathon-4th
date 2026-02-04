@@ -122,9 +122,12 @@ export default function ReflectionViewPage() {
   return (
     <div className="py-8">
       <Container>
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between print:hidden">
           <h1 className="font-bold text-2xl text-neutral-900">{PAGE_TITLES.REFLECTION_PAMPHLET}</h1>
           <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => window.print()}>
+              {BUTTON_LABELS.PDF_EXPORT}
+            </Button>
             <Link href="/reflection">
               <Button variant="ghost">{BUTTON_LABELS.BACK}</Button>
             </Link>
