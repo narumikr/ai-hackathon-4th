@@ -697,10 +697,10 @@ describe('TravelGuidePage', () => {
 
   describe('ボタン無効化状態', () => {
     it('削除処理中は削除ボタンが無効化される', async () => {
-      // 準備: 削除APIが遅延するPromiseを返す
+      // 準備: 削除APIが解決しないPromiseを返す
       mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
       mockDeleteTravelPlan.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 1000))
+        () => new Promise(() => {})
       );
 
       // 実行: コンポーネントをレンダリング
@@ -729,10 +729,10 @@ describe('TravelGuidePage', () => {
     });
 
     it('完了処理中は完了ボタンが無効化される', async () => {
-      // 準備: 完了APIが遅延するPromiseを返す
+      // 準備: 完了APIが解決しないPromiseを返す
       mockGetTravelPlan.mockResolvedValue(createMockTravelPlan({ status: 'planning' }));
       mockUpdateTravelPlan.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 1000))
+        () => new Promise(() => {})
       );
 
       // 実行: コンポーネントをレンダリング
