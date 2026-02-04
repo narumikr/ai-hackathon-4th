@@ -160,8 +160,12 @@ const createMockTravelPlan = (overrides: Partial<TravelPlanResponse> = {}): Trav
 });
 
 describe('ReflectionViewPage', () => {
+  const mockPrint = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // window.print をモック
+    vi.stubGlobal('print', mockPrint);
   });
 
   describe('ローディング状態', () => {
@@ -290,6 +294,19 @@ describe('ReflectionViewPage', () => {
       });
     });
 
+    it('PDF出力ボタンが表示される', async () => {
+      // 準備: pamphletを持つ旅行計画を返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+
+      // 実行: コンポーネントをレンダリング
+      render(<ReflectionViewPage />);
+
+      // 検証: PDF出力ボタンが表示される
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.PDF_EXPORT })).toBeInTheDocument();
+      });
+    });
+
     it('ReflectionViewerコンポーネントが表示される', async () => {
       // 準備: pamphletを持つ旅行計画を返す
       mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
@@ -360,6 +377,28 @@ describe('ReflectionViewPage', () => {
       });
       expect(screen.getByTestId('suggestion-1')).toHaveTextContent('姫路城で城郭建築を学ぶ');
       expect(screen.getByTestId('suggestion-2')).toHaveTextContent('伏見稲荷大社の千本鳥居を歩く');
+    });
+  });
+
+  describe('PDF出力機能', () => {
+    it('PDF出力ボタンをクリックするとwindow.printが呼び出される', async () => {
+      // 準備: pamphletを持つ旅行計画を返す
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+
+      // 実行: コンポーネントをレンダリング
+      render(<ReflectionViewPage />);
+
+      // 検証: PDF出力ボタンが表示されるまで待機
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: BUTTON_LABELS.PDF_EXPORT })).toBeInTheDocument();
+      });
+
+      // 実行: PDF出力ボタンをクリック
+      const pdfButton = screen.getByRole('button', { name: BUTTON_LABELS.PDF_EXPORT });
+      fireEvent.click(pdfButton);
+
+      // 検証: window.printが呼び出される
+      expect(mockPrint).toHaveBeenCalledTimes(1);
     });
   });
 
