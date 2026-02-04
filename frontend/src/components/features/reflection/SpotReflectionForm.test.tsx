@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { BUTTON_LABELS, FORM_LABELS, HELP_TEXTS, PLACEHOLDERS, STATUS_LABELS } from '@/constants';
+import { BUTTON_LABELS, FORM_LABELS, HELP_TEXTS, LABELS, PLACEHOLDERS, STATUS_LABELS } from '@/constants';
 import type { ReflectionSpot } from '@/types/reflection';
 import { SpotReflectionForm } from './SpotReflectionForm';
 
@@ -208,7 +208,7 @@ describe('SpotReflectionForm', () => {
       render(<SpotReflectionForm spot={spot} onUpdate={mockOnUpdate} />);
 
       // 削除ボタンは画像プレビューに表示される
-      const removeButtons = screen.getAllByRole('button', { name: /削除/i });
+      const removeButtons = screen.getAllByRole('button', { name: LABELS.REMOVE_IMAGE });
       expect(removeButtons).toHaveLength(2);
 
       // 最初の画像を削除
