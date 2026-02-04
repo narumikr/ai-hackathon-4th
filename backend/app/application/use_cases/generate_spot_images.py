@@ -4,6 +4,8 @@ import asyncio
 import logging
 from urllib.parse import quote
 
+import filetype
+
 from app.application.ports.ai_service import IAIService
 from app.application.ports.storage_service import IStorageService
 from app.domain.travel_guide.repository import ITravelGuideRepository
@@ -35,12 +37,13 @@ class GenerateSpotImagesUseCase:
         self._guide_repository = guide_repository
         self._max_concurrent = max_concurrent
 
-    def _get_image_path(self, plan_id: str, spot_name: str) -> str:
+    def _get_image_path(self, plan_id: str, spot_name: str, extension: str = "jpg") -> str:
         """画像保存パスを生成する
 
         Args:
             plan_id: 旅行計画ID
             spot_name: スポット名
+            extension: 画像拡張子（例: "jpg", "png", "webp"）
 
         Returns:
             str: 画像保存パス（例: travel-guides/{plan_id}/spots/{spot_name_safe}.jpg）
@@ -52,7 +55,32 @@ class GenerateSpotImagesUseCase:
         """
         # スポット名をURLセーフに変換（safe=''で全ての特殊文字をエンコード）
         spot_name_safe = quote(spot_name, safe="")
-        return f"travel-guides/{plan_id}/spots/{spot_name_safe}.jpg"
+        return f"travel-guides/{plan_id}/spots/{spot_name_safe}.{extension}"
+
+    def _detect_image_format(self, image_data: bytes) -> tuple[str, str]:
+        """画像データから拡張子とMIMEタイプを判定する
+
+        Args:
+            image_data: 画像データ
+
+        Returns:
+            tuple[str, str]: (拡張子, MIMEタイプ)
+        """
+        kind = filetype.guess(image_data[:261])
+        if kind is None:
+            raise ValueError("image format could not be detected.")
+
+        extension = kind.extension
+        mime_type = kind.mime
+
+        allowed = {"jpg", "jpeg", "png", "webp"}
+        if extension not in allowed:
+            raise ValueError(f"unsupported image format: {extension}")
+
+        if extension in {"jpg", "jpeg"}:
+            return ("jpg", "image/jpeg")
+
+        return (extension, mime_type)
 
     async def execute(
         self,
@@ -118,12 +146,13 @@ class GenerateSpotImagesUseCase:
         Raises:
             StorageOperationError: アップロード失敗
         """
-        path = self._get_image_path(plan_id, spot_name)
+        extension, content_type = self._detect_image_format(image_data)
+        path = self._get_image_path(plan_id, spot_name, extension)
         # CloudStorageService.upload_file()は署名付きURLを返す
         signed_url = await self._storage_service.upload_file(
             file_data=image_data,
             destination=path,
-            content_type="image/jpeg",
+            content_type=content_type,
         )
         return signed_url
 

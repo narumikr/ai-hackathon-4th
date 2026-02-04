@@ -87,7 +87,7 @@ class Settings(DatabaseSettings):
     # 画像生成設定
     image_generation_model: str = "gemini-2.5-flash-image"
     image_generation_location: str = "global"
-    image_generation_max_concurrent: int = 3
+    image_generation_max_concurrent: int = 1
     image_generation_aspect_ratio: str = "16:9"
     image_generation_timeout: int = 60
 
