@@ -107,7 +107,7 @@ vi.mock('@/components/features/reflection', () => ({
         </div>
       ))}
       {pamphlet.nextTripSuggestions.map((suggestion, idx) => (
-        <span key={idx} data-testid={`suggestion-${idx}`}>
+        <span key={suggestion} data-testid={`suggestion-${idx}`}>
           {suggestion}
         </span>
       ))}

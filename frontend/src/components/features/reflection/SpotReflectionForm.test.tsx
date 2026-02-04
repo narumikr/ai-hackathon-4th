@@ -1,6 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { BUTTON_LABELS, FORM_LABELS, HELP_TEXTS, LABELS, PLACEHOLDERS, STATUS_LABELS } from '@/constants';
+import {
+  BUTTON_LABELS,
+  FORM_LABELS,
+  HELP_TEXTS,
+  LABELS,
+  PLACEHOLDERS,
+  STATUS_LABELS,
+} from '@/constants';
 import type { ReflectionSpot } from '@/types/reflection';
 import { SpotReflectionForm } from './SpotReflectionForm';
 
