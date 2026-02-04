@@ -349,16 +349,38 @@ export default function TravelGuidePage() {
                       key={`${spot.spotName}-${index}`}
                       className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
                     >
-                      <div className="mb-4">
-                        <div className="mb-2 flex items-center gap-3">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-primary-950 text-sm">
-                            {index + 1}
-                          </span>
-                          <h3 className="font-bold text-neutral-900 text-xl">{spot.spotName}</h3>
+                      <div className="mb-4 flex gap-6">
+                        {/* 画像表示エリア */}
+                        <div className="shrink-0">
+                          {spot.imageUrl ? (
+                            <img
+                              src={spot.imageUrl}
+                              alt={`${spot.spotName}の画像`}
+                              className="h-48 w-64 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-48 w-64 items-center justify-center rounded-lg bg-neutral-100">
+                              <img
+                                src="/icons/image.png"
+                                alt="画像なし"
+                                className="h-16 w-16 opacity-30"
+                              />
+                            </div>
+                          )}
                         </div>
-                        {spot.historicalBackground && (
-                          <p className="text-neutral-600">{spot.historicalBackground}</p>
-                        )}
+
+                        {/* テキストコンテンツエリア */}
+                        <div className="flex-1">
+                          <div className="mb-2 flex items-center gap-3">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-primary-950 text-sm">
+                              {index + 1}
+                            </span>
+                            <h3 className="font-bold text-neutral-900 text-xl">{spot.spotName}</h3>
+                          </div>
+                          {spot.historicalBackground && (
+                            <p className="text-neutral-600">{spot.historicalBackground}</p>
+                          )}
+                        </div>
                       </div>
 
                       {spot.historicalSignificance && (

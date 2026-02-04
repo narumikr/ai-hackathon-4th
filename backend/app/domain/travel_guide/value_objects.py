@@ -63,6 +63,8 @@ class SpotDetail(ValueObject):
     highlights: tuple[str, ...]
     recommended_visit_time: str
     historical_significance: str
+    image_url: str | None = None
+    image_status: str = "not_started"
 
     def __post_init__(self) -> None:
         """バリデーション
@@ -83,6 +85,13 @@ class SpotDetail(ValueObject):
 
         normalized = _normalize_str_list(self.highlights, "highlights")
         object.__setattr__(self, "highlights", normalized)
+
+        # 画像ステータスのバリデーション
+        valid_statuses = {"not_started", "processing", "succeeded", "failed"}
+        if self.image_status not in valid_statuses:
+            raise ValueError(
+                f"image_status must be one of {valid_statuses}, got: {self.image_status}"
+            )
 
 
 @dataclass(frozen=True)
@@ -106,3 +115,32 @@ class Checkpoint(ValueObject):
 
         normalized = _normalize_str_list(self.checkpoints, "checkpoints")
         object.__setattr__(self, "checkpoints", normalized)
+
+
+def update_spot_image(
+    spot_detail: SpotDetail,
+    image_url: str | None,
+    image_status: str,
+) -> SpotDetail:
+    """スポット画像情報を更新した新しいSpotDetailを生成する
+
+    Args:
+        spot_detail: 更新元のSpotDetail
+        image_url: 画像URL（署名付きURL）
+        image_status: 画像生成ステータス
+
+    Returns:
+        SpotDetail: 画像情報が更新された新しいSpotDetailインスタンス
+
+    Raises:
+        ValueError: image_statusが不正な値の場合
+    """
+    return SpotDetail(
+        spot_name=spot_detail.spot_name,
+        historical_background=spot_detail.historical_background,
+        highlights=spot_detail.highlights,
+        recommended_visit_time=spot_detail.recommended_visit_time,
+        historical_significance=spot_detail.historical_significance,
+        image_url=image_url,
+        image_status=image_status,
+    )

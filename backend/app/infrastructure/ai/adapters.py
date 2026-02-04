@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from app.application.ports.ai_service import IAIService
 from app.infrastructure.ai.gemini_client import GeminiClient
+from app.infrastructure.ai.image_generation_client import ImageGenerationClient
 
 if TYPE_CHECKING:
     from app.infrastructure.ai.schemas.base import GeminiResponseSchema
@@ -17,12 +18,13 @@ class GeminiAIService(IAIService):
     """Gemini AIサービスアダプタ
 
     IAIServiceインターフェースを実装し、
-    GeminiClientを使用してAI機能を提供する
+    GeminiClientとImageGenerationClientを使用してAI機能を提供する
     """
 
     def __init__(
         self,
         gemini_client: GeminiClient,
+        image_generation_client: ImageGenerationClient,
         *,
         default_temperature: float = 0.7,
         default_max_output_tokens: int = 8192,
@@ -31,11 +33,14 @@ class GeminiAIService(IAIService):
         """GeminiAIServiceを初期化する
 
         Args:
-            gemini_client: GeminiClientインスタンス
+            gemini_client: GeminiClientインスタンス（テキスト生成用）
+            image_generation_client: ImageGenerationClientインスタンス（画像生成用）
             default_temperature: デフォルトの温度パラメータ
             default_max_output_tokens: デフォルトの最大出力トークン数
+            default_timeout_seconds: デフォルトのタイムアウト秒数
         """
         self.client = gemini_client
+        self.image_client = image_generation_client
         self.default_temperature = default_temperature
         self.default_max_output_tokens = default_max_output_tokens
         self.default_timeout_seconds = default_timeout_seconds
@@ -233,4 +238,90 @@ class GeminiAIService(IAIService):
             if max_output_tokens is not None
             else self.default_max_output_tokens,
             timeout=self.default_timeout_seconds,
+        )
+
+    async def generate_image_prompt(
+        self,
+        spot_name: str,
+        historical_background: str | None = None,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+    ) -> str:
+        """スポット情報から画像生成プロンプトを生成する
+
+        Args:
+            spot_name: スポット名
+            historical_background: 歴史的背景（オプション）
+            system_instruction: システム命令（オプション）
+            temperature: 生成の多様性を制御するパラメータ
+
+        Returns:
+            str: 画像生成用プロンプト
+        """
+        # プロンプトテンプレートを構築
+        prompt_parts = [
+            f"スポット名: {spot_name}",
+        ]
+
+        if historical_background:
+            prompt_parts.append(f"歴史的背景: {historical_background}")
+
+        prompt_parts.extend(
+            [
+                "",
+                "上記のスポット情報から、Vertex AI Image Generation APIで使用する画像生成プロンプトを作成してください。",
+                "",
+                "要件:",
+                "- 日本語で記述すること",
+                "- リアルで写真のようなスタイルを指定すること",
+                "- スポットの特徴と歴史的背景を反映すること",
+                "- 具体的で詳細な描写を含めること",
+                "- 100-200文字程度にまとめること",
+                "",
+                "プロンプトのみを出力してください。説明や前置きは不要です。",
+            ]
+        )
+
+        prompt = "\n".join(prompt_parts)
+
+        # Gemini APIを呼び出してプロンプトを生成
+        return await self.client.generate_content(
+            prompt=prompt,
+            system_instruction=system_instruction,
+            temperature=temperature if temperature is not None else self.default_temperature,
+            max_output_tokens=512,  # プロンプトは短いので512トークンで十分
+            timeout=self.default_timeout_seconds,
+        )
+
+    async def generate_image(
+        self,
+        prompt: str,
+        *,
+        aspect_ratio: str = "16:9",
+        timeout: int = 60,
+    ) -> bytes:
+        """画像を生成する
+
+        Note:
+            このメソッドはVertex AI Image Generation APIを使用します。
+            ImageGenerationClientを使用して画像を生成します。
+
+        Args:
+            prompt: 画像生成プロンプト
+            aspect_ratio: アスペクト比（"16:9", "1:1", "9:16"など）
+            timeout: タイムアウト秒数
+
+        Returns:
+            bytes: 生成された画像データ（JPEG形式）
+
+        Raises:
+            AIServiceConnectionError: 接続エラー
+            AIServiceQuotaExceededError: クォータ超過エラー
+            AIServiceInvalidRequestError: 不正リクエストエラー
+        """
+        return await self.image_client.generate_image(
+            prompt=prompt,
+            aspect_ratio=aspect_ratio,
+            timeout=timeout,
         )

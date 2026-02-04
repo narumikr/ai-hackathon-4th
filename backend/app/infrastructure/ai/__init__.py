@@ -4,10 +4,12 @@ from app.application.ports.ai_service import IAIService
 from app.config.settings import get_settings
 from app.infrastructure.ai.adapters import GeminiAIService
 from app.infrastructure.ai.gemini_client import GeminiClient
+from app.infrastructure.ai.image_generation_client import ImageGenerationClient
 
 __all__ = [
     "IAIService",
     "GeminiClient",
+    "ImageGenerationClient",
     "GeminiAIService",
     "create_ai_service",
 ]
@@ -37,9 +39,17 @@ def create_ai_service() -> IAIService:
         model_name=settings.gemini_model_name,
     )
 
+    # ImageGenerationClientを初期化
+    image_generation_client = ImageGenerationClient(
+        project_id=settings.google_cloud_project,
+        location=settings.image_generation_location,
+        model_name=settings.image_generation_model,
+    )
+
     # GeminiAIServiceを生成（設定値をデフォルトパラメータとして渡す）
     ai_service = GeminiAIService(
         gemini_client=gemini_client,
+        image_generation_client=image_generation_client,
         default_temperature=settings.gemini_temperature,
         default_max_output_tokens=settings.gemini_max_output_tokens,
         default_timeout_seconds=settings.gemini_timeout_seconds,

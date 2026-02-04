@@ -84,6 +84,13 @@ class Settings(DatabaseSettings):
     # TODO: 将来の拡張用 - thinking_levelパラメータの活用
     gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）
 
+    # 画像生成設定
+    image_generation_model: str = "gemini-2.5-flash-image"
+    image_generation_location: str = "global"
+    image_generation_max_concurrent: int = 3
+    image_generation_aspect_ratio: str = "16:9"
+    image_generation_timeout: int = 60
+
     # ログ設定
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     log_force_override: bool = False  # 既存のロガー設定を強制上書きするか

@@ -70,6 +70,25 @@ class FakeAIService(IAIService):
     ) -> dict[str, Any]:
         raise NotImplementedError
 
+    async def generate_image_prompt(
+        self,
+        spot_name: str,
+        historical_background: str | None = None,
+        *,
+        system_instruction: str | None = None,
+        temperature: float | None = None,
+    ) -> str:
+        raise NotImplementedError
+
+    async def generate_image(
+        self,
+        prompt: str,
+        *,
+        aspect_ratio: str = "16:9",
+        timeout: int = 60,
+    ) -> bytes:
+        raise NotImplementedError
+
     async def evaluate_travel_guide(
         self,
         guide_content: dict,

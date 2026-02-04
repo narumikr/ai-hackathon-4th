@@ -13,7 +13,11 @@ from app.domain.travel_plan.value_objects import GenerationStatus
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
-from app.interfaces.api.dependencies import get_ai_service_dependency
+from app.interfaces.api.dependencies import (
+    create_spot_images_use_case,
+    get_ai_service_dependency,
+    get_storage_service,
+)
 from app.interfaces.schemas.travel_guide import GenerateTravelGuideRequest
 from app.interfaces.schemas.travel_plan import TravelPlanResponse
 
@@ -146,7 +150,9 @@ async def generate_travel_guide(
         extra={"plan_id": plan_id},
     )
 
-    background_tasks.add_task(_run_travel_guide_generation, plan_id, ai_service, db.get_bind())
+    background_tasks.add_task(
+        _run_travel_guide_generation, plan_id, ai_service, db.get_bind(), background_tasks
+    )
     logger.debug(
         "Travel guide generation background task scheduled",
         extra={"plan_id": plan_id},
@@ -157,8 +163,17 @@ async def generate_travel_guide(
     return TravelPlanResponse(**dto.__dict__)
 
 
-async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bind) -> None:
-    """旅行ガイド生成をバックグラウンドで実行する"""
+async def _run_travel_guide_generation(
+    plan_id: str, ai_service: IAIService, bind, background_tasks: BackgroundTasks
+) -> None:
+    """旅行ガイド生成をバックグラウンドで実行する
+
+    Args:
+        plan_id: 旅行計画ID
+        ai_service: AIサービス
+        bind: SQLAlchemyのbind
+        background_tasks: バックグラウンドタスク（画像生成用）
+    """
     session_maker = sessionmaker(autocommit=False, autoflush=False, bind=bind)
     db = session_maker()
     try:
@@ -168,12 +183,22 @@ async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bin
         )
         plan_repository = TravelPlanRepository(db)
         guide_repository = TravelGuideRepository(db)
+
+        # GenerateSpotImagesUseCaseを作成
+        storage_service = get_storage_service()
+        image_use_case = create_spot_images_use_case(
+            ai_service=ai_service,
+            storage_service=storage_service,
+            guide_repository=guide_repository,
+        )
+
         use_case = GenerateTravelGuideUseCase(
             plan_repository=plan_repository,
             guide_repository=guide_repository,
             ai_service=ai_service,
+            image_use_case=image_use_case,
         )
-        guide_dto = await use_case.execute(plan_id=plan_id)
+        guide_dto = await use_case.execute(plan_id=plan_id, background_tasks=background_tasks)
         logger.debug(
             "Travel guide generation completed",
             extra={"plan_id": plan_id, "guide_id": guide_dto.id},

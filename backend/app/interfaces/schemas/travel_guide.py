@@ -24,6 +24,12 @@ class SpotDetailSchema(BaseModel):
     highlights: list[str]
     recommended_visit_time: str = Field(..., alias="recommendedVisitTime")
     historical_significance: str = Field(..., alias="historicalSignificance")
+    image_url: str | None = Field(None, alias="imageUrl", description="生成された画像の署名付きURL")
+    image_status: str = Field(
+        "not_started",
+        alias="imageStatus",
+        description="画像生成ステータス: not_started, processing, succeeded, failed",
+    )
 
     model_config = {"populate_by_name": True}
 

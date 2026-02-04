@@ -141,6 +141,8 @@ class TravelGuideRepository(ITravelGuideRepository):
                 highlights=detail["highlights"],
                 recommended_visit_time=detail["recommendedVisitTime"],
                 historical_significance=detail["historicalSignificance"],
+                image_url=detail.get("imageUrl"),  # デフォルトNone
+                image_status=detail.get("imageStatus", "not_started"),  # デフォルト"not_started"
             )
             for detail in model.spot_details
         ]
@@ -201,6 +203,8 @@ class TravelGuideRepository(ITravelGuideRepository):
                 "highlights": list(detail.highlights),
                 "recommendedVisitTime": detail.recommended_visit_time,
                 "historicalSignificance": detail.historical_significance,
+                "imageUrl": detail.image_url,  # 新規追加
+                "imageStatus": detail.image_status,  # 新規追加
             }
             for detail in spot_details
         ]
