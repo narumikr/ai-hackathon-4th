@@ -2,7 +2,7 @@
 
 import { ErrorDialog, GenerationStatusView } from '@/components/features/common';
 import { Container } from '@/components/layout';
-import { Button, Icon, Modal } from '@/components/ui';
+import { Button, Icon, LoadingSpinner, Modal } from '@/components/ui';
 import {
   BUTTON_LABELS,
   CONFIRMATION_MESSAGES,
@@ -369,11 +369,18 @@ export default function TravelGuidePage() {
                             />
                           ) : (
                             <div className="flex h-48 w-64 items-center justify-center rounded-lg bg-neutral-100">
-                              <img
-                                src="/icons/image.png"
-                                alt="画像なし"
-                                className="h-16 w-16 opacity-30"
-                              />
+                              {spot.imageStatus === 'processing' ? (
+                                <div className="flex flex-col items-center gap-2 text-neutral-500">
+                                  <LoadingSpinner size="lg" variant="secondary" />
+                                  <span className="text-sm">画像を生成中</span>
+                                </div>
+                              ) : (
+                                <img
+                                  src="/icons/image.png"
+                                  alt="画像なし"
+                                  className="h-16 w-16 opacity-30"
+                                />
+                              )}
                             </div>
                           )}
                         </div>

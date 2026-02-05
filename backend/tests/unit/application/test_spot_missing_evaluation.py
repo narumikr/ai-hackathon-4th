@@ -151,6 +151,31 @@ class FakeAIServiceWithMissingSpot(IAIService):
             return self.first_generation
         return self.second_generation
 
+class FakeSpotImageJobRepository:
+    """テスト用のスポット画像生成ジョブリポジトリ"""
+
+    def create_jobs(
+        self,
+        plan_id: str,
+        spot_names: list[str],
+        *,
+        max_attempts: int = 3,
+        commit: bool = True,
+    ) -> int:
+        return len(spot_names)
+
+    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str):
+        raise NotImplementedError
+
+    def mark_succeeded(self, job_id: str) -> None:
+        raise NotImplementedError
+
+    def mark_failed(self, job_id: str, *, error_message: str) -> None:
+        raise NotImplementedError
+
+
+
+
 
 @pytest.mark.asyncio
 async def test_retries_when_spot_is_missing(db_session: Session, sample_travel_plan) -> None:
@@ -249,6 +274,7 @@ async def test_retries_when_spot_is_missing(db_session: Session, sample_travel_p
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 

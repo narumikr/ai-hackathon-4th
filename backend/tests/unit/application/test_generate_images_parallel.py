@@ -28,9 +28,9 @@ class TestGenerateImagesParallel:
         )
 
         # _generate_single_spot_imageをモック化
-        async def mock_generate_single(plan_id: str, spot: SpotDetail) -> tuple[str, str | None, str]:
+        async def mock_generate_single(plan_id: str, spot: SpotDetail) -> tuple[str, str | None, str, str | None]:
             await asyncio.sleep(0.01)  # 非同期処理をシミュレート
-            return (spot.spot_name, f"https://example.com/{spot.spot_name}.jpg", "succeeded")
+            return (spot.spot_name, f"https://example.com/{spot.spot_name}.jpg", "succeeded", None)
 
         use_case._generate_single_spot_image = AsyncMock(side_effect=mock_generate_single)  # type: ignore
 
@@ -63,11 +63,11 @@ class TestGenerateImagesParallel:
 
         # Assert
         assert len(results) == 3
-        assert all(status == "succeeded" for _, _, status in results)
-        assert all(url is not None for _, url, _ in results)
+        assert all(status == "succeeded" for _, _, status, _ in results)
+        assert all(url is not None for _, url, _, _ in results)
 
         # すべてのスポットが処理されたことを確認
-        spot_names = {name for name, _, _ in results}
+        spot_names = {name for name, _, _, _ in results}
         assert spot_names == {"金閣寺", "清水寺", "伏見稲荷大社"}
 
     @pytest.mark.asyncio
@@ -86,11 +86,11 @@ class TestGenerateImagesParallel:
         )
 
         # _generate_single_spot_imageをモック化（2番目のスポットは失敗）
-        async def mock_generate_single(plan_id: str, spot: SpotDetail) -> tuple[str, str | None, str]:
+        async def mock_generate_single(plan_id: str, spot: SpotDetail) -> tuple[str, str | None, str, str | None]:
             await asyncio.sleep(0.01)
             if spot.spot_name == "清水寺":
-                return (spot.spot_name, None, "failed")
-            return (spot.spot_name, f"https://example.com/{spot.spot_name}.jpg", "succeeded")
+                return (spot.spot_name, None, "failed", "error")
+            return (spot.spot_name, f"https://example.com/{spot.spot_name}.jpg", "succeeded", None)
 
         use_case._generate_single_spot_image = AsyncMock(side_effect=mock_generate_single)  # type: ignore
 
@@ -125,12 +125,12 @@ class TestGenerateImagesParallel:
         assert len(results) == 3
 
         # 成功したスポットを確認
-        succeeded = [(name, url) for name, url, status in results if status == "succeeded"]
+        succeeded = [(name, url) for name, url, status, _ in results if status == "succeeded"]
         assert len(succeeded) == 2
         assert all(url is not None for _, url in succeeded)
 
         # 失敗したスポットを確認
-        failed = [(name, url) for name, url, status in results if status == "failed"]
+        failed = [(name, url) for name, url, status, _ in results if status == "failed"]
         assert len(failed) == 1
         assert failed[0][0] == "清水寺"
         assert failed[0][1] is None
@@ -154,13 +154,13 @@ class TestGenerateImagesParallel:
         concurrent_count = 0
         max_concurrent_observed = 0
 
-        async def mock_generate_single(plan_id: str, spot: SpotDetail) -> tuple[str, str | None, str]:
+        async def mock_generate_single(plan_id: str, spot: SpotDetail) -> tuple[str, str | None, str, str | None]:
             nonlocal concurrent_count, max_concurrent_observed
             concurrent_count += 1
             max_concurrent_observed = max(max_concurrent_observed, concurrent_count)
             await asyncio.sleep(0.05)  # 処理時間をシミュレート
             concurrent_count -= 1
-            return (spot.spot_name, f"https://example.com/{spot.spot_name}.jpg", "succeeded")
+            return (spot.spot_name, f"https://example.com/{spot.spot_name}.jpg", "succeeded", None)
 
         use_case._generate_single_spot_image = AsyncMock(side_effect=mock_generate_single)  # type: ignore
 

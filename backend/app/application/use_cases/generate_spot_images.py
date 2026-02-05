@@ -121,7 +121,7 @@ class GenerateSpotImagesUseCase:
         results = await self._generate_images_parallel(plan_id, spot_details)
 
         # 各スポットの結果を個別にDB更新
-        for spot_name, image_url, image_status in results:
+        for spot_name, image_url, image_status, _ in results:
             await self._update_spot_image_status(
                 plan_id=plan_id,
                 spot_name=spot_name,
@@ -134,10 +134,63 @@ class GenerateSpotImagesUseCase:
             extra={
                 "plan_id": plan_id,
                 "total_spots": len(spot_details),
-                "succeeded": sum(1 for _, _, status in results if status == "succeeded"),
-                "failed": sum(1 for _, _, status in results if status == "failed"),
+                "succeeded": sum(1 for _, _, status, _ in results if status == "succeeded"),
+                "failed": sum(1 for _, _, status, _ in results if status == "failed"),
             },
         )
+
+    async def generate_for_spot(
+        self,
+        plan_id: str,
+        spot_name: str,
+    ) -> tuple[str | None, str, str | None]:
+        """単一スポットの画像生成を実行する
+
+        Args:
+            plan_id: 旅行計画ID
+            spot_name: スポット名
+
+        Returns:
+            tuple[str | None, str, str | None]: (画像URL, ステータス, エラーメッセージ)
+        """
+        travel_guide = self._guide_repository.find_by_plan_id(plan_id)
+        if travel_guide is None:
+            logger.error(
+                "Travel guide not found for spot image generation",
+                extra={"plan_id": plan_id, "spot_name": spot_name},
+            )
+            return (None, "failed", "Travel guide not found")
+
+        spot_detail = next(
+            (detail for detail in travel_guide.spot_details if detail.spot_name == spot_name),
+            None,
+        )
+        if spot_detail is None:
+            logger.error(
+                "Spot not found in travel guide for image generation",
+                extra={"plan_id": plan_id, "spot_name": spot_name},
+            )
+            return (None, "failed", "Spot not found in travel guide")
+
+        await self._update_spot_image_status(
+            plan_id=plan_id,
+            spot_name=spot_name,
+            image_url=None,
+            image_status="processing",
+        )
+
+        _, image_url, status, error_message = await self._generate_single_spot_image(
+            plan_id, spot_detail
+        )
+
+        await self._update_spot_image_status(
+            plan_id=plan_id,
+            spot_name=spot_name,
+            image_url=image_url,
+            image_status=status,
+        )
+
+        return (image_url, status, error_message)
 
     async def _upload_and_get_url(
         self,
@@ -172,7 +225,7 @@ class GenerateSpotImagesUseCase:
         self,
         plan_id: str,
         spot_detail: SpotDetail,
-    ) -> tuple[str, str | None, str]:
+    ) -> tuple[str, str | None, str, str | None]:
         """単一スポットの画像を生成する
 
         Args:
@@ -180,7 +233,7 @@ class GenerateSpotImagesUseCase:
             spot_detail: スポット詳細
 
         Returns:
-            tuple[str, str | None, str]: (スポット名, 画像URL or None, ステータス)
+            tuple[str, str | None, str, str | None]: (スポット名, 画像URL or None, ステータス, エラーメッセージ)
 
         Note:
             プロンプト生成→画像生成→アップロードの流れで処理します。
@@ -219,7 +272,7 @@ class GenerateSpotImagesUseCase:
                     },
                     exc_info=True,
                 )
-                return (spot_name, None, "failed")
+                return (spot_name, None, "failed", f"prompt generation failed: {e}")
 
             # ステップ2: 画像生成（Vertex AI Image Generation API使用）
             try:
@@ -247,7 +300,7 @@ class GenerateSpotImagesUseCase:
                     },
                     exc_info=True,
                 )
-                return (spot_name, None, "failed")
+                return (spot_name, None, "failed", f"image generation failed: {e}")
 
             # ステップ3: 画像アップロード（Cloud Storage）
             try:
@@ -264,7 +317,7 @@ class GenerateSpotImagesUseCase:
                         "image_url_length": len(image_url),
                     },
                 )
-                return (spot_name, image_url, "succeeded")
+                return (spot_name, image_url, "succeeded", None)
             except Exception as e:
                 logger.error(
                     "Failed to upload image to Cloud Storage",
@@ -276,7 +329,7 @@ class GenerateSpotImagesUseCase:
                     },
                     exc_info=True,
                 )
-                return (spot_name, None, "failed")
+                return (spot_name, None, "failed", f"upload failed: {e}")
 
         except Exception as e:
             # 予期しないエラーをキャッチ
@@ -290,13 +343,13 @@ class GenerateSpotImagesUseCase:
                 },
                 exc_info=True,
             )
-            return (spot_name, None, "failed")
+            return (spot_name, None, "failed", f"unexpected error: {e}")
 
     async def _generate_images_parallel(
         self,
         plan_id: str,
         spot_details: list[SpotDetail],
-    ) -> list[tuple[str, str | None, str]]:
+    ) -> list[tuple[str, str | None, str, str | None]]:
         """複数スポットの画像を並列生成する
 
         Args:
@@ -304,7 +357,7 @@ class GenerateSpotImagesUseCase:
             spot_details: スポット詳細リスト
 
         Returns:
-            list[tuple[str, str | None, str]]: (スポット名, 画像URL or None, ステータス)のリスト
+            list[tuple[str, str | None, str, str | None]]: (スポット名, 画像URL or None, ステータス, エラーメッセージ)のリスト
 
         Note:
             - asyncio.Semaphoreで並行実行数を制限します（デフォルト: 3）
@@ -315,7 +368,9 @@ class GenerateSpotImagesUseCase:
         # 並行実行数を制限するセマフォ
         semaphore = asyncio.Semaphore(self._max_concurrent)
 
-        async def _generate_with_semaphore(spot: SpotDetail) -> tuple[str, str | None, str]:
+        async def _generate_with_semaphore(
+            spot: SpotDetail,
+        ) -> tuple[str, str | None, str, str | None]:
             """セマフォを使用して並行実行数を制限しながら画像を生成する"""
             async with semaphore:
                 try:
@@ -334,7 +389,7 @@ class GenerateSpotImagesUseCase:
                         exc_info=True,
                     )
                     # 失敗した場合もステータスを返す
-                    return (spot.spot_name, None, "failed")
+                    return (spot.spot_name, None, "failed", f"unexpected error: {e}")
 
         # すべてのスポットに対してタスクを作成
         tasks = [_generate_with_semaphore(spot) for spot in spot_details]
@@ -347,8 +402,8 @@ class GenerateSpotImagesUseCase:
             extra={
                 "plan_id": plan_id,
                 "total_spots": len(spot_details),
-                "succeeded": sum(1 for _, _, status in results if status == "succeeded"),
-                "failed": sum(1 for _, _, status in results if status == "failed"),
+                "succeeded": sum(1 for _, _, status, _ in results if status == "succeeded"),
+                "failed": sum(1 for _, _, status, _ in results if status == "failed"),
             },
         )
 

@@ -431,9 +431,9 @@ class TestExecuteMethod:
         # _generate_images_parallelをモック化
         use_case._generate_images_parallel = AsyncMock(
             return_value=[
-                ("金閣寺", "https://storage.googleapis.com/bucket/image1.jpg", "succeeded"),
-                ("清水寺", "https://storage.googleapis.com/bucket/image2.jpg", "succeeded"),
-                ("伏見稲荷大社", None, "failed"),
+                ("金閣寺", "https://storage.googleapis.com/bucket/image1.jpg", "succeeded", None),
+                ("清水寺", "https://storage.googleapis.com/bucket/image2.jpg", "succeeded", None),
+                ("伏見稲荷大社", None, "failed", "error"),
             ]
         )
 

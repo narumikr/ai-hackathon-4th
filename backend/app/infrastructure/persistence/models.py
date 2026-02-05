@@ -264,3 +264,53 @@ class ReflectionModel(Base):
     def __repr__(self) -> str:
         """文字列表現."""
         return f"<ReflectionModel(id={self.id}, plan_id={self.plan_id}, user_id={self.user_id})>"
+
+
+class SpotImageJobModel(Base):
+    """スポット画像生成ジョブモデル."""
+
+    __tablename__ = "spot_image_jobs"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid.uuid4()),
+    )
+
+    plan_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    spot_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="queued")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now(UTC),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.now(UTC),
+        onupdate=datetime.now(UTC),
+    )
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    locked_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    __table_args__ = (
+        Index(
+            "ux_spot_image_jobs_plan_spot",
+            "plan_id",
+            "spot_name",
+            unique=True,
+        ),
+        Index("ix_spot_image_jobs_status_locked_at", "status", "locked_at"),
+    )
+
+    def __repr__(self) -> str:
+        """文字列表現."""
+        return (
+            f"<SpotImageJobModel(id={self.id}, plan_id={self.plan_id}, "
+            f"spot_name={self.spot_name}, status={self.status})>"
+        )

@@ -182,6 +182,31 @@ class FakeAIService(IAIService):
             return self.structured_data[index]
         return self.structured_data
 
+class FakeSpotImageJobRepository:
+    """テスト用のスポット画像生成ジョブリポジトリ"""
+
+    def create_jobs(
+        self,
+        plan_id: str,
+        spot_names: list[str],
+        *,
+        max_attempts: int = 3,
+        commit: bool = True,
+    ) -> int:
+        return len(spot_names)
+
+    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str):
+        raise NotImplementedError
+
+    def mark_succeeded(self, job_id: str) -> None:
+        raise NotImplementedError
+
+    def mark_failed(self, job_id: str, *, error_message: str) -> None:
+        raise NotImplementedError
+
+
+
+
 
 def _structured_guide_payload() -> dict[str, Any]:
     return {
@@ -318,6 +343,7 @@ async def test_generate_travel_guide_use_case_creates_guide(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -358,6 +384,7 @@ async def test_generate_travel_guide_use_case_allows_recommended_spots(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -394,6 +421,7 @@ async def test_generate_travel_guide_use_case_rejects_short_overview(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     with pytest.raises(ValueError, match="Invalid AI response structure"):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -435,6 +463,7 @@ async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     with pytest.raises(ValueError, match="relatedSpots contains unknown spot names"):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -468,6 +497,7 @@ async def test_generate_travel_guide_use_case_updates_existing_guide(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -495,6 +525,7 @@ async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     with pytest.raises(TravelPlanNotFoundError):
         await use_case.execute(plan_id="non-existent-id")
@@ -547,6 +578,7 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     with pytest.raises(ValueError):
         await use_case.execute(plan_id=duplicate_plan.id)
@@ -573,6 +605,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     with pytest.raises(ValueError):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -718,6 +751,7 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -805,6 +839,7 @@ async def test_generate_travel_guide_proceeds_after_retry_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 

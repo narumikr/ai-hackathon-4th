@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import Any
 
 from pydantic import ValidationError
 
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.ports.ai_service import IAIService
+from app.application.ports.spot_image_job_repository import ISpotImageJobRepository
 from app.application.use_cases.travel_plan_helpers import validate_required_str
 from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_guide.services import TravelGuideComposer
@@ -25,20 +26,6 @@ from app.domain.travel_plan.value_objects import GenerationStatus
 from app.infrastructure.ai.schemas.evaluation import TravelGuideEvaluationSchema
 from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
 from app.prompts import render_template
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from app.application.use_cases.generate_spot_images import GenerateSpotImagesUseCase
-
-
-class BackgroundTasksProtocol(Protocol):
-    """BackgroundTasksのプロトコル定義"""
-
-    def add_task(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
-        """タスクを追加する"""
-        ...
-
 
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -318,8 +305,8 @@ class GenerateTravelGuideUseCase:
         plan_repository: ITravelPlanRepository,
         guide_repository: ITravelGuideRepository,
         ai_service: IAIService,
+        job_repository: ISpotImageJobRepository,
         composer: TravelGuideComposer | None = None,
-        image_use_case: GenerateSpotImagesUseCase | None = None,
     ) -> None:
         """ユースケースを初期化する
 
@@ -327,28 +314,26 @@ class GenerateTravelGuideUseCase:
             plan_repository: TravelPlanリポジトリ
             guide_repository: TravelGuideリポジトリ
             ai_service: AIサービス
+            job_repository: スポット画像生成ジョブリポジトリ
             composer: TravelGuideComposer（省略時はデフォルトを使用）
-            image_use_case: スポット画像生成ユースケース（省略時は画像生成なし）
         """
         self._plan_repository = plan_repository
         self._guide_repository = guide_repository
         self._ai_service = ai_service
+        self._job_repository = job_repository
         self._composer = composer or TravelGuideComposer()
-        self._image_use_case = image_use_case
 
     async def execute(
         self,
         plan_id: str,
         *,
         commit: bool = True,
-        background_tasks: BackgroundTasksProtocol | None = None,
     ) -> TravelGuideDTO:
         """旅行ガイドを生成する
 
         Args:
             plan_id: 旅行計画ID
             commit: Trueの場合はトランザクションをコミットする
-            background_tasks: FastAPIのBackgroundTasksインスタンス（画像生成用）
 
         Returns:
             TravelGuideDTO: 生成された旅行ガイド
@@ -357,9 +342,6 @@ class GenerateTravelGuideUseCase:
             TravelPlanNotFoundError: 旅行計画が見つからない場合
             ValueError: 入力や生成結果が不正な場合
 
-        Note:
-            画像生成はバックグラウンドタスクとして非同期で実行され、
-            ガイド生成の完了を待たずに返却されます。
         """
         logger.debug("GenerateTravelGuideUseCase started", extra={"plan_id": plan_id})
         validate_required_str(plan_id, "plan_id")
@@ -547,24 +529,45 @@ class GenerateTravelGuideUseCase:
             extra={"plan_id": plan_id},
         )
 
-        # 画像生成を非同期で開始（BackgroundTasksが提供されている場合）
-        if self._image_use_case is not None and background_tasks is not None:
-            logger.info(
-                "Scheduling spot images generation in background",
-                extra={"plan_id": plan_id, "spot_count": len(saved_guide.spot_details)},
-            )
-            # BackgroundTasksに画像生成タスクを追加
-            # plan_idのみを渡し、画像生成ユースケース内でDBから最新のガイドを取得する
-            background_tasks.add_task(
-                self._image_use_case.execute,
+        try:
+            created_jobs = self._register_spot_image_jobs(
                 plan_id=plan_id,
+                spot_details=saved_guide.spot_details,
+                commit=commit,
             )
-            logger.debug(
-                "Spot images generation task added to background",
+            logger.info(
+                "Spot image jobs registered",
+                extra={"plan_id": plan_id, "created_jobs": created_jobs},
+            )
+        except Exception:
+            logger.exception(
+                "Failed to register spot image jobs",
                 extra={"plan_id": plan_id},
             )
 
         return TravelGuideDTO.from_entity(saved_guide)
+
+    def _register_spot_image_jobs(
+        self,
+        plan_id: str,
+        spot_details: list[SpotDetail],
+        *,
+        commit: bool,
+    ) -> int:
+        """スポット画像生成ジョブを登録する"""
+        target_spots = [
+            detail.spot_name
+            for detail in spot_details
+            if not (detail.image_status == "succeeded" and detail.image_url)
+        ]
+        if not target_spots:
+            return 0
+        return self._job_repository.create_jobs(
+            plan_id=plan_id,
+            spot_names=target_spots,
+            max_attempts=3,
+            commit=commit,
+        )
 
     async def _evaluate_guide_data(
         self, guide_data: dict[str, Any], required_spot_names: list[str]

@@ -143,6 +143,31 @@ class FakeAIService(IAIService):
             }
         return self.structured_data
 
+class FakeSpotImageJobRepository:
+    """テスト用のスポット画像生成ジョブリポジトリ"""
+
+    def create_jobs(
+        self,
+        plan_id: str,
+        spot_names: list[str],
+        *,
+        max_attempts: int = 3,
+        commit: bool = True,
+    ) -> int:
+        return len(spot_names)
+
+    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str):
+        raise NotImplementedError
+
+    def mark_succeeded(self, job_id: str) -> None:
+        raise NotImplementedError
+
+    def mark_failed(self, job_id: str, *, error_message: str) -> None:
+        raise NotImplementedError
+
+
+
+
 
 @pytest.mark.asyncio
 async def test_new_spot_addition(db_session: Session, sample_travel_plan) -> None:
@@ -226,6 +251,7 @@ async def test_new_spot_addition(db_session: Session, sample_travel_plan) -> Non
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=FakeSpotImageJobRepository(),
     )
     await use_case.execute(plan_id=sample_travel_plan.id)
 
