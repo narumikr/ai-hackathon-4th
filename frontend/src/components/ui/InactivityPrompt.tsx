@@ -18,11 +18,15 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
   const [isVisible, setIsVisible] = useState(false);
   const [isFadingIn, setIsFadingIn] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetTimer = useCallback(() => {
     // 既存のタイマーをクリア
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+    }
+    if (fadeTimerRef.current) {
+      clearTimeout(fadeTimerRef.current);
     }
 
     // プロンプトが表示されている場合は非表示にする
@@ -36,8 +40,10 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
     // 新しいタイマーを設定
     timerRef.current = setTimeout(() => {
       setIsVisible(true);
-      // 次のレンダリング後にフェードインを開始
-      setIsFadingIn(true);
+      // DOM更新後にフェードインを開始
+      fadeTimerRef.current = setTimeout(() => {
+        setIsFadingIn(true);
+      }, 50);
     }, inactivityDelay);
   }, [inactivityDelay]);
 
@@ -48,8 +54,8 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
   }, [resetTimer]);
 
   useEffect(() => {
-    // 監視するイベントタイプ
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    // 監視するイベントタイプ（scrollは頻繁に発火するため除外）
+    const events = ['mousedown', 'keydown', 'touchstart'];
 
     // イベントリスナーを追加
     events.forEach(event => {
@@ -66,6 +72,9 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
       });
       if (timerRef.current) {
         clearTimeout(timerRef.current);
+      }
+      if (fadeTimerRef.current) {
+        clearTimeout(fadeTimerRef.current);
       }
     };
   }, [resetTimer]);
