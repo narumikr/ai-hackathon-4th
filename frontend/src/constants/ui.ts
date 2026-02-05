@@ -424,6 +424,14 @@ export const HINTS = {
 export const PLACEHOLDER_MESSAGES = {} as const;
 
 /**
+ * 非アクティブ時のメッセージ
+ */
+export const INACTIVITY_PROMPT = {
+  MESSAGE: '旅行計画を立ててみよう',
+  CLOSE_BUTTON: '閉じる',
+} as const;
+
+/**
  * その他の表示文言
  */
 export const LABELS = {
