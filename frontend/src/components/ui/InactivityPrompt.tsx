@@ -73,7 +73,7 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
         clearTimeout(fadeTimerRef.current);
       }
     };
-  }, [resetTimer]);
+  }, [inactivityDelay]);
 
   if (!isVisible) return null;
 
