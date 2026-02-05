@@ -10,15 +10,25 @@ interface InactivityPromptProps {
   inactivityDelay?: number;
 }
 
+const STORAGE_KEY = 'inactivity-prompt-dismissed';
+
 /**
  * 非アクティブ時にユーザーに次のアクションを促すプロンプトコンポーネント
  * 画面右下にフェードインアニメーションで表示される
+ * セッション中に一度表示され、ユーザーが閉じた場合は再表示されない
  */
 export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isFadingIn, setIsFadingIn] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // セッションストレージから dismissed 状態を読み込む
+  useEffect(() => {
+    const dismissed = sessionStorage.getItem(STORAGE_KEY) === 'true';
+    setIsDismissed(dismissed);
+  }, []);
 
   const resetTimer = useCallback(() => {
     // 既存のタイマーをクリア
@@ -33,6 +43,11 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
     setIsFadingIn(false);
     setIsVisible(false);
 
+    // 既に閉じられている場合は新しいタイマーを設定しない
+    if (isDismissed) {
+      return;
+    }
+
     // 新しいタイマーを設定
     timerRef.current = setTimeout(() => {
       setIsVisible(true);
@@ -41,15 +56,30 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
         setIsFadingIn(true);
       }, 50);
     }, inactivityDelay);
-  }, [inactivityDelay]);
+  }, [inactivityDelay, isDismissed]);
 
   const handleClose = useCallback(() => {
     setIsFadingIn(false);
     setIsVisible(false);
-    resetTimer();
-  }, [resetTimer]);
+    setIsDismissed(true);
+    // セッションストレージに保存
+    sessionStorage.setItem(STORAGE_KEY, 'true');
+
+    // タイマーをクリア（再表示されないようにする）
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    if (fadeTimerRef.current) {
+      clearTimeout(fadeTimerRef.current);
+    }
+  }, []);
 
   useEffect(() => {
+    // 既に閉じられている場合は何もしない
+    if (isDismissed) {
+      return;
+    }
+
     // 監視するイベントタイプ（scrollは頻繁に発火するため除外）
     const events = ['mousedown', 'keydown', 'touchstart'];
 
@@ -73,12 +103,13 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
         clearTimeout(fadeTimerRef.current);
       }
     };
-  }, [inactivityDelay]);
+  }, [isDismissed, resetTimer]);
 
   if (!isVisible) return null;
 
   return (
     <div
+      data-testid="inactivity-prompt"
       className={`fixed right-6 bottom-6 z-40 max-w-sm rounded-lg bg-white p-4 shadow-lg transition-opacity duration-500 ${
         isFadingIn ? 'opacity-100' : 'opacity-0'
       }`}
