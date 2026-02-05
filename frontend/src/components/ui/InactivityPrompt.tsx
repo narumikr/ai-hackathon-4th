@@ -18,7 +18,6 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
   const [isVisible, setIsVisible] = useState(false);
   const [isFadingIn, setIsFadingIn] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
 
   const resetTimer = useCallback(() => {
     // 既存のタイマーをクリア
@@ -26,26 +25,21 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
       clearTimeout(timerRef.current);
     }
 
-    // 既存のアニメーションフレームをクリア
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-
     // プロンプトが表示されている場合は非表示にする
-    if (isVisible) {
-      setIsFadingIn(false);
-      setIsVisible(false);
-    }
+    setIsVisible(prev => {
+      if (prev) {
+        setIsFadingIn(false);
+      }
+      return false;
+    });
 
     // 新しいタイマーを設定
     timerRef.current = setTimeout(() => {
       setIsVisible(true);
-      // フェードインアニメーションを開始
-      animationFrameRef.current = requestAnimationFrame(() => {
-        setIsFadingIn(true);
-      });
+      // 次のレンダリング後にフェードインを開始
+      setIsFadingIn(true);
     }, inactivityDelay);
-  }, [inactivityDelay, isVisible]);
+  }, [inactivityDelay]);
 
   const handleClose = useCallback(() => {
     setIsFadingIn(false);
@@ -54,8 +48,8 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
   }, [resetTimer]);
 
   useEffect(() => {
-    // 監視するイベントタイプ（mousemoveは除外してパフォーマンスを向上）
-    const events = ['mousedown', 'keypress', 'scroll', 'touchstart', 'click'];
+    // 監視するイベントタイプ
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
 
     // イベントリスナーを追加
     events.forEach(event => {
@@ -72,9 +66,6 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
       });
       if (timerRef.current) {
         clearTimeout(timerRef.current);
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, [resetTimer]);
