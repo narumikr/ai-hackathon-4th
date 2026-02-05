@@ -30,12 +30,8 @@ export function InactivityPrompt({ inactivityDelay = 5000 }: InactivityPromptPro
     }
 
     // プロンプトが表示されている場合は非表示にする
-    setIsVisible(prev => {
-      if (prev) {
-        setIsFadingIn(false);
-      }
-      return false;
-    });
+    setIsFadingIn(false);
+    setIsVisible(false);
 
     // 新しいタイマーを設定
     timerRef.current = setTimeout(() => {
