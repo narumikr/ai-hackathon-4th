@@ -10,6 +10,7 @@ export interface SpotLocation {
   name: string;
   lat: number;
   lng: number;
+  originalIndex: number;
 }
 
 export interface GoogleMapViewProps {
@@ -52,6 +53,7 @@ export function GoogleMapView({
   const searchSpotLocation = useCallback(
     async (
       spotName: string,
+      originalIndex: number,
       service: google.maps.places.PlacesService
     ): Promise<SpotLocation | null> => {
       const searchQuery = destination ? `${spotName} ${destination}` : spotName;
@@ -73,6 +75,7 @@ export function GoogleMapView({
                 name: spotName,
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng(),
+                originalIndex,
               });
               return;
             }
@@ -104,8 +107,8 @@ export function GoogleMapView({
 
       const locations: SpotLocation[] = [];
 
-      for (const spot of spots) {
-        const location = await searchSpotLocation(spot, service);
+      for (let i = 0; i < spots.length; i++) {
+        const location = await searchSpotLocation(spots[i], i + 1, service);
         if (location) {
           locations.push(location);
         }
@@ -181,7 +184,7 @@ export function GoogleMapView({
             key={`${spot.name}-${index}`}
             position={{ lat: spot.lat, lng: spot.lng }}
             label={{
-              text: String(index + 1),
+              text: String(spot.originalIndex),
               color: 'white',
               fontWeight: 'bold',
             }}
