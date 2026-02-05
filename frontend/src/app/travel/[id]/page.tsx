@@ -349,6 +349,15 @@ export default function TravelGuidePage() {
                       key={`${spot.spotName}-${index}`}
                       className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
                     >
+                      {/* スポット名（一番上） */}
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-primary-950 text-sm">
+                          {index + 1}
+                        </span>
+                        <h3 className="font-bold text-neutral-900 text-xl">{spot.spotName}</h3>
+                      </div>
+
+                      {/* 画像と歴史的背景を横並び */}
                       <div className="mb-4 flex gap-6">
                         {/* 画像表示エリア */}
                         <div className="shrink-0">
@@ -369,20 +378,15 @@ export default function TravelGuidePage() {
                           )}
                         </div>
 
-                        {/* テキストコンテンツエリア */}
+                        {/* 歴史的背景 */}
                         <div className="flex-1">
-                          <div className="mb-2 flex items-center gap-3">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-primary-950 text-sm">
-                              {index + 1}
-                            </span>
-                            <h3 className="font-bold text-neutral-900 text-xl">{spot.spotName}</h3>
-                          </div>
                           {spot.historicalBackground && (
                             <p className="text-neutral-600">{spot.historicalBackground}</p>
                           )}
                         </div>
                       </div>
 
+                      {/* 歴史的意義 */}
                       {spot.historicalSignificance && (
                         <div className="mb-4">
                           <h4 className="mb-2 flex items-center gap-1 font-semibold text-neutral-700 text-sm">
@@ -395,6 +399,7 @@ export default function TravelGuidePage() {
                         </div>
                       )}
 
+                      {/* ハイライト */}
                       {spot.highlights && spot.highlights.length > 0 && (
                         <div>
                           <h4 className="mb-2 flex items-center gap-1 font-semibold text-neutral-700 text-sm">

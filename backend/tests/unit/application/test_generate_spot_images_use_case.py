@@ -364,30 +364,12 @@ class TestExecuteMethod:
         # Arrange
         from unittest.mock import AsyncMock, MagicMock
 
-        from app.domain.travel_guide.value_objects import SpotDetail
+        from app.domain.travel_guide.entity import TravelGuide
+        from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
 
         mock_ai_service = MagicMock()
         mock_storage_service = MagicMock()
         mock_repository = MagicMock()
-
-        use_case = GenerateSpotImagesUseCase(
-            ai_service=mock_ai_service,
-            storage_service=mock_storage_service,
-            guide_repository=mock_repository,
-            max_concurrent=3,
-        )
-
-        # _generate_images_parallelをモック化
-        use_case._generate_images_parallel = AsyncMock(
-            return_value=[
-                ("金閣寺", "https://storage.googleapis.com/bucket/image1.jpg", "succeeded"),
-                ("清水寺", "https://storage.googleapis.com/bucket/image2.jpg", "succeeded"),
-                ("伏見稲荷大社", None, "failed"),
-            ]
-        )
-
-        # _update_spot_image_statusをモック化
-        use_case._update_spot_image_status = AsyncMock()
 
         spot_details = [
             SpotDetail(
@@ -413,13 +395,58 @@ class TestExecuteMethod:
             ),
         ]
 
-        # Act
-        await use_case.execute(
+        # モックの旅行ガイドを作成
+        mock_guide = TravelGuide(
+            id="guide-123",
             plan_id="plan-123",
+            overview="京都の主要な観光スポットを巡る旅行ガイド",
+            timeline=[
+                HistoricalEvent(
+                    year=1397,
+                    event="金閣寺創建",
+                    significance="室町文化の象徴",
+                    related_spots=("金閣寺",),
+                ),
+            ],
             spot_details=spot_details,
+            checkpoints=[
+                Checkpoint(
+                    spot_name="金閣寺",
+                    checkpoints=("金箔の舎利殿を観察",),
+                    historical_context="室町文化の象徴",
+                ),
+            ],
         )
 
+        # リポジトリのモック設定
+        mock_repository.find_by_plan_id.return_value = mock_guide
+
+        use_case = GenerateSpotImagesUseCase(
+            ai_service=mock_ai_service,
+            storage_service=mock_storage_service,
+            guide_repository=mock_repository,
+            max_concurrent=3,
+        )
+
+        # _generate_images_parallelをモック化
+        use_case._generate_images_parallel = AsyncMock(
+            return_value=[
+                ("金閣寺", "https://storage.googleapis.com/bucket/image1.jpg", "succeeded"),
+                ("清水寺", "https://storage.googleapis.com/bucket/image2.jpg", "succeeded"),
+                ("伏見稲荷大社", None, "failed"),
+            ]
+        )
+
+        # _update_spot_image_statusをモック化
+        use_case._update_spot_image_status = AsyncMock()
+
+        # Act
+        await use_case.execute(plan_id="plan-123")
+
         # Assert
+        # リポジトリから旅行ガイドを取得したことを確認
+        mock_repository.find_by_plan_id.assert_called_once_with("plan-123")
+
         # 並列処理が呼び出されたことを確認
         use_case._generate_images_parallel.assert_called_once_with("plan-123", spot_details)
 
@@ -448,14 +475,17 @@ class TestExecuteMethod:
         }
 
     @pytest.mark.asyncio
-    async def test_execute_with_empty_spot_details(self) -> None:
-        """空のスポットリストでexecute()を呼び出しても正常に動作する"""
+    async def test_execute_with_guide_not_found(self) -> None:
+        """旅行ガイドが見つからない場合は警告ログを出力して終了する"""
         # Arrange
         from unittest.mock import AsyncMock, MagicMock
 
         mock_ai_service = MagicMock()
         mock_storage_service = MagicMock()
         mock_repository = MagicMock()
+
+        # 旅行ガイドが見つからない場合
+        mock_repository.find_by_plan_id.return_value = None
 
         use_case = GenerateSpotImagesUseCase(
             ai_service=mock_ai_service,
@@ -467,11 +497,9 @@ class TestExecuteMethod:
         use_case._update_spot_image_status = AsyncMock()
 
         # Act
-        await use_case.execute(
-            plan_id="plan-123",
-            spot_details=[],
-        )
+        await use_case.execute(plan_id="plan-123")
 
         # Assert
-        use_case._generate_images_parallel.assert_called_once_with("plan-123", [])
+        mock_repository.find_by_plan_id.assert_called_once_with("plan-123")
+        use_case._generate_images_parallel.assert_not_called()
         use_case._update_spot_image_status.assert_not_called()

@@ -554,10 +554,10 @@ class GenerateTravelGuideUseCase:
                 extra={"plan_id": plan_id, "spot_count": len(saved_guide.spot_details)},
             )
             # BackgroundTasksに画像生成タスクを追加
+            # plan_idのみを渡し、画像生成ユースケース内でDBから最新のガイドを取得する
             background_tasks.add_task(
                 self._image_use_case.execute,
                 plan_id=plan_id,
-                spot_details=saved_guide.spot_details,
             )
             logger.debug(
                 "Spot images generation task added to background",

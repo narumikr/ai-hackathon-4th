@@ -85,18 +85,30 @@ class GenerateSpotImagesUseCase:
     async def execute(
         self,
         plan_id: str,
-        spot_details: list[SpotDetail],
     ) -> None:
         """スポット画像を生成する
 
         Args:
             plan_id: 旅行計画ID
-            spot_details: スポット詳細リスト
 
         Note:
             このメソッドは非同期で実行され、呼び出し元は完了を待たない
             各スポットの画像生成完了後、個別にDBを更新する
+
+            DBから最新の旅行ガイドを取得し、全てのスポット（既存+新規）に対して
+            画像生成を実行します。
         """
+        # DBから最新の旅行ガイドを取得
+        travel_guide = self._guide_repository.find_by_plan_id(plan_id)
+        if travel_guide is None:
+            logger.warning(
+                "Travel guide not found for image generation",
+                extra={"plan_id": plan_id},
+            )
+            return
+
+        spot_details = travel_guide.spot_details
+
         logger.info(
             "Starting spot images generation",
             extra={
