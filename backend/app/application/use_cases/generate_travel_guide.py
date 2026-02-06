@@ -635,22 +635,31 @@ class GenerateTravelGuideUseCase:
         return structured
 
 
+def _build_spots_text(travel_plan: TravelPlan) -> str:
+    """スポットテキストを生成する
+
+    スポットが指定されている場合はリスト形式、未指定の場合は
+    目的地に基づいておすすめスポットを提案するよう指示するテキストを返す。
+    """
+    if travel_plan.spots:
+        return "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
+    return "指定なし（目的地に基づいておすすめの観光スポットを提案してください）"
+
+
 def _build_fact_extraction_prompt(travel_plan: TravelPlan) -> str:
     """事実抽出用のプロンプトを生成する（Step A）"""
-    spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return render_template(
         _FACT_EXTRACTION_PROMPT_TEMPLATE,
         destination=travel_plan.destination,
-        spots_text=spots_text,
+        spots_text=_build_spots_text(travel_plan),
     )
 
 
 def _build_travel_guide_prompt(travel_plan: TravelPlan, extracted_facts: str) -> str:
     """旅行ガイド生成用のプロンプトを生成する（Step B）"""
-    spots_text = "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
     return render_template(
         _TRAVEL_GUIDE_PROMPT_TEMPLATE,
         destination=travel_plan.destination,
-        spots_text=spots_text,
+        spots_text=_build_spots_text(travel_plan),
         extracted_facts=extracted_facts,
     )
