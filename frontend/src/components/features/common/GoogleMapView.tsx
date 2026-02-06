@@ -98,6 +98,43 @@ export function GoogleMapView({
   useEffect(() => {
     if (!isLoaded || spots.length === 0) return;
 
+    /**
+     * Searches for the geographic locations of all spots using Google Places API.
+     *
+     * Creates a temporary Google Map instance (via DOM element creation) to initialize
+     * the PlacesService, which is required by the Google Maps API architecture.
+     * The PlacesService cannot be instantiated without a Map or div element reference.
+     *
+     * Process:
+     * 1. Creates a temporary DOM element and Map instance for PlacesService initialization
+     * 2. Sequentially searches for each spot's location using the Places API
+     * 3. Updates the state with found locations
+     * 4. Calculates and sets the map center to the average position of all found locations
+     * 5. Updates the searching state flag
+     *
+     * @remarks
+     * DOM generation is necessary because `google.maps.places.PlacesService` requires
+     * either a Map instance or an HTMLDivElement as a constructor parameter per Google Maps API specification.
+     * The temporary map is only used for API initialization and not rendered to the UI.
+     *
+     * @returns {Promise<void>} A promise that resolves when all spot locations have been searched and state updated
+     */
+    /**
+     * すべてのスポットの位置情報を検索し、地図上に表示するための処理を行います。
+     *
+     * @remarks
+     * この関数は以下の処理を順次実行します：
+     * 1. 検索中フラグを立てる
+     * 2. Google Places APIを使用して各スポットの位置情報を検索
+     * 3. 取得した位置情報を状態に保存
+     * 4. すべてのスポットの平均座標を計算し、地図の中心位置を設定
+     * 5. 検索中フラグを解除
+     *
+     * @returns Promise<void> - 非同期処理の完了を表すPromise
+     *
+     * @throws Google Places APIのエラーが発生した場合、個別のスポット検索は失敗する可能性がありますが、
+     * 関数全体の実行は継続されます
+     */
     const searchAllSpots = async () => {
       setIsSearching(true);
 
@@ -105,14 +142,9 @@ export function GoogleMapView({
       const tempMap = new google.maps.Map(mapDiv);
       const service = new google.maps.places.PlacesService(tempMap);
 
-      const locations: SpotLocation[] = [];
-
-      for (let i = 0; i < spots.length; i++) {
-        const location = await searchSpotLocation(spots[i], i + 1, service);
-        if (location) {
-          locations.push(location);
-        }
-      }
+      const locationPromises = spots.map((spot, i) => searchSpotLocation(spot, i + 1, service));
+      const results = await Promise.all(locationPromises);
+      const locations = results.filter((loc): loc is SpotLocation => loc !== null);
 
       setSpotLocations(locations);
 
