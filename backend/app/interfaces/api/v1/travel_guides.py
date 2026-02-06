@@ -11,9 +11,12 @@ from app.application.use_cases.generate_travel_guide import GenerateTravelGuideU
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.value_objects import GenerationStatus
 from app.infrastructure.persistence.database import get_db
+from app.infrastructure.repositories.spot_image_job_repository import SpotImageJobRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
-from app.interfaces.api.dependencies import get_ai_service_dependency
+from app.interfaces.api.dependencies import (
+    get_ai_service_dependency,
+)
 from app.interfaces.schemas.travel_guide import GenerateTravelGuideRequest
 from app.interfaces.schemas.travel_plan import TravelPlanResponse
 
@@ -158,7 +161,13 @@ async def generate_travel_guide(
 
 
 async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bind) -> None:
-    """旅行ガイド生成をバックグラウンドで実行する"""
+    """旅行ガイド生成をバックグラウンドで実行する
+
+    Args:
+        plan_id: 旅行計画ID
+        ai_service: AIサービス
+        bind: SQLAlchemyのbind
+    """
     session_maker = sessionmaker(autocommit=False, autoflush=False, bind=bind)
     db = session_maker()
     try:
@@ -168,10 +177,13 @@ async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bin
         )
         plan_repository = TravelPlanRepository(db)
         guide_repository = TravelGuideRepository(db)
+        job_repository = SpotImageJobRepository(db)
+
         use_case = GenerateTravelGuideUseCase(
             plan_repository=plan_repository,
             guide_repository=guide_repository,
             ai_service=ai_service,
+            job_repository=job_repository,
         )
         guide_dto = await use_case.execute(plan_id=plan_id)
         logger.debug(

@@ -52,6 +52,8 @@ class TravelGuideDTO:
                     "highlights": list(detail.highlights),
                     "recommendedVisitTime": detail.recommended_visit_time,
                     "historicalSignificance": detail.historical_significance,
+                    "imageUrl": detail.image_url,
+                    "imageStatus": detail.image_status,
                 }
                 for detail in entity.spot_details
             ],

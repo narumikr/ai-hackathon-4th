@@ -292,6 +292,17 @@ just dev-backend   # バックエンドのみ（http://localhost:8000）
 just dev-frontend  # フロントエンドのみ（http://localhost:3000）
 ```
 
+#### スポット画像生成ワーカーの起動
+
+スポット画像生成はバックエンドとは別プロセスで実行されます。
+ローカルで画像生成を行う場合は、ワーカーを起動してください。
+
+```bash
+just dev-worker
+```
+
+同時実行数は `backend/.env` の `IMAGE_GENERATION_MAX_CONCURRENT` で調整します。
+
 #### API仕様書
 
 バックエンドAPIの仕様書は以下の方法で確認できます。

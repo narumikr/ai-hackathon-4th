@@ -133,8 +133,9 @@ class FakeAIServiceWithMissingSpot(IAIService):
         return self.second_generation
 
 
+
 @pytest.mark.asyncio
-async def test_retries_when_spot_is_missing(db_session: Session, sample_travel_plan) -> None:
+async def test_retries_when_spot_is_missing(db_session: Session, sample_travel_plan, fake_job_repository) -> None:
     """前提条件: 初回生成でスポットが漏れている。
     実行: 旅行ガイドを生成する。
     検証: 再生成が実行され、全スポットが含まれる。
@@ -230,6 +231,7 @@ async def test_retries_when_spot_is_missing(db_session: Session, sample_travel_p
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 

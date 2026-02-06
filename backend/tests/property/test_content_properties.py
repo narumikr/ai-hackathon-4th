@@ -21,6 +21,7 @@ from hypothesis import strategies as st
 from app.domain.travel_guide.value_objects import SpotDetail
 from app.infrastructure.ai.adapters import GeminiAIService
 from app.infrastructure.ai.gemini_client import GeminiClient
+from app.infrastructure.ai.image_generation_client import ImageGenerationClient
 
 # --- Hypothesisカスタム戦略定義 ---
 
@@ -155,9 +156,14 @@ async def test_property_web_search_execution(inputs: tuple[str, str | None]) -> 
     expected_response = "Historical information with search results about the destination."
     mock_client.generate_content = AsyncMock(return_value=expected_response)
 
+    # モックImageGenerationClientの準備
+    mock_image_client = MagicMock()
+    mock_image_client.generate_image = AsyncMock()
+
     # GeminiAIServiceのインスタンス作成
     service = GeminiAIService(
         gemini_client=mock_client,
+        image_generation_client=mock_image_client,
         default_temperature=0.0,
         default_max_output_tokens=8192,
         default_timeout_seconds=60,
@@ -221,9 +227,14 @@ async def test_property_historical_background_summarization(
     }
     mock_client.generate_content_with_schema = AsyncMock(return_value=mock_spot_data)
 
+    # モックImageGenerationClientの準備
+    mock_image_client = MagicMock(spec=ImageGenerationClient)
+    mock_image_client.generate_image = AsyncMock()
+
     # GeminiAIServiceのインスタンス作成
     service = GeminiAIService(
         gemini_client=mock_client,
+        image_generation_client=mock_image_client,
         default_temperature=0.0,
         default_max_output_tokens=8192,
         default_timeout_seconds=60,
@@ -305,9 +316,14 @@ async def test_property_historical_highlights_organization(
     }
     mock_client.generate_content_with_schema = AsyncMock(return_value=mock_spot_data)
 
+    # モックImageGenerationClientの準備
+    mock_image_client = MagicMock(spec=ImageGenerationClient)
+    mock_image_client.generate_image = AsyncMock()
+
     # GeminiAIServiceのインスタンス作成
     service = GeminiAIService(
         gemini_client=mock_client,
+        image_generation_client=mock_image_client,
         default_temperature=0.0,
         default_max_output_tokens=8192,
         default_timeout_seconds=60,

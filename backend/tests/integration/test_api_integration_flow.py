@@ -155,6 +155,7 @@ class StubAIService(IAIService):
         }
 
 
+
 class StubStorageService(IStorageService):
     """ストレージサービスのスタブ"""
 
