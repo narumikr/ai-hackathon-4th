@@ -428,64 +428,13 @@ class GenerateSpotImagesUseCase:
             TravelGuideを取得し、該当スポットのSpotDetailを更新して保存する
         """
         try:
-            # ステップ1: TravelGuideを取得
-            travel_guide = self._guide_repository.find_by_plan_id(plan_id)
-            if travel_guide is None:
-                logger.error(
-                    "TravelGuide not found for image status update",
-                    extra={
-                        "plan_id": plan_id,
-                        "spot_name": spot_name,
-                    },
-                )
-                return
-
-            # ステップ2: 該当スポットを見つけて更新
-            updated_spot_details = []
-            spot_found = False
-
-            for spot_detail in travel_guide.spot_details:
-                if spot_detail.spot_name == spot_name:
-                    # 該当スポットの画像情報を更新
-                    from app.domain.travel_guide.value_objects import update_spot_image
-
-                    updated_spot = update_spot_image(
-                        spot_detail=spot_detail,
-                        image_url=image_url,
-                        image_status=image_status,
-                    )
-                    updated_spot_details.append(updated_spot)
-                    spot_found = True
-                    logger.debug(
-                        "Updated spot image status",
-                        extra={
-                            "plan_id": plan_id,
-                            "spot_name": spot_name,
-                            "image_status": image_status,
-                            "has_image_url": image_url is not None,
-                        },
-                    )
-                else:
-                    # 他のスポットはそのまま
-                    updated_spot_details.append(spot_detail)
-
-            if not spot_found:
-                logger.warning(
-                    "Spot not found in TravelGuide for image status update",
-                    extra={
-                        "plan_id": plan_id,
-                        "spot_name": spot_name,
-                        "available_spots": [s.spot_name for s in travel_guide.spot_details],
-                    },
-                )
-                return
-
-            # ステップ3: TravelGuideを更新
-            travel_guide.update_guide(spot_details=updated_spot_details)
-
-            # ステップ4: リポジトリに保存
-            self._guide_repository.save(travel_guide, commit=True)
-
+            self._guide_repository.update_spot_image_status(
+                plan_id=plan_id,
+                spot_name=spot_name,
+                image_url=image_url,
+                image_status=image_status,
+                commit=True,
+            )
             logger.info(
                 "Successfully updated spot image status in database",
                 extra={

@@ -57,3 +57,16 @@ class ITravelGuideRepository(ABC):
             guide_id: 削除する旅行ガイドID
         """
         pass
+
+    @abstractmethod
+    def update_spot_image_status(
+        self,
+        plan_id: str,
+        spot_name: str,
+        image_url: str | None,
+        image_status: str,
+        *,
+        commit: bool = True,
+    ) -> None:
+        """特定スポットの画像情報のみを更新する"""
+        pass

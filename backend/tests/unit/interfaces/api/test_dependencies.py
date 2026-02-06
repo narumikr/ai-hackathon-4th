@@ -33,14 +33,18 @@ def test_get_ai_service_returns_gemini_ai_service(monkeypatch: pytest.MonkeyPatc
     assert isinstance(ai_service, IAIService)
 
 
-@pytest.mark.skip(reason="環境変数の完全なクリアが困難なため、このテストはスキップします")
 def test_get_ai_service_raises_error_when_project_not_set(monkeypatch: pytest.MonkeyPatch) -> None:
     """GOOGLE_CLOUD_PROJECTが設定されていない場合にエラーが発生することを確認する"""
     # 環境変数をクリア
     monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+    monkeypatch.delenv("GOOGLE_CLOUD_LOCATION", raising=False)
+    monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost:5432/testdb")
 
     # キャッシュをクリア（設定とAIサービスの両方）
-    from app.config.settings import get_settings
+    from app.config.settings import Settings, get_settings
+
+    # .env 由来の値を読まないようにする
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
 
     get_settings.cache_clear()
     get_ai_service.cache_clear()

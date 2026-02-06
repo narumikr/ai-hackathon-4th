@@ -105,64 +105,10 @@ class TestUpdateSpotImageStatus:
     async def test_update_spot_image_status_success(self) -> None:
         """スポット画像ステータスを正常に更新できる"""
         # Arrange
-        from unittest.mock import AsyncMock, MagicMock
-
-        from app.domain.travel_guide.entity import TravelGuide
-        from app.domain.travel_guide.value_objects import (
-            Checkpoint,
-            HistoricalEvent,
-            SpotDetail,
-        )
+        from unittest.mock import MagicMock
 
         # モックリポジトリを作成
         mock_repository = MagicMock()
-
-        # テスト用のTravelGuideを作成
-        spot_details = [
-            SpotDetail(
-                spot_name="金閣寺",
-                historical_background="室町時代に建立された寺院",
-                highlights=("金箔で覆われた外観", "美しい庭園"),
-                recommended_visit_time="午前中",
-                historical_significance="室町文化を代表する建築物",
-                image_url=None,
-                image_status="not_started",
-            ),
-            SpotDetail(
-                spot_name="清水寺",
-                historical_background="平安時代に建立された寺院",
-                highlights=("清水の舞台", "音羽の滝"),
-                recommended_visit_time="午後",
-                historical_significance="京都を代表する寺院",
-                image_url=None,
-                image_status="not_started",
-            ),
-        ]
-
-        travel_guide = TravelGuide(
-            id="guide-123",
-            plan_id="plan-123",
-            overview="京都の歴史的な寺院を巡る旅",
-            timeline=[
-                HistoricalEvent(
-                    year=1397,
-                    event="金閣寺建立",
-                    significance="室町文化の象徴",
-                    related_spots=("金閣寺",),
-                )
-            ],
-            spot_details=spot_details,
-            checkpoints=[
-                Checkpoint(
-                    spot_name="金閣寺",
-                    checkpoints=("入口", "庭園"),
-                    historical_context="室町時代の建築",
-                )
-            ],
-        )
-
-        mock_repository.find_by_plan_id.return_value = travel_guide
-        mock_repository.save.return_value = travel_guide
 
         use_case = GenerateSpotImagesUseCase(
             ai_service=None,  # type: ignore
@@ -179,19 +125,13 @@ class TestUpdateSpotImageStatus:
         )
 
         # Assert
-        mock_repository.find_by_plan_id.assert_called_once_with("plan-123")
-        mock_repository.save.assert_called_once()
-
-        # 保存されたTravelGuideを確認
-        saved_guide = mock_repository.save.call_args[0][0]
-        updated_spot = next(s for s in saved_guide.spot_details if s.spot_name == "金閣寺")
-        assert updated_spot.image_url == "https://storage.googleapis.com/bucket/image.jpg"
-        assert updated_spot.image_status == "succeeded"
-
-        # 他のスポットは変更されていないことを確認
-        other_spot = next(s for s in saved_guide.spot_details if s.spot_name == "清水寺")
-        assert other_spot.image_url is None
-        assert other_spot.image_status == "not_started"
+        mock_repository.update_spot_image_status.assert_called_once_with(
+            plan_id="plan-123",
+            spot_name="金閣寺",
+            image_url="https://storage.googleapis.com/bucket/image.jpg",
+            image_status="succeeded",
+            commit=True,
+        )
 
     @pytest.mark.asyncio
     async def test_update_spot_image_status_travel_guide_not_found(self) -> None:
@@ -200,7 +140,7 @@ class TestUpdateSpotImageStatus:
         from unittest.mock import MagicMock
 
         mock_repository = MagicMock()
-        mock_repository.find_by_plan_id.return_value = None
+        mock_repository.update_spot_image_status.side_effect = ValueError("not found")
 
         use_case = GenerateSpotImagesUseCase(
             ai_service=None,  # type: ignore
@@ -217,8 +157,13 @@ class TestUpdateSpotImageStatus:
         )
 
         # Assert
-        mock_repository.find_by_plan_id.assert_called_once_with("non-existent-plan")
-        mock_repository.save.assert_not_called()
+        mock_repository.update_spot_image_status.assert_called_once_with(
+            plan_id="non-existent-plan",
+            spot_name="金閣寺",
+            image_url="https://storage.googleapis.com/bucket/image.jpg",
+            image_status="succeeded",
+            commit=True,
+        )
 
     @pytest.mark.asyncio
     async def test_update_spot_image_status_spot_not_found(self) -> None:
@@ -226,46 +171,8 @@ class TestUpdateSpotImageStatus:
         # Arrange
         from unittest.mock import MagicMock
 
-        from app.domain.travel_guide.entity import TravelGuide
-        from app.domain.travel_guide.value_objects import (
-            Checkpoint,
-            HistoricalEvent,
-            SpotDetail,
-        )
-
         mock_repository = MagicMock()
-
-        travel_guide = TravelGuide(
-            id="guide-123",
-            plan_id="plan-123",
-            overview="京都の歴史的な寺院を巡る旅",
-            timeline=[
-                HistoricalEvent(
-                    year=1397,
-                    event="金閣寺建立",
-                    significance="室町文化の象徴",
-                    related_spots=("金閣寺",),
-                )
-            ],
-            spot_details=[
-                SpotDetail(
-                    spot_name="金閣寺",
-                    historical_background="室町時代に建立された寺院",
-                    highlights=("金箔で覆われた外観", "美しい庭園"),
-                    recommended_visit_time="午前中",
-                    historical_significance="室町文化を代表する建築物",
-                )
-            ],
-            checkpoints=[
-                Checkpoint(
-                    spot_name="金閣寺",
-                    checkpoints=("入口", "庭園"),
-                    historical_context="室町時代の建築",
-                )
-            ],
-        )
-
-        mock_repository.find_by_plan_id.return_value = travel_guide
+        mock_repository.update_spot_image_status.side_effect = ValueError("spot not found")
 
         use_case = GenerateSpotImagesUseCase(
             ai_service=None,  # type: ignore
@@ -282,8 +189,13 @@ class TestUpdateSpotImageStatus:
         )
 
         # Assert
-        mock_repository.find_by_plan_id.assert_called_once_with("plan-123")
-        mock_repository.save.assert_not_called()
+        mock_repository.update_spot_image_status.assert_called_once_with(
+            plan_id="plan-123",
+            spot_name="存在しないスポット",
+            image_url="https://storage.googleapis.com/bucket/image.jpg",
+            image_status="succeeded",
+            commit=True,
+        )
 
     @pytest.mark.asyncio
     async def test_update_spot_image_status_with_failed_status(self) -> None:
@@ -291,48 +203,7 @@ class TestUpdateSpotImageStatus:
         # Arrange
         from unittest.mock import MagicMock
 
-        from app.domain.travel_guide.entity import TravelGuide
-        from app.domain.travel_guide.value_objects import (
-            Checkpoint,
-            HistoricalEvent,
-            SpotDetail,
-        )
-
         mock_repository = MagicMock()
-
-        travel_guide = TravelGuide(
-            id="guide-123",
-            plan_id="plan-123",
-            overview="京都の歴史的な寺院を巡る旅",
-            timeline=[
-                HistoricalEvent(
-                    year=1397,
-                    event="金閣寺建立",
-                    significance="室町文化の象徴",
-                    related_spots=("金閣寺",),
-                )
-            ],
-            spot_details=[
-                SpotDetail(
-                    spot_name="金閣寺",
-                    historical_background="室町時代に建立された寺院",
-                    highlights=("金箔で覆われた外観", "美しい庭園"),
-                    recommended_visit_time="午前中",
-                    historical_significance="室町文化を代表する建築物",
-                    image_status="processing",
-                )
-            ],
-            checkpoints=[
-                Checkpoint(
-                    spot_name="金閣寺",
-                    checkpoints=("入口", "庭園"),
-                    historical_context="室町時代の建築",
-                )
-            ],
-        )
-
-        mock_repository.find_by_plan_id.return_value = travel_guide
-        mock_repository.save.return_value = travel_guide
 
         use_case = GenerateSpotImagesUseCase(
             ai_service=None,  # type: ignore
@@ -349,10 +220,13 @@ class TestUpdateSpotImageStatus:
         )
 
         # Assert
-        saved_guide = mock_repository.save.call_args[0][0]
-        updated_spot = saved_guide.spot_details[0]
-        assert updated_spot.image_url is None
-        assert updated_spot.image_status == "failed"
+        mock_repository.update_spot_image_status.assert_called_once_with(
+            plan_id="plan-123",
+            spot_name="金閣寺",
+            image_url=None,
+            image_status="failed",
+            commit=True,
+        )
 
 
 class TestExecuteMethod:
