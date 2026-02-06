@@ -23,7 +23,8 @@ config = context.config
 
 # 設定からデータベースURLを取得
 settings = get_database_settings()
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# ConfigParserの補間仕様により、URL内の'%'は'%%'へエスケープが必要
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

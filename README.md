@@ -235,9 +235,36 @@ just migrate-current
 
 # データベースリセット（開発用）
 just db-reset
+
+# 本番DBマイグレーション適用（ローカル端末から直接実行）
+cd backend
+uv sync
+
+PROJECT_ID=
+DATABASE_HOST=
+DATABASE_NAME="travel_agent"
+DATABASE_USER="backend_user"
+
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic upgrade head
+
+# 適用リビジョン確認
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic current
 ```
 
 **注意**: 本番環境へのマイグレーション適用前には、必ずバックアップを取得してください。
+Cloud Run Service起動時には自動でマイグレーションされないため、本番デプロイ後にローカル端末から直接 `uv run alembic upgrade head` を実行してください。
+`DATABASE_PASSWORD` は Secret Manager の `db-password-production` から取得してください（`roles/secretmanager.secretAccessor` が必要です）。
+`.env` の `DATABASE_URL` が優先されるため、`DATABASE_URL=""` を指定して明示的に無効化してください。
 
 ### pre-commit
 pre-commit（コミット前フック管理ツール）を使い、コミット前に `just check-quality-commit` と `just test-all` を実行します。

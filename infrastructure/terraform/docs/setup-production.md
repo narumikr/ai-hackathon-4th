@@ -14,7 +14,8 @@
 8. [バックエンドDockerイメージのビルド＆プッシュ](#バックエンドdockerイメージのビルドプッシュ)
 9. [フロントエンドDockerイメージのビルド＆プッシュ](#フロントエンドdockerイメージのビルドプッシュ)
 10. [インフラストラクチャのデプロイ](#インフラストラクチャのデプロイ)
-11. [動作確認](#動作確認)
+11. [データベースマイグレーションの実行](#データベースマイグレーションの実行)
+12. [動作確認](#動作確認)
 
 ## 前提条件
 
@@ -257,7 +258,6 @@ terraform apply -var-file=environments/production.tfvars -target=module.cloud_ru
 
 ```bash
 # バックエンドURLを取得
-cd ../infrastructure/terraform
 export BACKEND_URL=$(terraform output -raw backend_url)
 cd ../../frontend
 
@@ -330,6 +330,41 @@ terraform apply -var-file=environments/production.tfvars
 ```
 
 `yes`と入力して実行します。
+
+## データベースマイグレーションの実行
+
+Cloud Run Serviceは起動時に自動でマイグレーションを実行しません。  
+本番デプロイ後、ローカル端末から本番DBへ直接Alembicマイグレーションを実行します。
+
+```bash
+# backendディレクトリで実行
+cd ../../backend
+uv sync
+
+PROJECT_ID="natural-ether-481906-c4"
+DATABASE_HOST="34.153.197.145"
+DATABASE_NAME="travel_agent"
+DATABASE_USER="backend_user"
+
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic upgrade head
+
+# 適用リビジョン確認
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic current
+```
+
+`DATABASE_PASSWORD` は Secret Manager の `db-password-production` から取得します。  
+実行には `roles/secretmanager.secretAccessor` 権限が必要です。
+`.env` の `DATABASE_URL` が設定されている場合はそちらが優先されるため、`DATABASE_URL=""` を指定して無効化してください。
 
 ## 動作確認
 
