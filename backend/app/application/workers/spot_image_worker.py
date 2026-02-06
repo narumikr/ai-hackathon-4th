@@ -82,7 +82,8 @@ async def _process_job(job, *, ai_service, storage_service) -> None:
             },
         )
         try:
-            SpotImageJobRepository(session).mark_failed(
+            session.rollback()
+            job_repository.mark_failed(
                 job.id,
                 error_message=str(exc) or "unexpected error",
             )

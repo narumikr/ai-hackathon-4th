@@ -235,11 +235,12 @@ class GeminiClient:
                     if attempt == max_retries - 1:
                         raise AIServiceInvalidRequestError(f"Invalid JSON response: {e}") from e
                     self._logger.warning(
-                        "Invalid JSON response from Gemini. retry=%s/%s, length=%s, full=%r",
+                        "Invalid JSON response from Gemini. retry=%s/%s, length=%s, head=%r, tail=%r",
                         attempt + 1,
                         max_retries,
                         len(extracted_text),
-                        extracted_text,
+                        extracted_text[:200],
+                        extracted_text[-200:],
                     )
                     await self._exponential_backoff(attempt)
                     continue
