@@ -343,9 +343,6 @@ class GenerateTravelGuideUseCase:
         if not travel_plan.id:
             raise ValueError("plan_id is required and must not be empty.")
 
-        if not travel_plan.spots:
-            raise ValueError("spots must not be empty.")
-
         plan_spot_names = [spot.name for spot in travel_plan.spots]
         logger.debug(
             "Travel plan validated for guide generation",
