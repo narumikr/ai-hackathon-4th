@@ -520,6 +520,44 @@ async def test_generate_travel_guide_use_case_fails_when_job_registration_fails(
 
 
 @pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rolls_back_existing_guide_update_when_job_registration_fails(
+    db_session: Session, sample_travel_plan, sample_travel_guide, failing_job_repository
+) -> None:
+    """前提条件: 既存ガイドがあり、ジョブ登録が失敗する。
+    実行: 旅行ガイドを再生成する。
+    検証: 既存ガイド更新とスポット追加がロールバックされ、生成ステータスのみFAILEDになる。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
+        structured_data=_structured_guide_payload_with_recommendations(),
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=failing_job_repository,
+    )
+
+    with pytest.raises(ValueError, match="job registration failed"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
+    assert [spot.name for spot in plan.spots] == ["清水寺", "金閣寺"]
+
+    rolled_back_guide = guide_repository.find_by_plan_id(sample_travel_plan.id)
+    assert rolled_back_guide is not None
+    assert rolled_back_guide.id == sample_travel_guide.id
+    assert rolled_back_guide.overview == "京都の歴史的寺院を巡る旅"
+    assert len(rolled_back_guide.spot_details) == 1
+    assert rolled_back_guide.spot_details[0].spot_name == "清水寺"
+
+
+@pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rolls_back_new_spots_when_job_registration_fails(
     db_session: Session, sample_travel_plan, failing_job_repository
 ) -> None:
