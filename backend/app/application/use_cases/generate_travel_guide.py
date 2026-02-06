@@ -24,7 +24,7 @@ from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
 from app.infrastructure.ai.schemas.evaluation import TravelGuideEvaluationSchema
 from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
-from app.prompts import render_template
+from app.prompts import load_template, render_template
 
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -92,6 +92,7 @@ _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_fact_extraction_sys
 _TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
 _EVALUATION_PROMPT_TEMPLATE = "travel_guide_evaluation_prompt.txt"
 _EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_evaluation_system_instruction.txt"
+_NO_SPOTS_TEXT_TEMPLATE = "travel_guide_no_spots_text.txt"
 
 logger = logging.getLogger(__name__)
 
@@ -643,7 +644,7 @@ def _build_spots_text(travel_plan: TravelPlan) -> str:
     """
     if travel_plan.spots:
         return "\n".join([f"- {spot.name}" for spot in travel_plan.spots])
-    return "指定なし（目的地に基づいておすすめの観光スポットを提案してください）"
+    return load_template(_NO_SPOTS_TEXT_TEMPLATE).strip()
 
 
 def _build_fact_extraction_prompt(travel_plan: TravelPlan) -> str:
