@@ -205,6 +205,20 @@ class FakeSpotImageJobRepository:
         raise NotImplementedError
 
 
+class FailingSpotImageJobRepository(FakeSpotImageJobRepository):
+    """create_jobsで失敗するテスト用リポジトリ"""
+
+    def create_jobs(
+        self,
+        plan_id: str,
+        spot_names: list[str],
+        *,
+        max_attempts: int = 3,
+        commit: bool = True,
+    ) -> int:
+        raise ValueError("job registration failed")
+
+
 
 
 
@@ -529,6 +543,36 @@ async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session
     )
     with pytest.raises(TravelPlanNotFoundError):
         await use_case.execute(plan_id="non-existent-id")
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_fails_when_job_registration_fails(
+    db_session: Session, sample_travel_plan
+) -> None:
+    """前提条件: ジョブ登録が失敗する。
+    実行: 旅行ガイドを生成する。
+    検証: 例外が送出され、生成ステータスがFAILEDになる。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
+        structured_data=_structured_guide_payload(),
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=FailingSpotImageJobRepository(),
+    )
+
+    with pytest.raises(ValueError, match="job registration failed"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
 
 
 @pytest.mark.asyncio

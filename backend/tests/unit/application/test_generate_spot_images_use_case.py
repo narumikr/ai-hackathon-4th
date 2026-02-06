@@ -135,7 +135,7 @@ class TestUpdateSpotImageStatus:
 
     @pytest.mark.asyncio
     async def test_update_spot_image_status_travel_guide_not_found(self) -> None:
-        """TravelGuideが見つからない場合、エラーログを出力して正常終了する"""
+        """TravelGuideが見つからない場合、例外を送出する"""
         # Arrange
         from unittest.mock import MagicMock
 
@@ -148,13 +148,14 @@ class TestUpdateSpotImageStatus:
             guide_repository=mock_repository,
         )
 
-        # Act
-        await use_case._update_spot_image_status(
-            plan_id="non-existent-plan",
-            spot_name="金閣寺",
-            image_url="https://storage.googleapis.com/bucket/image.jpg",
-            image_status="succeeded",
-        )
+        # Act & Assert
+        with pytest.raises(ValueError, match="not found"):
+            await use_case._update_spot_image_status(
+                plan_id="non-existent-plan",
+                spot_name="金閣寺",
+                image_url="https://storage.googleapis.com/bucket/image.jpg",
+                image_status="succeeded",
+            )
 
         # Assert
         mock_repository.update_spot_image_status.assert_called_once_with(
@@ -167,7 +168,7 @@ class TestUpdateSpotImageStatus:
 
     @pytest.mark.asyncio
     async def test_update_spot_image_status_spot_not_found(self) -> None:
-        """該当スポットが見つからない場合、警告ログを出力して正常終了する"""
+        """該当スポットが見つからない場合、例外を送出する"""
         # Arrange
         from unittest.mock import MagicMock
 
@@ -180,13 +181,14 @@ class TestUpdateSpotImageStatus:
             guide_repository=mock_repository,
         )
 
-        # Act
-        await use_case._update_spot_image_status(
-            plan_id="plan-123",
-            spot_name="存在しないスポット",
-            image_url="https://storage.googleapis.com/bucket/image.jpg",
-            image_status="succeeded",
-        )
+        # Act & Assert
+        with pytest.raises(ValueError, match="spot not found"):
+            await use_case._update_spot_image_status(
+                plan_id="plan-123",
+                spot_name="存在しないスポット",
+                image_url="https://storage.googleapis.com/bucket/image.jpg",
+                image_status="succeeded",
+            )
 
         # Assert
         mock_repository.update_spot_image_status.assert_called_once_with(
@@ -377,3 +379,111 @@ class TestExecuteMethod:
         mock_repository.find_by_plan_id.assert_called_once_with("plan-123")
         use_case._generate_images_parallel.assert_not_called()
         use_case._update_spot_image_status.assert_not_called()
+
+
+class TestGenerateForSpot:
+    """generate_for_spot()メソッドのテストクラス"""
+
+    @pytest.mark.asyncio
+    async def test_generate_for_spot_raises_when_processing_update_fails(self) -> None:
+        """processing更新に失敗した場合、例外を送出する"""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.domain.travel_guide.entity import TravelGuide
+        from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
+
+        mock_repository = MagicMock()
+        mock_repository.find_by_plan_id.return_value = TravelGuide(
+            id="guide-1",
+            plan_id="plan-123",
+            overview="overview",
+            timeline=[
+                HistoricalEvent(
+                    year=1397,
+                    event="event",
+                    significance="significance",
+                    related_spots=("金閣寺",),
+                )
+            ],
+            spot_details=[
+                SpotDetail(
+                    spot_name="金閣寺",
+                    historical_background="background",
+                    highlights=("h1",),
+                    recommended_visit_time="午前",
+                    historical_significance="significance",
+                )
+            ],
+            checkpoints=[
+                Checkpoint(
+                    spot_name="金閣寺",
+                    checkpoints=("c1",),
+                    historical_context="context",
+                )
+            ],
+        )
+        mock_repository.update_spot_image_status.side_effect = ValueError("db failure")
+
+        use_case = GenerateSpotImagesUseCase(
+            ai_service=MagicMock(),
+            storage_service=MagicMock(),
+            guide_repository=mock_repository,
+        )
+        use_case._generate_single_spot_image = AsyncMock(  # type: ignore[method-assign]
+            return_value=("金閣寺", "https://example.com/img.jpg", "succeeded", None)
+        )
+
+        with pytest.raises(ValueError, match="db failure"):
+            await use_case.generate_for_spot(plan_id="plan-123", spot_name="金閣寺")
+
+    @pytest.mark.asyncio
+    async def test_generate_for_spot_raises_when_final_update_fails(self) -> None:
+        """最終ステータス更新に失敗した場合、例外を送出する"""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.domain.travel_guide.entity import TravelGuide
+        from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
+
+        mock_repository = MagicMock()
+        mock_repository.find_by_plan_id.return_value = TravelGuide(
+            id="guide-1",
+            plan_id="plan-123",
+            overview="overview",
+            timeline=[
+                HistoricalEvent(
+                    year=1397,
+                    event="event",
+                    significance="significance",
+                    related_spots=("金閣寺",),
+                )
+            ],
+            spot_details=[
+                SpotDetail(
+                    spot_name="金閣寺",
+                    historical_background="background",
+                    highlights=("h1",),
+                    recommended_visit_time="午前",
+                    historical_significance="significance",
+                )
+            ],
+            checkpoints=[
+                Checkpoint(
+                    spot_name="金閣寺",
+                    checkpoints=("c1",),
+                    historical_context="context",
+                )
+            ],
+        )
+        mock_repository.update_spot_image_status.side_effect = [None, ValueError("final update failed")]
+
+        use_case = GenerateSpotImagesUseCase(
+            ai_service=MagicMock(),
+            storage_service=MagicMock(),
+            guide_repository=mock_repository,
+        )
+        use_case._generate_single_spot_image = AsyncMock(  # type: ignore[method-assign]
+            return_value=("金閣寺", "https://example.com/img.jpg", "succeeded", None)
+        )
+
+        with pytest.raises(ValueError, match="final update failed"):
+            await use_case.generate_for_spot(plan_id="plan-123", spot_name="金閣寺")

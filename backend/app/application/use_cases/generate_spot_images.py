@@ -427,32 +427,18 @@ class GenerateSpotImagesUseCase:
         Note:
             TravelGuideを取得し、該当スポットのSpotDetailを更新して保存する
         """
-        try:
-            self._guide_repository.update_spot_image_status(
-                plan_id=plan_id,
-                spot_name=spot_name,
-                image_url=image_url,
-                image_status=image_status,
-                commit=True,
-            )
-            logger.info(
-                "Successfully updated spot image status in database",
-                extra={
-                    "plan_id": plan_id,
-                    "spot_name": spot_name,
-                    "image_status": image_status,
-                },
-            )
-
-        except Exception as e:
-            logger.error(
-                "Failed to update spot image status in database",
-                extra={
-                    "plan_id": plan_id,
-                    "spot_name": spot_name,
-                    "image_status": image_status,
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                },
-                exc_info=True,
-            )
+        self._guide_repository.update_spot_image_status(
+            plan_id=plan_id,
+            spot_name=spot_name,
+            image_url=image_url,
+            image_status=image_status,
+            commit=True,
+        )
+        logger.info(
+            "Successfully updated spot image status in database",
+            extra={
+                "plan_id": plan_id,
+                "spot_name": spot_name,
+                "image_status": image_status,
+            },
+        )

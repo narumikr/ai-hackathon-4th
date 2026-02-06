@@ -512,6 +512,22 @@ class GenerateTravelGuideUseCase:
                         checkpoints=generated_guide.checkpoints,
                     )
                     saved_guide = self._guide_repository.save(existing, commit=False)
+            created_jobs = self._register_spot_image_jobs(
+                plan_id=plan_id,
+                spot_details=saved_guide.spot_details,
+                commit=False,
+            )
+            logger.info(
+                "Spot image jobs registered",
+                extra={"plan_id": plan_id, "created_jobs": created_jobs},
+            )
+
+            travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
+            self._plan_repository.save(travel_plan, commit=commit)
+            logger.debug(
+                "Guide status set to succeeded in use case",
+                extra={"plan_id": plan_id},
+            )
         except Exception:
             logger.exception(
                 "Travel guide generation failed in use case",
@@ -521,29 +537,6 @@ class GenerateTravelGuideUseCase:
             failed_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
             self._plan_repository.save(failed_plan, commit=commit)
             raise
-
-        travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
-        self._plan_repository.save(travel_plan, commit=commit)
-        logger.debug(
-            "Guide status set to succeeded in use case",
-            extra={"plan_id": plan_id},
-        )
-
-        try:
-            created_jobs = self._register_spot_image_jobs(
-                plan_id=plan_id,
-                spot_details=saved_guide.spot_details,
-                commit=commit,
-            )
-            logger.info(
-                "Spot image jobs registered",
-                extra={"plan_id": plan_id, "created_jobs": created_jobs},
-            )
-        except Exception:
-            logger.exception(
-                "Failed to register spot image jobs",
-                extra={"plan_id": plan_id},
-            )
 
         return TravelGuideDTO.from_entity(saved_guide)
 
