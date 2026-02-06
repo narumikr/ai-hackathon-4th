@@ -56,9 +56,16 @@
     - 歴史的背景
     - 見どころ
     - チェックポイント
+  - **Google Map表示**
+    - 観光スポットの位置をマップ上にマーカーで表示
+    - Places APIによるスポット名からの位置検索
+    - 番号付きマーカーで訪問順を可視化
+    - マーカークリックでスポット名をInfoWindowで表示
+    - マップの中心はスポット位置の重心に自動調整
   - 旅行完了マーク機能
 - **コンポーネント**:
   - `app/travel/[id]/page.tsx`
+  - `components/features/common/GoogleMapView.tsx`
   - `components/display/TravelGuide.tsx`
   - `components/display/Timeline.tsx`
 
@@ -157,6 +164,9 @@ frontend/src/
 │   │   ├── Modal.tsx
 │   │   ├── LoadingSpinner.tsx
 │   │   └── ErrorBoundary.tsx
+│   ├── features/
+│   │   └── common/              # 機能共通コンポーネント
+│   │       └── GoogleMapView.tsx  # Google Map表示
 │   ├── travel/                  # 旅行計画関連
 │   │   ├── TravelList.tsx
 │   │   ├── TravelForm.tsx
@@ -209,6 +219,9 @@ frontend/src/
 - **状態管理**: React hooks + Context API
 - **フォーム管理**: React Hook Form
 - **画像アップロード**: ドラッグ&ドロップ対応
+- **地図表示**: Google Maps JavaScript API + Places API
+  - ライブラリ: `@react-google-maps/api`
+  - 環境変数: `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
 - **レスポンシブ対応**: モバイルファースト
 - **アクセシビリティ**: WCAG 2.1 AA準拠
 
