@@ -516,6 +516,101 @@ async def test_generate_travel_guide_use_case_fails_when_job_registration_fails(
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
     assert plan.guide_generation_status == GenerationStatus.FAILED
+    assert guide_repository.find_by_plan_id(sample_travel_plan.id) is None
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rolls_back_new_spots_when_job_registration_fails(
+    db_session: Session, sample_travel_plan, failing_job_repository
+) -> None:
+    """前提条件: ジョブ登録が失敗し、AI応答に新規スポットが含まれる。
+    実行: 旅行ガイドを生成する。
+    検証: 新規スポットと旅行ガイドがロールバックされ、生成ステータスのみFAILEDになる。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
+        structured_data={
+            "overview": "京都の代表的な寺院と城郭を巡り、宗教と政治の歴史を比較しながら学ぶ旅行ガイドです。清水寺と金閣寺に加えて二条城を取り上げ、時代ごとの建築様式や権力構造の変遷を現地で確認できるように構成しています。各スポットの背景、見どころ、学習観点を明確に示し、体験を通じて歴史理解を深める内容です。",
+            "timeline": [
+                {
+                    "year": 778,
+                    "event": "清水寺創建",
+                    "significance": "平安初期の信仰文化の形成",
+                    "relatedSpots": ["清水寺"],
+                },
+                {
+                    "year": 1397,
+                    "event": "金閣寺建立",
+                    "significance": "室町文化の象徴",
+                    "relatedSpots": ["金閣寺"],
+                },
+                {
+                    "year": 1603,
+                    "event": "二条城が徳川政権の拠点として整備",
+                    "significance": "江戸幕府の統治体制を示す重要拠点",
+                    "relatedSpots": ["二条城"],
+                },
+            ],
+            "spotDetails": [
+                {
+                    "spotName": "清水寺",
+                    "historicalBackground": "奈良時代末期に創建された寺院で、京都東山の信仰拠点として発展した。",
+                    "highlights": ["清水の舞台", "音羽の滝"],
+                    "recommendedVisitTime": "午前",
+                    "historicalSignificance": "庶民信仰と観音信仰の広がりを示す。",
+                },
+                {
+                    "spotName": "金閣寺",
+                    "historicalBackground": "足利義満の別荘を前身とし、北山文化を代表する寺院として知られる。",
+                    "highlights": ["舎利殿", "鏡湖池"],
+                    "recommendedVisitTime": "午後",
+                    "historicalSignificance": "室町期の権威と美意識を体現する。",
+                },
+                {
+                    "spotName": "二条城",
+                    "historicalBackground": "徳川家康が築城し、将軍権威の象徴として機能した城郭。",
+                    "highlights": ["二の丸御殿", "唐門"],
+                    "recommendedVisitTime": "午後",
+                    "historicalSignificance": "武家政権の政治運営を理解する重要資料。",
+                },
+            ],
+            "checkpoints": [
+                {
+                    "spotName": "清水寺",
+                    "checkpoints": ["舞台構造を観察する"],
+                    "historicalContext": "信仰と景観が結びついた寺院建築。",
+                },
+                {
+                    "spotName": "金閣寺",
+                    "checkpoints": ["庭園と舎利殿の関係を確認する"],
+                    "historicalContext": "室町文化の美的価値観を反映した空間。",
+                },
+                {
+                    "spotName": "二条城",
+                    "checkpoints": ["二の丸御殿の意匠を確認する"],
+                    "historicalContext": "江戸幕府の権威表象としての建築。",
+                },
+            ],
+        },
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=failing_job_repository,
+    )
+
+    with pytest.raises(ValueError, match="job registration failed"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
+    assert [spot.name for spot in plan.spots] == ["清水寺", "金閣寺"]
+    assert guide_repository.find_by_plan_id(sample_travel_plan.id) is None
 
 
 @pytest.mark.asyncio

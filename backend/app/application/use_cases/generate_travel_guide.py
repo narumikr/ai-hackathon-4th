@@ -512,15 +512,15 @@ class GenerateTravelGuideUseCase:
                         checkpoints=generated_guide.checkpoints,
                     )
                     saved_guide = self._guide_repository.save(existing, commit=False)
-            created_jobs = self._register_spot_image_jobs(
-                plan_id=plan_id,
-                spot_details=saved_guide.spot_details,
-                commit=False,
-            )
-            logger.info(
-                "Spot image jobs registered",
-                extra={"plan_id": plan_id, "created_jobs": created_jobs},
-            )
+                created_jobs = self._register_spot_image_jobs(
+                    plan_id=plan_id,
+                    spot_details=saved_guide.spot_details,
+                    commit=False,
+                )
+                logger.info(
+                    "Spot image jobs registered",
+                    extra={"plan_id": plan_id, "created_jobs": created_jobs},
+                )
 
             travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
             self._plan_repository.save(travel_plan, commit=commit)
