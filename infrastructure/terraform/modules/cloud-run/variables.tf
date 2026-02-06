@@ -50,6 +50,11 @@ variable "service_account_email" {
   type        = string
 }
 
+variable "frontend_service_account_email" {
+  description = "フロントエンド用サービスアカウントのメールアドレス"
+  type        = string
+}
+
 variable "labels" {
   description = "リソースに付与するラベル"
   type        = map(string)

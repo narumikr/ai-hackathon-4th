@@ -122,12 +122,12 @@ resource "google_cloud_run_service" "backend" {
   autogenerate_revision_name = true
 }
 
-# パブリックアクセス許可（一般公開）
-resource "google_cloud_run_service_iam_member" "backend_public" {
+# フロントエンドサービスからのアクセス許可
+resource "google_cloud_run_service_iam_member" "backend_frontend_invoker" {
   count    = var.environment == "production" ? 1 : 0
   service  = google_cloud_run_service.backend[0].name
   location = google_cloud_run_service.backend[0].location
   project  = var.project_id
   role     = "roles/run.invoker"
-  member   = "allUsers"
+  member   = "serviceAccount:${var.frontend_service_account_email}"
 }

@@ -162,6 +162,7 @@ module "cloud_run" {
   database_user         = local.is_production ? module.cloud_sql[0].database_user : ""
   db_password_secret_id = local.is_production ? module.secret_manager[0].db_password_secret_id : ""
   service_account_email = local.is_production ? module.iam[0].backend_service_account_email : ""
+  frontend_service_account_email = local.is_production ? module.iam[0].frontend_service_account_email : ""
   labels                = local.common_labels
 
   # 他のモジュールに依存

@@ -263,7 +263,8 @@ cd ../../frontend
 
 # .env.productionファイルを作成
 cat > .env.production <<EOF
-NEXT_PUBLIC_API_URL=${BACKEND_URL}
+NEXT_PUBLIC_API_URL=/
+BACKEND_SERVICE_URL=${BACKEND_URL}
 NODE_ENV=production
 NEXT_TELEMETRY_DISABLED=1
 EOF
