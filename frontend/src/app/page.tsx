@@ -1,5 +1,5 @@
 import { Container } from '@/components/layout';
-import { Button, Icon } from '@/components/ui';
+import { Button, Icon, InactivityPrompt } from '@/components/ui';
 import { APP_DESCRIPTION, APP_NAME, BUTTON_LABELS, HOME_CONTENT } from '@/constants';
 import Link from 'next/link';
 
@@ -86,6 +86,9 @@ export default function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* Inactivity Prompt */}
+      <InactivityPrompt />
     </div>
   );
 }
