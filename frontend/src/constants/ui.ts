@@ -235,6 +235,8 @@ export const MESSAGES = {
   GUIDE_GENERATING: '現在生成中です...',
   GUIDE_GENERATION_FAILED: 'ガイドの生成に失敗しました。',
   NO_SPOTS_REGISTERED: '観光スポットが登録されていません。',
+  MAP_LOAD_ERROR: 'マップの読み込みに失敗しました',
+  SEARCHING_SPOTS: 'スポットを検索中...',
 } as const;
 
 /**
@@ -340,6 +342,7 @@ export const SECTION_TITLES = {
   TOURIST_SPOTS: '観光スポット',
   HIGHLIGHTS: 'ハイライト',
   NEXT_TRIP_SUGGESTIONS: '次の旅行の提案',
+  MAP: 'マップ',
 } as const;
 
 /**
@@ -457,4 +460,5 @@ export const EMOJI_LABELS = {
   UPLOAD: 'アップロード',
   NOTE: 'メモ',
   HINT: 'ヒント',
+  MAP: 'マップ',
 } as const;
