@@ -23,6 +23,9 @@ def test_get_ai_service_returns_gemini_ai_service(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv("GOOGLE_CLOUD_LOCATION", "asia-northeast1")
 
     # キャッシュをクリア
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
     get_ai_service.cache_clear()
 
     # 実行
@@ -114,6 +117,9 @@ def test_ai_service_has_both_clients(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GOOGLE_CLOUD_LOCATION", "asia-northeast1")
 
     # キャッシュをクリア
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
     get_ai_service.cache_clear()
 
     # 実行

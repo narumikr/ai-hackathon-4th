@@ -42,12 +42,19 @@ class ISpotImageJobRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str) -> list[SpotImageJobRecord]:
+    def fetch_and_lock_jobs(
+        self,
+        limit: int,
+        *,
+        worker_id: str,
+        stale_after_seconds: int,
+    ) -> list[SpotImageJobRecord]:
         """ジョブを取得してロックする
 
         Args:
             limit: 取得件数
             worker_id: ワーカー識別子
+            stale_after_seconds: この秒数を超えてロックされているprocessingジョブを再取得対象にする
 
         Returns:
             list[SpotImageJobRecord]: ロック済みジョブのリスト

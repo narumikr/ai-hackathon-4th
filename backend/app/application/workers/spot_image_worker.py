@@ -102,11 +102,20 @@ async def run_worker() -> None:
     _apply_settings_env()
     settings = get_settings()
     max_concurrent = settings.image_generation_max_concurrent
+    job_lock_timeout_seconds = settings.image_generation_job_lock_timeout_seconds
     if max_concurrent <= 0:
         raise ValueError("image_generation_max_concurrent must be a positive integer.")
+    if job_lock_timeout_seconds <= 0:
+        raise ValueError("image_generation_job_lock_timeout_seconds must be a positive integer.")
 
     worker_id = _build_worker_id()
-    logger.info("Spot image worker started", extra={"worker_id": worker_id})
+    logger.info(
+        "Spot image worker started",
+        extra={
+            "worker_id": worker_id,
+            "lock_timeout_seconds": job_lock_timeout_seconds,
+        },
+    )
 
     ai_service = get_ai_service()
     storage_service = get_storage_service()
@@ -118,7 +127,11 @@ async def run_worker() -> None:
         session = SessionLocal()
         try:
             job_repository = SpotImageJobRepository(session)
-            jobs = job_repository.fetch_and_lock_jobs(max_concurrent, worker_id=worker_id)
+            jobs = job_repository.fetch_and_lock_jobs(
+                max_concurrent,
+                worker_id=worker_id,
+                stale_after_seconds=job_lock_timeout_seconds,
+            )
         finally:
             session.close()
 

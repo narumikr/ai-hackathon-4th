@@ -88,6 +88,7 @@ class Settings(DatabaseSettings):
     image_generation_model: str = "gemini-2.5-flash-image"
     image_generation_location: str = "global"
     image_generation_max_concurrent: int = 1
+    image_generation_job_lock_timeout_seconds: int = 900
     image_generation_aspect_ratio: str = "16:9"
     image_generation_timeout: int = 60
 
@@ -121,6 +122,14 @@ class Settings(DatabaseSettings):
     def validate_google_cloud_project(cls, value: str | None) -> str | None:
         """Google Cloud Projectの検証（GCS使用時のみ必須）"""
         # GCS使用時はチェックするが、ここでは緩く設定
+        return value
+
+    @field_validator("image_generation_job_lock_timeout_seconds")
+    @classmethod
+    def validate_image_generation_job_lock_timeout_seconds(cls, value: int) -> int:
+        """ジョブロックのタイムアウト秒数を検証する"""
+        if value <= 0:
+            raise ValueError("image_generation_job_lock_timeout_seconds must be positive.")
         return value
 
     @field_validator("google_application_credentials")

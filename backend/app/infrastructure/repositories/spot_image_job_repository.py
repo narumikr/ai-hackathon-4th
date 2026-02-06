@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+import logging
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.application.ports.spot_image_job_repository import (
@@ -11,6 +13,8 @@ from app.application.ports.spot_image_job_repository import (
     SpotImageJobRecord,
 )
 from app.infrastructure.persistence.models import SpotImageJobModel
+
+logger = logging.getLogger(__name__)
 
 
 class SpotImageJobRepository(ISpotImageJobRepository):
@@ -74,27 +78,61 @@ class SpotImageJobRepository(ISpotImageJobRepository):
             self._session.flush()
         return len(jobs)
 
-    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str) -> list[SpotImageJobRecord]:
+    def fetch_and_lock_jobs(
+        self,
+        limit: int,
+        *,
+        worker_id: str,
+        stale_after_seconds: int,
+    ) -> list[SpotImageJobRecord]:
         if limit <= 0:
             raise ValueError("limit must be a positive integer.")
         if not worker_id or not worker_id.strip():
             raise ValueError("worker_id is required and must not be empty.")
+        if stale_after_seconds <= 0:
+            raise ValueError("stale_after_seconds must be a positive integer.")
 
         now = datetime.now(UTC)
+        stale_before = now - timedelta(seconds=stale_after_seconds)
+        reclaimed_count = 0
         with self._session.begin():
             jobs = (
                 self._session.query(SpotImageJobModel)
-                .filter(SpotImageJobModel.status == "queued")
+                .filter(
+                    or_(
+                        SpotImageJobModel.status == "queued",
+                        (
+                            (SpotImageJobModel.status == "processing")
+                            & (
+                                or_(
+                                    SpotImageJobModel.locked_at.is_(None),
+                                    SpotImageJobModel.locked_at < stale_before,
+                                )
+                            )
+                        ),
+                    )
+                )
                 .order_by(SpotImageJobModel.created_at.asc())
                 .limit(limit)
                 .with_for_update(skip_locked=True)
                 .all()
             )
             for job in jobs:
+                if job.status == "processing":
+                    reclaimed_count += 1
                 job.status = "processing"
                 job.locked_at = now
                 job.locked_by = worker_id
                 job.updated_at = now
+        if reclaimed_count > 0:
+            logger.info(
+                "Reclaimed stale spot image jobs",
+                extra={
+                    "reclaimed_count": reclaimed_count,
+                    "worker_id": worker_id,
+                    "stale_after_seconds": stale_after_seconds,
+                },
+            )
 
         return [
             SpotImageJobRecord(

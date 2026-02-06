@@ -195,7 +195,7 @@ class FakeSpotImageJobRepository:
     ) -> int:
         return len(spot_names)
 
-    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str):
+    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str, stale_after_seconds: int):
         raise NotImplementedError
 
     def mark_succeeded(self, job_id: str) -> None:
