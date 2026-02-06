@@ -154,26 +154,6 @@ class StubAIService(IAIService):
             ],
         }
 
-    async def generate_image_prompt(
-        self,
-        spot_name: str,
-        historical_background: str | None = None,
-        *,
-        system_instruction: str | None = None,
-        temperature: float | None = None,
-    ) -> str:
-        """画像生成プロンプトを生成する（スタブ）"""
-        return f"リアルな写真風の{spot_name}の画像"
-
-    async def generate_image(
-        self,
-        prompt: str,
-        *,
-        aspect_ratio: str = "16:9",
-        timeout: int = 60,
-    ) -> bytes:
-        """画像を生成する（スタブ）"""
-        return b"dummy-image-data"
 
 
 class StubStorageService(IStorageService):

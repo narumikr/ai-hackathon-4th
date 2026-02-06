@@ -80,25 +80,6 @@ class FakeAIService(IAIService):
     ) -> dict[str, Any]:
         raise NotImplementedError
 
-    async def generate_image_prompt(
-        self,
-        spot_name: str,
-        historical_background: str | None = None,
-        *,
-        system_instruction: str | None = None,
-        temperature: float | None = None,
-    ) -> str:
-        raise NotImplementedError
-
-    async def generate_image(
-        self,
-        prompt: str,
-        *,
-        aspect_ratio: str = "16:9",
-        timeout: int = 60,
-    ) -> bytes:
-        raise NotImplementedError
-
     async def evaluate_travel_guide(
         self,
         guide_content: dict,
@@ -181,44 +162,6 @@ class FakeAIService(IAIService):
             index = min(self.call_count - 1, len(self.structured_data) - 1)
             return self.structured_data[index]
         return self.structured_data
-
-class FakeSpotImageJobRepository:
-    """テスト用のスポット画像生成ジョブリポジトリ"""
-
-    def create_jobs(
-        self,
-        plan_id: str,
-        spot_names: list[str],
-        *,
-        max_attempts: int = 3,
-        commit: bool = True,
-    ) -> int:
-        return len(spot_names)
-
-    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str):
-        raise NotImplementedError
-
-    def mark_succeeded(self, job_id: str) -> None:
-        raise NotImplementedError
-
-    def mark_failed(self, job_id: str, *, error_message: str) -> None:
-        raise NotImplementedError
-
-
-class FailingSpotImageJobRepository(FakeSpotImageJobRepository):
-    """create_jobsで失敗するテスト用リポジトリ"""
-
-    def create_jobs(
-        self,
-        plan_id: str,
-        spot_names: list[str],
-        *,
-        max_attempts: int = 3,
-        commit: bool = True,
-    ) -> int:
-        raise ValueError("job registration failed")
-
-
 
 
 
@@ -338,7 +281,7 @@ def _structured_guide_payload_with_recommendations() -> dict[str, Any]:
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_creates_guide(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画が存在する。
     実行: 旅行ガイドを生成する。
@@ -357,7 +300,7 @@ async def test_generate_travel_guide_use_case_creates_guide(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -379,7 +322,7 @@ async def test_generate_travel_guide_use_case_creates_guide(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_allows_recommended_spots(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画とおすすめスポットを含む構造化データ。
     実行: 旅行ガイドを生成する。
@@ -398,7 +341,7 @@ async def test_generate_travel_guide_use_case_allows_recommended_spots(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -412,7 +355,7 @@ async def test_generate_travel_guide_use_case_allows_recommended_spots(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rejects_short_overview(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: overviewが最小文字数を満たさない構造化データ。
     実行: 旅行ガイドを生成する。
@@ -435,7 +378,7 @@ async def test_generate_travel_guide_use_case_rejects_short_overview(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError, match="Invalid AI response structure"):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -447,7 +390,7 @@ async def test_generate_travel_guide_use_case_rejects_short_overview(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画が存在し、AIが新規スポットを追加する。
     実行: 年表に不正な関連スポットを含めてガイド生成を失敗させる。
@@ -477,7 +420,7 @@ async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError, match="relatedSpots contains unknown spot names"):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -492,7 +435,7 @@ async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_updates_existing_guide(
-    db_session: Session, sample_travel_plan, sample_travel_guide
+    db_session: Session, sample_travel_plan, sample_travel_guide, fake_job_repository
 ) -> None:
     """前提条件: 既存の旅行ガイドが存在する。
     実行: 旅行ガイドを再生成する。
@@ -511,7 +454,7 @@ async def test_generate_travel_guide_use_case_updates_existing_guide(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -521,7 +464,7 @@ async def test_generate_travel_guide_use_case_updates_existing_guide(
 
 
 @pytest.mark.asyncio
-async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session) -> None:
+async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session, fake_job_repository) -> None:
     """前提条件: 存在しない旅行計画ID。
     実行: 旅行ガイドを生成する。
     検証: TravelPlanNotFoundErrorが発生する。
@@ -539,7 +482,7 @@ async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     with pytest.raises(TravelPlanNotFoundError):
         await use_case.execute(plan_id="non-existent-id")
@@ -547,7 +490,7 @@ async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_fails_when_job_registration_fails(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, failing_job_repository
 ) -> None:
     """前提条件: ジョブ登録が失敗する。
     実行: 旅行ガイドを生成する。
@@ -564,7 +507,7 @@ async def test_generate_travel_guide_use_case_fails_when_job_registration_fails(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FailingSpotImageJobRepository(),
+        job_repository=failing_job_repository,
     )
 
     with pytest.raises(ValueError, match="job registration failed"):
@@ -577,7 +520,7 @@ async def test_generate_travel_guide_use_case_fails_when_job_registration_fails(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
-    db_session: Session,
+    db_session: Session, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画に同名スポットが含まれる。
     実行: 旅行ガイドを生成する。
@@ -622,7 +565,7 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError):
         await use_case.execute(plan_id=duplicate_plan.id)
@@ -630,7 +573,7 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rejects_non_dict_structured_response(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: AIサービスが辞書以外の構造化データを返す。
     実行: 旅行ガイドを生成する。
@@ -649,7 +592,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -661,7 +604,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_retries_on_evaluation_failure(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 初回生成が評価に失敗し、再生成で成功する。
     実行: 旅行ガイドを生成する。
@@ -795,7 +738,7 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -811,7 +754,7 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_proceeds_after_retry_failure(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 初回も再生成も評価に失敗する。
     実行: 旅行ガイドを生成する。
@@ -883,7 +826,7 @@ async def test_generate_travel_guide_proceeds_after_retry_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 

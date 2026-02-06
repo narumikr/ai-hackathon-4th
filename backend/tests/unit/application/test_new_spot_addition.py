@@ -69,25 +69,6 @@ class FakeAIService(IAIService):
     ) -> dict[str, Any]:
         raise NotImplementedError
 
-    async def generate_image_prompt(
-        self,
-        spot_name: str,
-        historical_background: str | None = None,
-        *,
-        system_instruction: str | None = None,
-        temperature: float | None = None,
-    ) -> str:
-        raise NotImplementedError
-
-    async def generate_image(
-        self,
-        prompt: str,
-        *,
-        aspect_ratio: str = "16:9",
-        timeout: int = 60,
-    ) -> bytes:
-        raise NotImplementedError
-
     async def evaluate_travel_guide(
         self,
         guide_content: dict,
@@ -143,34 +124,10 @@ class FakeAIService(IAIService):
             }
         return self.structured_data
 
-class FakeSpotImageJobRepository:
-    """テスト用のスポット画像生成ジョブリポジトリ"""
-
-    def create_jobs(
-        self,
-        plan_id: str,
-        spot_names: list[str],
-        *,
-        max_attempts: int = 3,
-        commit: bool = True,
-    ) -> int:
-        return len(spot_names)
-
-    def fetch_and_lock_jobs(self, limit: int, *, worker_id: str):
-        raise NotImplementedError
-
-    def mark_succeeded(self, job_id: str) -> None:
-        raise NotImplementedError
-
-    def mark_failed(self, job_id: str, *, error_message: str) -> None:
-        raise NotImplementedError
-
-
-
 
 
 @pytest.mark.asyncio
-async def test_new_spot_addition(db_session: Session, sample_travel_plan) -> None:
+async def test_new_spot_addition(db_session: Session, sample_travel_plan, fake_job_repository) -> None:
     """新規スポットが追加されることを確認する"""
     # 前提条件: 旅行計画には清水寺と金閣寺のみが含まれる
     plan_repository = TravelPlanRepository(db_session)
@@ -251,7 +208,7 @@ async def test_new_spot_addition(db_session: Session, sample_travel_plan) -> Non
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
-        job_repository=FakeSpotImageJobRepository(),
+        job_repository=fake_job_repository,
     )
     await use_case.execute(plan_id=sample_travel_plan.id)
 

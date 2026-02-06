@@ -21,7 +21,7 @@ class TestGenerateImagesParallel:
         mock_guide_repository = Mock()
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=mock_ai_service,
+            image_generation_service=mock_ai_service,
             storage_service=mock_storage_service,
             guide_repository=mock_guide_repository,
             max_concurrent=2,
@@ -79,7 +79,7 @@ class TestGenerateImagesParallel:
         mock_guide_repository = Mock()
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=mock_ai_service,
+            image_generation_service=mock_ai_service,
             storage_service=mock_storage_service,
             guide_repository=mock_guide_repository,
             max_concurrent=2,
@@ -144,7 +144,7 @@ class TestGenerateImagesParallel:
         mock_guide_repository = Mock()
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=mock_ai_service,
+            image_generation_service=mock_ai_service,
             storage_service=mock_storage_service,
             guide_repository=mock_guide_repository,
             max_concurrent=2,  # 最大2つまで同時実行
@@ -191,7 +191,7 @@ class TestGenerateImagesParallel:
         mock_guide_repository = Mock()
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=mock_ai_service,
+            image_generation_service=mock_ai_service,
             storage_service=mock_storage_service,
             guide_repository=mock_guide_repository,
         )

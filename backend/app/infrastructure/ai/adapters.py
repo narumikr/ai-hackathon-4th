@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from app.application.ports.ai_service import IAIService
+from app.application.ports.image_generation_service import IImageGenerationService
 from app.infrastructure.ai.gemini_client import GeminiClient
 from app.infrastructure.ai.image_generation_client import ImageGenerationClient
 
@@ -14,10 +15,10 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound="GeminiResponseSchema")
 
 
-class GeminiAIService(IAIService):
+class GeminiAIService(IAIService, IImageGenerationService):
     """Gemini AIサービスアダプタ
 
-    IAIServiceインターフェースを実装し、
+    IAIServiceとIImageGenerationServiceの両インターフェースを実装し、
     GeminiClientとImageGenerationClientを使用してAI機能を提供する
     """
 

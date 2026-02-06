@@ -1,6 +1,7 @@
 """AI infrastructure layer exports and factory functions."""
 
 from app.application.ports.ai_service import IAIService
+from app.application.ports.image_generation_service import IImageGenerationService
 from app.config.settings import get_settings
 from app.infrastructure.ai.adapters import GeminiAIService
 from app.infrastructure.ai.gemini_client import GeminiClient
@@ -8,6 +9,7 @@ from app.infrastructure.ai.image_generation_client import ImageGenerationClient
 
 __all__ = [
     "IAIService",
+    "IImageGenerationService",
     "GeminiClient",
     "ImageGenerationClient",
     "GeminiAIService",
@@ -15,14 +17,14 @@ __all__ = [
 ]
 
 
-def create_ai_service() -> IAIService:
+def create_ai_service() -> GeminiAIService:
     """AIサービスのファクトリ関数
 
     設定から必要なパラメータを取得し、
     GeminiClientとGeminiAIServiceを初期化して返す
 
     Returns:
-        IAIService: AIサービスのインスタンス
+        GeminiAIService: AIサービスのインスタンス（IAIServiceとIImageGenerationServiceの両方を実装）
 
     Raises:
         ValueError: GOOGLE_CLOUD_PROJECTが設定されていない場合

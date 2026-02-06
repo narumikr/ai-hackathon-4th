@@ -3,6 +3,7 @@
 from functools import lru_cache
 
 from app.application.ports.ai_service import IAIService
+from app.application.ports.image_generation_service import IImageGenerationService
 from app.application.ports.storage_service import IStorageService
 from app.application.use_cases.generate_spot_images import GenerateSpotImagesUseCase
 from app.config.settings import Settings, get_settings
@@ -42,11 +43,11 @@ async def get_storage_service_dependency() -> IStorageService:
 
 
 @lru_cache(maxsize=1)
-def get_ai_service() -> IAIService:
+def get_ai_service() -> GeminiAIService:
     """AIサービスのシングルトンインスタンスを取得する
 
     Returns:
-        IAIService: AIサービス実装
+        GeminiAIService: AIサービス実装（IAIServiceとIImageGenerationServiceの両方を実装）
 
     Raises:
         ValueError: GOOGLE_CLOUD_PROJECTが設定されていない場合
@@ -86,15 +87,24 @@ async def get_ai_service_dependency() -> IAIService:
     return get_ai_service()
 
 
+def get_image_generation_service() -> IImageGenerationService:
+    """画像生成サービスのインスタンスを取得する
+
+    Returns:
+        IImageGenerationService: 画像生成サービス実装
+    """
+    return get_ai_service()
+
+
 def create_spot_images_use_case(
-    ai_service: IAIService,
+    image_generation_service: IImageGenerationService,
     storage_service: IStorageService,
     guide_repository,  # ITravelGuideRepository
 ) -> GenerateSpotImagesUseCase:
     """スポット画像生成ユースケースを作成する
 
     Args:
-        ai_service: AIサービス
+        image_generation_service: 画像生成サービス
         storage_service: ストレージサービス
         guide_repository: 旅行ガイドリポジトリ
 
@@ -106,7 +116,7 @@ def create_spot_images_use_case(
     """
     settings = get_settings()
     return GenerateSpotImagesUseCase(
-        ai_service=ai_service,
+        image_generation_service=image_generation_service,
         storage_service=storage_service,
         guide_repository=guide_repository,
         max_concurrent=settings.image_generation_max_concurrent,

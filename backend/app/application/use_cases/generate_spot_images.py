@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import filetype
 
-from app.application.ports.ai_service import IAIService
+from app.application.ports.image_generation_service import IImageGenerationService
 from app.application.ports.storage_service import IStorageService
 from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_guide.value_objects import SpotDetail
@@ -19,7 +19,7 @@ class GenerateSpotImagesUseCase:
 
     def __init__(
         self,
-        ai_service: IAIService,
+        image_generation_service: IImageGenerationService,
         storage_service: IStorageService,
         guide_repository: ITravelGuideRepository,
         max_concurrent: int = 3,
@@ -27,12 +27,12 @@ class GenerateSpotImagesUseCase:
         """初期化
 
         Args:
-            ai_service: AIサービス
+            image_generation_service: 画像生成サービス
             storage_service: ストレージサービス
             guide_repository: 旅行ガイドリポジトリ
             max_concurrent: 最大同時実行数
         """
-        self._ai_service = ai_service
+        self._image_generation_service = image_generation_service
         self._storage_service = storage_service
         self._guide_repository = guide_repository
         self._max_concurrent = max_concurrent
@@ -249,7 +249,7 @@ class GenerateSpotImagesUseCase:
 
             # ステップ1: プロンプト生成（Gemini API使用）
             try:
-                prompt = await self._ai_service.generate_image_prompt(
+                prompt = await self._image_generation_service.generate_image_prompt(
                     spot_name=spot_name,
                     historical_background=spot_detail.historical_background,
                 )
@@ -276,7 +276,7 @@ class GenerateSpotImagesUseCase:
 
             # ステップ2: 画像生成（Vertex AI Image Generation API使用）
             try:
-                image_data = await self._ai_service.generate_image(
+                image_data = await self._image_generation_service.generate_image(
                     prompt=prompt,
                     aspect_ratio="16:9",
                     timeout=60,

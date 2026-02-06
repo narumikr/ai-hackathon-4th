@@ -12,7 +12,7 @@ class TestGenerateSpotImagesUseCase:
         """日本語のスポット名で画像パスを生成できる"""
         # Arrange
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=None,  # type: ignore
         )
@@ -29,7 +29,7 @@ class TestGenerateSpotImagesUseCase:
         """英語のスポット名（スペース含む）で画像パスを生成できる"""
         # Arrange
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=None,  # type: ignore
         )
@@ -46,7 +46,7 @@ class TestGenerateSpotImagesUseCase:
         """特殊文字を含むスポット名で画像パスを生成できる"""
         # Arrange
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=None,  # type: ignore
         )
@@ -64,7 +64,7 @@ class TestGenerateSpotImagesUseCase:
         """画像パスが正しい形式で生成される"""
         # Arrange
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=None,  # type: ignore
         )
@@ -83,7 +83,7 @@ class TestGenerateSpotImagesUseCase:
         """スラッシュを含むスポット名で画像パスを生成できる"""
         # Arrange
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=None,  # type: ignore
         )
@@ -111,7 +111,7 @@ class TestUpdateSpotImageStatus:
         mock_repository = MagicMock()
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=mock_repository,
         )
@@ -143,7 +143,7 @@ class TestUpdateSpotImageStatus:
         mock_repository.update_spot_image_status.side_effect = ValueError("not found")
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=mock_repository,
         )
@@ -176,7 +176,7 @@ class TestUpdateSpotImageStatus:
         mock_repository.update_spot_image_status.side_effect = ValueError("spot not found")
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=mock_repository,
         )
@@ -208,7 +208,7 @@ class TestUpdateSpotImageStatus:
         mock_repository = MagicMock()
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=None,  # type: ignore
+            image_generation_service=None,  # type: ignore
             storage_service=None,  # type: ignore
             guide_repository=mock_repository,
         )
@@ -298,7 +298,7 @@ class TestExecuteMethod:
         mock_repository.find_by_plan_id.return_value = mock_guide
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=mock_ai_service,
+            image_generation_service=mock_ai_service,
             storage_service=mock_storage_service,
             guide_repository=mock_repository,
             max_concurrent=3,
@@ -364,7 +364,7 @@ class TestExecuteMethod:
         mock_repository.find_by_plan_id.return_value = None
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=mock_ai_service,
+            image_generation_service=mock_ai_service,
             storage_service=mock_storage_service,
             guide_repository=mock_repository,
         )
@@ -425,7 +425,7 @@ class TestGenerateForSpot:
         mock_repository.update_spot_image_status.side_effect = ValueError("db failure")
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=MagicMock(),
+            image_generation_service=MagicMock(),
             storage_service=MagicMock(),
             guide_repository=mock_repository,
         )
@@ -477,7 +477,7 @@ class TestGenerateForSpot:
         mock_repository.update_spot_image_status.side_effect = [None, ValueError("final update failed")]
 
         use_case = GenerateSpotImagesUseCase(
-            ai_service=MagicMock(),
+            image_generation_service=MagicMock(),
             storage_service=MagicMock(),
             guide_repository=mock_repository,
         )

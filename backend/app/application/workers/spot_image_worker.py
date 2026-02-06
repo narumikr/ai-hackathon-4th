@@ -13,7 +13,7 @@ from app.config.settings import get_settings
 from app.infrastructure.persistence.database import SessionLocal
 from app.infrastructure.repositories.spot_image_job_repository import SpotImageJobRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
-from app.interfaces.api.dependencies import get_ai_service, get_storage_service
+from app.interfaces.api.dependencies import get_image_generation_service, get_storage_service
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +34,13 @@ def _apply_settings_env() -> None:
         os.environ["GOOGLE_CLOUD_LOCATION"] = settings.google_cloud_location
 
 
-async def _process_job(job, *, ai_service, storage_service) -> None:
+async def _process_job(job, *, image_generation_service, storage_service) -> None:
     session = SessionLocal()
     try:
         guide_repository = TravelGuideRepository(session)
         job_repository = SpotImageJobRepository(session)
         use_case = GenerateSpotImagesUseCase(
-            ai_service=ai_service,
+            image_generation_service=image_generation_service,
             storage_service=storage_service,
             guide_repository=guide_repository,
         )
@@ -108,7 +108,7 @@ async def run_worker() -> None:
     worker_id = _build_worker_id()
     logger.info("Spot image worker started", extra={"worker_id": worker_id})
 
-    ai_service = get_ai_service()
+    image_generation_service = get_image_generation_service()
     storage_service = get_storage_service()
 
     semaphore = asyncio.Semaphore(max_concurrent)
@@ -128,7 +128,11 @@ async def run_worker() -> None:
 
         async def _run(job):
             async with semaphore:
-                await _process_job(job, ai_service=ai_service, storage_service=storage_service)
+                await _process_job(
+                    job,
+                    image_generation_service=image_generation_service,
+                    storage_service=storage_service,
+                )
 
         await asyncio.gather(*[_run(job) for job in jobs])
 

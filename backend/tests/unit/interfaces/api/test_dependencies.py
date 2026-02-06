@@ -3,6 +3,7 @@
 import pytest
 
 from app.application.ports.ai_service import IAIService
+from app.application.ports.image_generation_service import IImageGenerationService
 from app.application.ports.storage_service import IStorageService
 from app.application.use_cases.generate_spot_images import GenerateSpotImagesUseCase
 from app.config.settings import Settings
@@ -12,6 +13,7 @@ from app.infrastructure.ai.image_generation_client import ImageGenerationClient
 from app.interfaces.api.dependencies import (
     create_spot_images_use_case,
     get_ai_service,
+    get_image_generation_service,
     get_storage_service,
 )
 
@@ -31,6 +33,7 @@ def test_get_ai_service_returns_gemini_ai_service(monkeypatch: pytest.MonkeyPatc
     # 検証
     assert isinstance(ai_service, GeminiAIService)
     assert isinstance(ai_service, IAIService)
+    assert isinstance(ai_service, IImageGenerationService)
 
 
 def test_get_ai_service_raises_error_when_project_not_set(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -83,7 +86,7 @@ def test_create_spot_images_use_case_returns_use_case(
     get_storage_service.cache_clear()
 
     # 依存性を取得
-    ai_service = get_ai_service()
+    image_generation_service = get_image_generation_service()
     storage_service = get_storage_service()
 
     # モックリポジトリを作成
@@ -94,14 +97,14 @@ def test_create_spot_images_use_case_returns_use_case(
 
     # 実行
     use_case = create_spot_images_use_case(
-        ai_service=ai_service,
+        image_generation_service=image_generation_service,
         storage_service=storage_service,
         guide_repository=guide_repository,
     )
 
     # 検証
     assert isinstance(use_case, GenerateSpotImagesUseCase)
-    assert use_case._ai_service is ai_service
+    assert use_case._image_generation_service is image_generation_service
     assert use_case._storage_service is storage_service
     assert use_case._guide_repository is guide_repository
     assert use_case._max_concurrent == 5
