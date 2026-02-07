@@ -30,18 +30,21 @@ interface SourceTextProps {
 function SourceText({ text }: SourceTextProps) {
   const parsed = parseSourceFromMultilineText(text);
 
+  // Only show the raw https:// URL as a clickable link.
+  // If the extracted source is not a URL, do not display any bracketed source text.
   return (
     <div>
       <p className="text-neutral-600 whitespace-pre-wrap">{parsed.content}</p>
       {parsed.source.url && (
         <p className="mt-2 text-sm">
+          <span className="text-neutral-500 mr-1">出典:</span>
           <a
             href={parsed.source.url}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary-600 hover:text-primary-700 underline"
           >
-            [出典 {parsed.source.label}]
+            {parsed.source.url}
           </a>
         </p>
       )}
@@ -370,7 +373,7 @@ export default function TravelGuidePage() {
                         {LABELS.YEAR_SUFFIX}
                       </div>
                       <div className="flex-1">
-                        <p className="text-neutral-700">{item.event}</p>
+                        <SourceText text={item.event} />
                       </div>
                     </div>
                   ))}
@@ -442,9 +445,7 @@ export default function TravelGuidePage() {
                             <Icon name="museum" size="sm" label={EMOJI_LABELS.HISTORIC_BUILDING} />{' '}
                             {SECTION_TITLES.HISTORICAL_CONTEXT}
                           </h4>
-                          <p className="text-neutral-700 leading-relaxed">
-                            {spot.historicalSignificance}
-                          </p>
+                          <SourceText text={spot.historicalSignificance} />
                         </div>
                       )}
 
