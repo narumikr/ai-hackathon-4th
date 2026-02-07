@@ -16,10 +16,41 @@ import {
   STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+
+// 出典付きテキスト表示コンポーネント
+interface SourceTextProps {
+  text: string;
+}
+
+function SourceText({ text }: SourceTextProps) {
+  const parsed = parseSourceFromMultilineText(text);
+
+  // Only show the raw https:// URL as a clickable link.
+  // If the extracted source is not a URL, do not display any bracketed source text.
+  return (
+    <div>
+      <p className="whitespace-pre-wrap text-neutral-600">{parsed.content}</p>
+      {parsed.source.url && (
+        <p className="mt-2 text-sm">
+          <span className="mr-1 text-neutral-500">出典:</span>
+          <a
+            href={parsed.source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 underline hover:text-primary-700"
+          >
+            {parsed.source.url}
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function TravelGuidePage() {
   const router = useRouter();
@@ -342,7 +373,7 @@ export default function TravelGuidePage() {
                         {LABELS.YEAR_SUFFIX}
                       </div>
                       <div className="flex-1">
-                        <p className="text-neutral-700">{item.event}</p>
+                        <SourceText text={item.event} />
                       </div>
                     </div>
                   ))}
@@ -402,7 +433,7 @@ export default function TravelGuidePage() {
                         {/* 歴史的背景 */}
                         <div className="flex-1">
                           {spot.historicalBackground && (
-                            <p className="text-neutral-600">{spot.historicalBackground}</p>
+                            <SourceText text={spot.historicalBackground} />
                           )}
                         </div>
                       </div>
@@ -414,9 +445,7 @@ export default function TravelGuidePage() {
                             <Icon name="museum" size="sm" label={EMOJI_LABELS.HISTORIC_BUILDING} />{' '}
                             {SECTION_TITLES.HISTORICAL_CONTEXT}
                           </h4>
-                          <p className="text-neutral-700 leading-relaxed">
-                            {spot.historicalSignificance}
-                          </p>
+                          <SourceText text={spot.historicalSignificance} />
                         </div>
                       )}
 
@@ -433,7 +462,7 @@ export default function TravelGuidePage() {
                                 key={`${spot.spotName}-highlight-${idx}`}
                                 className="text-neutral-700"
                               >
-                                {highlight}
+                                <SourceText text={highlight} />
                               </li>
                             ))}
                           </ul>
