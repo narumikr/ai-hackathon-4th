@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 
+from google.api_core import exceptions as google_exceptions
 from google.cloud import tasks_v2
 
 from app.application.ports.spot_image_task_dispatcher import ISpotImageTaskDispatcher
+
+logger = logging.getLogger(__name__)
 
 
 class CloudTasksDispatcher(ISpotImageTaskDispatcher):
@@ -80,4 +84,14 @@ class CloudTasksDispatcher(ISpotImageTaskDispatcher):
             if safe_name:
                 task["name"] = f"{self._queue_path}/tasks/{safe_name}"
 
-        self._client.create_task(request={"parent": self._queue_path, "task": task})
+        try:
+            self._client.create_task(request={"parent": self._queue_path, "task": task})
+        except google_exceptions.AlreadyExists:
+            logger.info(
+                "Cloud Tasks task already exists. Skipping duplicate enqueue.",
+                extra={
+                    "plan_id": plan_id,
+                    "spot_name": spot_name,
+                    "task_idempotency_key": task_idempotency_key,
+                },
+            )
