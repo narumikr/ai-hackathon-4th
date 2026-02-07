@@ -701,6 +701,7 @@ def _build_travel_guide_prompt(travel_plan: TravelPlan, extracted_facts: str) ->
     """旅行ガイド生成用のプロンプトを生成する（Step B）"""
     return render_template(
         _TRAVEL_GUIDE_PROMPT_TEMPLATE,
+        title=travel_plan.title,
         destination=travel_plan.destination,
         spots_text=_build_spots_text(travel_plan),
         extracted_facts=extracted_facts,
