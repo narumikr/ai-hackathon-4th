@@ -13,6 +13,8 @@ export interface SpotDetail {
   highlights: string[];
   recommendedVisitTime: string;
   historicalSignificance: string;
+  imageUrl?: string | null;
+  imageStatus?: 'not_started' | 'processing' | 'succeeded' | 'failed';
 }
 
 export interface Checkpoint {

@@ -44,6 +44,11 @@ dev-all:
 	echo "One of the dev servers exited with an error (backend: $backend_status, frontend: $frontend_status)."
 	exit 1
 	ßfi
+
+# スポット画像生成ワーカー起動
+dev-worker:
+	cd {{backend_dir}} && {{uv}} run python3 -m app.application.workers.spot_image_worker
+
 # --- テスト実行 ---
 
 # バックエンドテスト実行

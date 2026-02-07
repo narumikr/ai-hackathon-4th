@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.ports.ai_service import IAIService
+from app.application.ports.spot_image_job_repository import ISpotImageJobRepository
 from app.application.use_cases.travel_plan_helpers import validate_required_str
 from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_guide.services import TravelGuideComposer
@@ -304,6 +305,7 @@ class GenerateTravelGuideUseCase:
         plan_repository: ITravelPlanRepository,
         guide_repository: ITravelGuideRepository,
         ai_service: IAIService,
+        job_repository: ISpotImageJobRepository,
         composer: TravelGuideComposer | None = None,
     ) -> None:
         """ユースケースを初期化する
@@ -312,14 +314,21 @@ class GenerateTravelGuideUseCase:
             plan_repository: TravelPlanリポジトリ
             guide_repository: TravelGuideリポジトリ
             ai_service: AIサービス
+            job_repository: スポット画像生成ジョブリポジトリ
             composer: TravelGuideComposer（省略時はデフォルトを使用）
         """
         self._plan_repository = plan_repository
         self._guide_repository = guide_repository
         self._ai_service = ai_service
+        self._job_repository = job_repository
         self._composer = composer or TravelGuideComposer()
 
-    async def execute(self, plan_id: str, *, commit: bool = True) -> TravelGuideDTO:
+    async def execute(
+        self,
+        plan_id: str,
+        *,
+        commit: bool = True,
+    ) -> TravelGuideDTO:
         """旅行ガイドを生成する
 
         Args:
@@ -332,6 +341,7 @@ class GenerateTravelGuideUseCase:
         Raises:
             TravelPlanNotFoundError: 旅行計画が見つからない場合
             ValueError: 入力や生成結果が不正な場合
+
         """
         logger.debug("GenerateTravelGuideUseCase started", extra={"plan_id": plan_id})
         validate_required_str(plan_id, "plan_id")
@@ -502,6 +512,22 @@ class GenerateTravelGuideUseCase:
                         checkpoints=generated_guide.checkpoints,
                     )
                     saved_guide = self._guide_repository.save(existing, commit=False)
+                created_jobs = self._register_spot_image_jobs(
+                    plan_id=plan_id,
+                    spot_details=saved_guide.spot_details,
+                    commit=False,
+                )
+                logger.info(
+                    "Spot image jobs registered",
+                    extra={"plan_id": plan_id, "created_jobs": created_jobs},
+                )
+
+            travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
+            self._plan_repository.save(travel_plan, commit=commit)
+            logger.debug(
+                "Guide status set to succeeded in use case",
+                extra={"plan_id": plan_id},
+            )
         except Exception:
             logger.exception(
                 "Travel guide generation failed in use case",
@@ -512,14 +538,29 @@ class GenerateTravelGuideUseCase:
             self._plan_repository.save(failed_plan, commit=commit)
             raise
 
-        travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
-        self._plan_repository.save(travel_plan, commit=commit)
-        logger.debug(
-            "Guide status set to succeeded in use case",
-            extra={"plan_id": plan_id},
-        )
-
         return TravelGuideDTO.from_entity(saved_guide)
+
+    def _register_spot_image_jobs(
+        self,
+        plan_id: str,
+        spot_details: list[SpotDetail],
+        *,
+        commit: bool,
+    ) -> int:
+        """スポット画像生成ジョブを登録する"""
+        target_spots = [
+            detail.spot_name
+            for detail in spot_details
+            if not (detail.image_status == "succeeded" and detail.image_url)
+        ]
+        if not target_spots:
+            return 0
+        return self._job_repository.create_jobs(
+            plan_id=plan_id,
+            spot_names=target_spots,
+            max_attempts=3,
+            commit=commit,
+        )
 
     async def _evaluate_guide_data(
         self, guide_data: dict[str, Any], required_spot_names: list[str]
