@@ -171,7 +171,7 @@ class SpotImageJobRepository(ISpotImageJobRepository):
         job.locked_by = None
         self._session.commit()
 
-    def mark_failed(self, job_id: str, *, error_message: str) -> None:
+    def mark_failed(self, job_id: str, *, error_message: str) -> SpotImageJobRecord:
         if not job_id or not job_id.strip():
             raise ValueError("job_id is required and must not be empty.")
         if not error_message or not error_message.strip():
@@ -191,3 +191,38 @@ class SpotImageJobRepository(ISpotImageJobRepository):
         job.locked_at = None
         job.locked_by = None
         self._session.commit()
+        return SpotImageJobRecord(
+            id=job.id,
+            plan_id=job.plan_id,
+            spot_name=job.spot_name,
+            attempts=job.attempts,
+            max_attempts=job.max_attempts,
+            status=job.status,
+        )
+
+    def requeue_failed_job(self, job_id: str) -> SpotImageJobRecord:
+        if not job_id or not job_id.strip():
+            raise ValueError("job_id is required and must not be empty.")
+
+        job = self._session.get(SpotImageJobModel, job_id)
+        if job is None:
+            raise ValueError(f"SpotImageJob not found: {job_id}")
+        if job.status != "failed":
+            raise ValueError(f"SpotImageJob is not failed: {job_id}")
+
+        now = datetime.now(UTC)
+        job.status = "queued"
+        job.attempts = 0
+        job.created_at = now
+        job.updated_at = now
+        job.locked_at = None
+        job.locked_by = None
+        self._session.commit()
+        return SpotImageJobRecord(
+            id=job.id,
+            plan_id=job.plan_id,
+            spot_name=job.spot_name,
+            attempts=job.attempts,
+            max_attempts=job.max_attempts,
+            status=job.status,
+        )

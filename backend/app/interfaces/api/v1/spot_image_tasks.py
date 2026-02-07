@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import socket
 import uuid
+from hashlib import sha1
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -15,7 +16,11 @@ from app.config.settings import get_settings
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.repositories.spot_image_job_repository import SpotImageJobRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
-from app.interfaces.api.dependencies import get_image_generation_service, get_storage_service
+from app.interfaces.api.dependencies import (
+    get_image_generation_service,
+    get_spot_image_task_dispatcher,
+    get_storage_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +38,12 @@ def _build_worker_id() -> str:
     hostname = socket.gethostname()
     suffix = uuid.uuid4().hex[:8]
     return f"cloud-task-{hostname}-{suffix}"
+
+
+def _build_requeue_task_idempotency_key(plan_id: str, spot_name: str) -> str:
+    digest = sha1(f"{plan_id}:{spot_name}".encode()).hexdigest()
+    suffix = uuid.uuid4().hex[:8]
+    return f"spot-image-requeue-{digest}-{suffix}"
 
 
 def _validate_cloud_tasks_request_or_raise(http_request: Request) -> None:
@@ -103,10 +114,29 @@ async def run_spot_image_task(
             job_repository.mark_succeeded(claimed_job.id)
             return {"status": "succeeded"}
 
-        job_repository.mark_failed(
+        failed_job = job_repository.mark_failed(
             claimed_job.id,
             error_message=error_message or "image generation failed",
         )
+        if failed_job.status == "failed" and failed_job.attempts >= failed_job.max_attempts:
+            requeued_job = job_repository.requeue_failed_job(claimed_job.id)
+            dispatcher = get_spot_image_task_dispatcher()
+            dispatcher.enqueue_spot_image_task(
+                plan_id=requeued_job.plan_id,
+                spot_name=requeued_job.spot_name,
+                task_idempotency_key=_build_requeue_task_idempotency_key(
+                    requeued_job.plan_id, requeued_job.spot_name
+                ),
+            )
+            logger.info(
+                "Spot image job reached max attempts and was requeued",
+                extra={
+                    "plan_id": requeued_job.plan_id,
+                    "spot_name": requeued_job.spot_name,
+                    "job_id": requeued_job.id,
+                },
+            )
+            return {"status": "requeued"}
         # 再試行ポリシーはCloud Tasks側に委譲するため5xxを返す
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -119,7 +149,7 @@ async def run_spot_image_task(
             "Unexpected error while handling spot image task",
             extra={"plan_id": plan_id, "spot_name": spot_name, "job_id": claimed_job.id},
         )
-        job_repository.mark_failed(claimed_job.id, error_message=str(exc) or "unexpected error")
+        _ = job_repository.mark_failed(claimed_job.id, error_message=str(exc) or "unexpected error")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="spot image generation failed unexpectedly",
