@@ -33,6 +33,7 @@ def create_storage_service(settings: Settings) -> IStorageService:
         return CloudStorageService(
             bucket_name=settings.gcs_bucket_name,
             project_id=settings.google_cloud_project,
+            signing_service_account_email=settings.cloud_tasks_service_account_email,
         )
     else:
         raise ValueError(

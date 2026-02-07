@@ -16,6 +16,7 @@
 10. [インフラストラクチャのデプロイ](#インフラストラクチャのデプロイ)
 11. [データベースマイグレーションの実行](#データベースマイグレーションの実行)
 12. [動作確認](#動作確認)
+13. [トラブルシューティング](#トラブルシューティング)
 
 ## 前提条件
 
@@ -425,3 +426,59 @@ gcloud tasks queues describe spot-image-generation \
 ```
 
 `state: RUNNING` が表示されることを確認します。
+
+## トラブルシューティング
+
+### Cloud Storage署名URL生成で `iam.serviceAccounts.signBlob` が 403 になる場合
+
+画像生成タスク実行時に以下のエラーが出る場合があります。
+
+- `Permission 'iam.serviceAccounts.signBlob' denied on resource`
+- `Error calling the IAM signBytes API`
+
+この場合、Cloud Run実行サービスアカウントに `roles/iam.serviceAccountTokenCreator` が不足しています。
+
+#### 1. 現在の権限を確認
+
+```bash
+gcloud iam service-accounts get-iam-policy \
+  backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com \
+  --project natural-ether-481906-c4
+```
+
+`roles/iam.serviceAccountTokenCreator` に以下メンバーが含まれていることを確認します。
+
+- `serviceAccount:backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com`
+
+#### 2. 緊急回避として権限を付与
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding \
+  backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com \
+  --member="serviceAccount:backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator" \
+  --project natural-ether-481906-c4
+```
+
+#### 3. 反映確認
+
+```bash
+gcloud iam service-accounts get-iam-policy \
+  backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com \
+  --project natural-ether-481906-c4
+```
+
+#### 4. 恒久対応
+
+手動付与のみだと再作成時に失われる可能性があるため、Terraformで以下を管理します。
+
+- `infrastructure/terraform/modules/iam/main.tf`
+- `google_service_account_iam_member.backend_token_creator_self`
+
+必要に応じて以下を実行して本番へ反映してください。
+
+```bash
+cd infrastructure/terraform
+terraform plan -var-file=environments/production.tfvars
+terraform apply -var-file=environments/production.tfvars
+```

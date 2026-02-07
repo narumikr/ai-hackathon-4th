@@ -325,12 +325,75 @@ class GeminiClient:
         Raises:
             AIServiceInvalidRequestError: text属性が存在しない、または空の場合
         """
-        if not hasattr(response, "text"):
-            raise AIServiceInvalidRequestError("Response does not contain a text attribute.")
-        text = response.text
-        if text is None or (isinstance(text, str) and not text.strip()):
-            raise AIServiceInvalidRequestError("Response text is empty.")
-        return text
+        text = getattr(response, "text", None)
+        if isinstance(text, str) and text.strip():
+            return text
+
+        candidate_text = self._extract_first_candidate_text(response)
+        diagnostics = self._build_response_text_diagnostics(response)
+        if candidate_text is not None:
+            self._logger.warning(
+                "Gemini response.text is empty; falling back to candidates.parts.text. diagnostics=%s",
+                diagnostics,
+            )
+            return candidate_text
+
+        self._logger.error(
+            "Gemini response text is empty and no fallback text found. diagnostics=%s",
+            diagnostics,
+        )
+        raise AIServiceInvalidRequestError("Response text is empty.")
+
+    def _extract_first_candidate_text(self, response: Any) -> str | None:
+        """レスポンス候補から最初の有効なtextを取得する。"""
+        candidates = getattr(response, "candidates", None)
+        if not candidates:
+            return None
+
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            parts = getattr(content, "parts", None)
+            if not parts:
+                continue
+            for part in parts:
+                part_text = getattr(part, "text", None)
+                if isinstance(part_text, str) and part_text.strip():
+                    return part_text
+        return None
+
+    def _build_response_text_diagnostics(self, response: Any) -> dict[str, Any]:
+        """text抽出失敗時の診断情報を構築する。"""
+        text = getattr(response, "text", None)
+        text_length = len(text) if isinstance(text, str) else None
+
+        candidate_count = 0
+        candidate_text_lengths: list[int] = []
+        finish_reasons: list[str] = []
+        candidates = getattr(response, "candidates", None)
+        if candidates:
+            candidate_count = len(candidates)
+            for candidate in candidates:
+                finish_reason = getattr(candidate, "finish_reason", None)
+                if finish_reason is not None:
+                    finish_reasons.append(str(finish_reason))
+
+                content = getattr(candidate, "content", None)
+                parts = getattr(content, "parts", None)
+                if not parts:
+                    continue
+                for part in parts:
+                    part_text = getattr(part, "text", None)
+                    if isinstance(part_text, str):
+                        candidate_text_lengths.append(len(part_text))
+
+        prompt_feedback = getattr(response, "prompt_feedback", None)
+        return {
+            "text_length": text_length,
+            "candidate_count": candidate_count,
+            "candidate_text_lengths": candidate_text_lengths[:10],
+            "finish_reasons": finish_reasons[:10],
+            "has_prompt_feedback": prompt_feedback is not None,
+        }
 
     def _extract_structured_data(self, response: Any) -> dict[str, Any]:
         """構造化レスポンスをdictとして抽出する.

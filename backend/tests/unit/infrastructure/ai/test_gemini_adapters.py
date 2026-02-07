@@ -283,5 +283,5 @@ async def test_generate_image_prompt(gemini_service, mock_gemini_client):
 
     # パラメータの確認
     assert call_kwargs["temperature"] == 0.7
-    assert call_kwargs["max_output_tokens"] == 512
+    assert call_kwargs["max_output_tokens"] == 2048
     assert call_kwargs["timeout"] == 60
