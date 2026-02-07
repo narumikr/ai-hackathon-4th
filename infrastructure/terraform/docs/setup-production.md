@@ -47,7 +47,7 @@ docker --version
 
 ```bash
 # プロジェクトIDを環境変数に設定
-export PROD_PROJECT_ID="natural-ether-481906-c4"
+export PROD_PROJECT_ID=""
 export PROJECT_ID="${PROD_PROJECT_ID}"
 ```
 
@@ -359,7 +359,7 @@ Cloud Run Serviceは起動時に自動でマイグレーションを実行しま
 cd ../../backend
 uv sync
 
-PROJECT_ID="natural-ether-481906-c4"
+PROJECT_ID=${PROD_PROJECT_ID}
 DATABASE_HOST="34.180.69.3"
 DATABASE_NAME="travel_agent"
 DATABASE_USER="backend_user"
@@ -442,30 +442,30 @@ gcloud tasks queues describe spot-image-generation \
 
 ```bash
 gcloud iam service-accounts get-iam-policy \
-  backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com \
-  --project natural-ether-481906-c4
+  backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com \
+  --project ${PROD_PROJECT_ID}
 ```
 
 `roles/iam.serviceAccountTokenCreator` に以下メンバーが含まれていることを確認します。
 
-- `serviceAccount:backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com`
+- `serviceAccount:backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com`
 
 #### 2. 緊急回避として権限を付与
 
 ```bash
 gcloud iam service-accounts add-iam-policy-binding \
-  backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com \
-  --member="serviceAccount:backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com" \
+  backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com \
+  --member="serviceAccount:backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountTokenCreator" \
-  --project natural-ether-481906-c4
+  --project ${PROD_PROJECT_ID}
 ```
 
 #### 3. 反映確認
 
 ```bash
 gcloud iam service-accounts get-iam-policy \
-  backend-service-production@natural-ether-481906-c4.iam.gserviceaccount.com \
-  --project natural-ether-481906-c4
+  backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com \
+  --project ${PROD_PROJECT_ID}
 ```
 
 #### 4. 恒久対応
