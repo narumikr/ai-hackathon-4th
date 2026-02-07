@@ -3,6 +3,7 @@
 import { ErrorDialog, GenerationStatusView, GoogleMapView } from '@/components/features/common';
 import { Container } from '@/components/layout';
 import { Button, Icon, LoadingSpinner, Modal } from '@/components/ui';
+import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import {
   BUTTON_LABELS,
   CONFIRMATION_MESSAGES,
@@ -20,6 +21,33 @@ import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+
+// 出典付きテキスト表示コンポーネント
+interface SourceTextProps {
+  text: string;
+}
+
+function SourceText({ text }: SourceTextProps) {
+  const parsed = parseSourceFromMultilineText(text);
+
+  return (
+    <div>
+      <p className="text-neutral-600 whitespace-pre-wrap">{parsed.content}</p>
+      {parsed.source.url && (
+        <p className="mt-2 text-sm">
+          <a
+            href={parsed.source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 hover:text-primary-700 underline"
+          >
+            [出典 {parsed.source.label}]
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function TravelGuidePage() {
   const router = useRouter();
@@ -402,7 +430,7 @@ export default function TravelGuidePage() {
                         {/* 歴史的背景 */}
                         <div className="flex-1">
                           {spot.historicalBackground && (
-                            <p className="text-neutral-600">{spot.historicalBackground}</p>
+                            <SourceText text={spot.historicalBackground} />
                           )}
                         </div>
                       </div>
@@ -433,7 +461,7 @@ export default function TravelGuidePage() {
                                 key={`${spot.spotName}-highlight-${idx}`}
                                 className="text-neutral-700"
                               >
-                                {highlight}
+                                <SourceText text={highlight} />
                               </li>
                             ))}
                           </ul>
