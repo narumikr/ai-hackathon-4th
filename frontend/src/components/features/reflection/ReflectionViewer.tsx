@@ -2,13 +2,13 @@
 
 import { Icon } from '@/components/ui';
 import { DATE_LABELS, EMOJI_LABELS, FORM_LABELS, SECTION_TITLES } from '@/constants';
+import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import type {
   ReflectionPamphletResponse,
   ReflectionPhotoResponse,
   TravelPlanResponse,
 } from '@/types';
 import Image from 'next/image';
-import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import type React from 'react';
 import { useMemo } from 'react';
 
@@ -79,29 +79,29 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
         <h3 className="mb-4 font-bold text-neutral-900 text-xl">
           {FORM_LABELS.OVERALL_IMPRESSION_PLAIN}
         </h3>
-        {
-          (() => {
-            const parsed = parseSourceFromMultilineText(pamphlet.travelSummary || '');
-            return (
-              <div>
-                <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">{parsed.content}</p>
-                {parsed.source.url && (
-                  <p className="mt-2 text-sm">
-                    <span className="text-neutral-500 mr-1">出典:</span>
-                    <a
-                      href={parsed.source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 underline"
-                    >
-                      {parsed.source.url}
-                    </a>
-                  </p>
-                )}
-              </div>
-            );
-          })()
-        }
+        {(() => {
+          const parsed = parseSourceFromMultilineText(pamphlet.travelSummary || '');
+          return (
+            <div>
+              <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">
+                {parsed.content}
+              </p>
+              {parsed.source.url && (
+                <p className="mt-2 text-sm">
+                  <span className="mr-1 text-neutral-500">出典:</span>
+                  <a
+                    href={parsed.source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 underline hover:text-primary-700"
+                  >
+                    {parsed.source.url}
+                  </a>
+                </p>
+              )}
+            </div>
+          );
+        })()}
       </section>
 
       {/* スポットごとの振り返り */}
@@ -141,29 +141,29 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
                   </div>
                 )}
 
-                {
-                  (() => {
-                    const parsed = parseSourceFromMultilineText(spotReflection.reflection || '');
-                    return (
-                      <div>
-                        <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">{parsed.content}</p>
-                        {parsed.source.url && (
-                          <p className="mt-2 text-sm">
-                            <span className="text-neutral-500 mr-1">出典:</span>
-                            <a
-                              href={parsed.source.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary-600 hover:text-primary-700 underline"
-                            >
-                              {parsed.source.url}
-                            </a>
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })()
-                }
+                {(() => {
+                  const parsed = parseSourceFromMultilineText(spotReflection.reflection || '');
+                  return (
+                    <div>
+                      <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">
+                        {parsed.content}
+                      </p>
+                      {parsed.source.url && (
+                        <p className="mt-2 text-sm">
+                          <span className="mr-1 text-neutral-500">出典:</span>
+                          <a
+                            href={parsed.source.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary-600 underline hover:text-primary-700"
+                          >
+                            {parsed.source.url}
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
@@ -188,7 +188,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
                         href={parsed.source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-700 underline"
+                        className="text-primary-600 underline hover:text-primary-700"
                       >
                         {parsed.source.url}
                       </a>

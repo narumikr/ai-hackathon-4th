@@ -3,7 +3,6 @@
 import { ErrorDialog, GenerationStatusView, GoogleMapView } from '@/components/features/common';
 import { Container } from '@/components/layout';
 import { Button, Icon, LoadingSpinner, Modal } from '@/components/ui';
-import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import {
   BUTTON_LABELS,
   CONFIRMATION_MESSAGES,
@@ -17,6 +16,7 @@ import {
   STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -34,15 +34,15 @@ function SourceText({ text }: SourceTextProps) {
   // If the extracted source is not a URL, do not display any bracketed source text.
   return (
     <div>
-      <p className="text-neutral-600 whitespace-pre-wrap">{parsed.content}</p>
+      <p className="whitespace-pre-wrap text-neutral-600">{parsed.content}</p>
       {parsed.source.url && (
         <p className="mt-2 text-sm">
-          <span className="text-neutral-500 mr-1">出典:</span>
+          <span className="mr-1 text-neutral-500">出典:</span>
           <a
             href={parsed.source.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary-600 hover:text-primary-700 underline"
+            className="text-primary-600 underline hover:text-primary-700"
           >
             {parsed.source.url}
           </a>

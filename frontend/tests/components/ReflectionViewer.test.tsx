@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
 import { ReflectionViewer } from '@/components/features/reflection/ReflectionViewer';
 import type { ReflectionPamphletResponse, TravelPlanResponse } from '@/types';
+import { render, screen } from '@testing-library/react';
 import { vi } from 'vitest';
 
 vi.mock('next/image', () => ({
