@@ -27,3 +27,18 @@ production_domain = ""
 
 # コストセンター
 cost_center = "historical-travel-agent"
+
+# 画像生成実行モード（production推奨: cloud_tasks）
+image_execution_mode = "cloud_tasks"
+
+# Cloud Tasks設定
+cloud_tasks_location = "asia-northeast1"
+cloud_tasks_queue_name = "spot-image-generation"
+cloud_tasks_max_dispatches_per_second = 5
+cloud_tasks_max_concurrent_dispatches = 10
+cloud_tasks_max_attempts = 10
+cloud_tasks_min_backoff_seconds = 5
+cloud_tasks_max_backoff_seconds = 300
+
+# 任意: 固定URLを使う場合のみ指定（通常は空文字で自動解決）
+cloud_tasks_target_url = ""

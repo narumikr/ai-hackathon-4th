@@ -68,6 +68,7 @@ gcloud services enable sqladmin.googleapis.com
 gcloud services enable storage.googleapis.com
 gcloud services enable artifactregistry.googleapis.com
 gcloud services enable secretmanager.googleapis.com
+gcloud services enable cloudtasks.googleapis.com
 
 # IAM関連
 gcloud services enable iam.googleapis.com
@@ -184,6 +185,21 @@ production_domain = ""
 
 # コストセンター
 cost_center = "historical-travel-agent"
+
+# 画像生成実行モード（本番は cloud_tasks 推奨）
+image_execution_mode = "cloud_tasks"
+
+# Cloud Tasks設定
+cloud_tasks_location = "asia-northeast1"
+cloud_tasks_queue_name = "spot-image-generation"
+cloud_tasks_max_dispatches_per_second = 5
+cloud_tasks_max_concurrent_dispatches = 10
+cloud_tasks_max_attempts = 10
+cloud_tasks_min_backoff_seconds = 5
+cloud_tasks_max_backoff_seconds = 300
+
+# 任意: 固定URLを使う場合のみ指定（通常は空文字で自動解決）
+cloud_tasks_target_url = ""
 ```
 
 ## バックエンドDockerイメージのビルド＆プッシュ
@@ -322,6 +338,7 @@ terraform plan -var-file=environments/production.tfvars
 - IAM（サービスアカウント、権限）
 - Cloud Run（バックエンドサービス）
 - Cloud Run（フロントエンドサービス）
+- Cloud Tasks（スポット画像生成キュー）
 
 ### 2. デプロイの実行
 
@@ -342,7 +359,7 @@ cd ../../backend
 uv sync
 
 PROJECT_ID="natural-ether-481906-c4"
-DATABASE_HOST="34.153.197.145"
+DATABASE_HOST="34.180.69.3"
 DATABASE_NAME="travel_agent"
 DATABASE_USER="backend_user"
 
@@ -398,3 +415,13 @@ open ${FRONTEND_URL}
 - フロントエンドが正常に表示される
 - バックエンドAPIとの通信が正常に動作する
 - アプリケーションの機能が正常に動作する
+
+### 3. Cloud Tasksキューの確認
+
+```bash
+gcloud tasks queues describe spot-image-generation \
+  --location=asia-northeast1 \
+  --project=${PROJECT_ID}
+```
+
+`state: RUNNING` が表示されることを確認します。

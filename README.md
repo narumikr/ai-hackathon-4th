@@ -188,6 +188,12 @@ cp backend/.env.example backend/.env
 cp frontend/.env.local.example frontend/.env.local
 ```
 
+`backend/.env` では `IMAGE_EXECUTION_MODE` を明示してください。
+
+- `local_worker`: ローカルで `just dev-worker` を起動して画像生成する。
+- `cloud_tasks`: Cloud Tasksで画像生成を実行する（`CLOUD_TASKS_LOCATION` / `CLOUD_TASKS_QUEUE_NAME` / `CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL` が必須）。
+  - `CLOUD_TASKS_TARGET_URL` は未設定時、受信リクエストのbase URLから自動構築されます。
+
 #### 5. データベース・Redisの起動
 
 ```bash
@@ -302,6 +308,8 @@ just dev-worker
 ```
 
 同時実行数は `backend/.env` の `IMAGE_GENERATION_MAX_CONCURRENT` で調整します。
+`IMAGE_EXECUTION_MODE=local_worker` のときのみ `just dev-worker` を起動してください。
+`IMAGE_EXECUTION_MODE=cloud_tasks` の場合、本番では `dev-worker` は不要です。
 
 #### API仕様書
 

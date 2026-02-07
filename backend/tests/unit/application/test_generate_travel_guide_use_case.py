@@ -970,3 +970,63 @@ async def test_generate_travel_guide_proceeds_after_retry_failure(
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
     assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_enqueues_tasks_in_cloud_tasks_mode(
+    db_session: Session, sample_travel_plan, fake_job_repository, fake_task_dispatcher, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("IMAGE_EXECUTION_MODE", "cloud_tasks")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "test-project")
+    monkeypatch.setenv("CLOUD_TASKS_LOCATION", "asia-northeast1")
+    monkeypatch.setenv("CLOUD_TASKS_QUEUE_NAME", "spot-image-generation")
+    monkeypatch.setenv("CLOUD_TASKS_TARGET_URL", "https://example.com/api/v1/internal/tasks/spot-image")
+    monkeypatch.setenv("CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL", "worker@example.com")
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
+
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="京都の歴史情報。",
+        structured_data=_structured_guide_payload(),
+    )
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=fake_job_repository,
+        task_dispatcher=fake_task_dispatcher,
+    )
+    await use_case.execute(plan_id=sample_travel_plan.id)
+
+    assert len(fake_task_dispatcher.enqueued) == 2
+    assert fake_task_dispatcher.enqueued[0][0] == sample_travel_plan.id
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_skips_enqueue_in_local_worker_mode(
+    db_session: Session, sample_travel_plan, fake_job_repository, fake_task_dispatcher, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("IMAGE_EXECUTION_MODE", "local_worker")
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
+
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="京都の歴史情報。",
+        structured_data=_structured_guide_payload(),
+    )
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=fake_job_repository,
+        task_dispatcher=fake_task_dispatcher,
+    )
+    await use_case.execute(plan_id=sample_travel_plan.id)
+
+    assert fake_task_dispatcher.enqueued == []

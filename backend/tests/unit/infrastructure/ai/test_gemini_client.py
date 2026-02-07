@@ -142,6 +142,104 @@ async def test_generate_structured_data_success():
 
 
 @pytest.mark.asyncio
+async def test_generate_structured_data_success_with_parsed_and_empty_text():
+    """response.textが空でもresponse.parsedから構造化データを取得できること."""
+    expected_data = {"name": "富士山", "type": "自然"}
+    mock_response = MagicMock()
+    mock_response.text = ""
+    mock_response.parsed = expected_data
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
+
+    result = await gemini_client.generate_content_with_schema(
+        prompt="富士山の情報を返してください",
+        response_schema=SimpleTestSchema,
+        temperature=0.0,
+    )
+
+    assert result == expected_data
+    mock_async_client.models.generate_content.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_generate_structured_data_success_with_candidates_text():
+    """response.textが空でもcandidates.parts.textのJSONを復元できること."""
+    expected_data = {"name": "富士山", "type": "自然"}
+    part = MagicMock()
+    part.text = json.dumps(expected_data)
+    content = MagicMock()
+    content.parts = [part]
+    candidate = MagicMock()
+    candidate.content = content
+
+    mock_response = MagicMock()
+    mock_response.text = ""
+    mock_response.parsed = None
+    mock_response.candidates = [candidate]
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
+
+    result = await gemini_client.generate_content_with_schema(
+        prompt="富士山の情報を返してください",
+        response_schema=SimpleTestSchema,
+        temperature=0.0,
+    )
+
+    assert result == expected_data
+    mock_async_client.models.generate_content.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_generate_structured_data_fallback_from_invalid_text_to_candidates():
+    """response.textのJSONが壊れていてもcandidates.parts.textから復元できること."""
+    expected_data = {"name": "富士山", "type": "自然"}
+    part = MagicMock()
+    part.text = json.dumps(expected_data)
+    content = MagicMock()
+    content.parts = [part]
+    candidate = MagicMock()
+    candidate.content = content
+
+    mock_response = MagicMock()
+    mock_response.text = '{"name":"富士山","type":"自然'
+    mock_response.parsed = None
+    mock_response.candidates = [candidate]
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
+
+    result = await gemini_client.generate_content_with_schema(
+        prompt="富士山の情報を返してください",
+        response_schema=SimpleTestSchema,
+        temperature=0.0,
+    )
+
+    assert result == expected_data
+    mock_async_client.models.generate_content.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_generate_structured_data_invalid_json_raises_invalid_request_error():
+    """構造化JSONが壊れている場合はAIServiceInvalidRequestErrorを送出すること."""
+    mock_response = MagicMock()
+    mock_response.text = '{"name":"富士山","type":"自然'
+    mock_response.parsed = None
+    mock_response.candidates = None
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
+
+    with pytest.raises(AIServiceInvalidRequestError, match="Structured response JSON is invalid"):
+        await gemini_client.generate_content_with_schema(
+            prompt="富士山の情報を返してください",
+            response_schema=SimpleTestSchema,
+            temperature=0.0,
+        )
+
+
+@pytest.mark.asyncio
 async def test_generate_structured_data_with_images_success():
     """画像付きJSON構造化出力の成功ケース
 
