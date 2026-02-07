@@ -45,7 +45,6 @@ export default function ReflectionListPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to fetch travel plans:', apiError);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

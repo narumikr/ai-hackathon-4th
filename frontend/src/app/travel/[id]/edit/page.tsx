@@ -62,7 +62,6 @@ export default function TravelEditPage() {
       } catch (err) {
         const apiError = toApiError(err);
         setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plan:', apiError);
       } finally {
         setIsLoading(false);
       }
@@ -127,7 +126,6 @@ export default function TravelEditPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to update travel plan or generate guide:', apiError);
     } finally {
       setIsSubmitting(false);
     }

@@ -43,7 +43,6 @@ export default function ReflectionViewPage() {
       } catch (err) {
         const apiError = toApiError(err);
         setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plan:', apiError);
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);

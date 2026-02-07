@@ -53,7 +53,6 @@ export default function TravelGuidePage() {
       } catch (err) {
         const apiError = toApiError(err);
         setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plan:', apiError);
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -82,7 +81,6 @@ export default function TravelGuidePage() {
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to retry guide generation:', apiError);
       setIsRetrying(false);
     }
   };
@@ -113,7 +111,6 @@ export default function TravelGuidePage() {
       const apiError = toApiError(err);
       setIsDeleteModalOpen(false);
       setError(ERROR_ALERTS.DELETE_FAILED(apiError.message));
-      console.error('Failed to delete travel plan:', apiError);
     } finally {
       setIsDeleting(false);
     }
@@ -143,7 +140,6 @@ export default function TravelGuidePage() {
     } catch (err) {
       const apiError = toApiError(err);
       setError(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
-      console.error('Failed to complete travel plan:', apiError);
     } finally {
       setIsCompleting(false);
     }

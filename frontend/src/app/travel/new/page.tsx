@@ -111,7 +111,6 @@ export default function TravelNewPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to create travel plan or generate guide:', apiError);
     } finally {
       setIsSubmitting(false);
     }
