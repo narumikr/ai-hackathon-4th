@@ -6,11 +6,12 @@ import logging
 import socket
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.application.use_cases.generate_spot_images import GenerateSpotImagesUseCase
+from app.config.settings import get_settings
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.repositories.spot_image_job_repository import SpotImageJobRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
@@ -34,6 +35,26 @@ def _build_worker_id() -> str:
     return f"cloud-task-{hostname}-{suffix}"
 
 
+def _validate_cloud_tasks_request_or_raise(http_request: Request) -> None:
+    """Cloud Tasks由来の内部実行リクエストのみ許可する。"""
+    settings = get_settings()
+    expected_queue_name = (settings.cloud_tasks_queue_name or "").strip()
+    if not expected_queue_name:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal task queue is not configured.",
+        )
+
+    task_name = http_request.headers.get("X-Cloudtasks-Taskname", "").strip()
+    queue_name = http_request.headers.get("X-Cloudtasks-Queuename", "").strip()
+
+    if not task_name or queue_name != expected_queue_name:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden.",
+        )
+
+
 @router.post(
     "/spot-image",
     status_code=status.HTTP_200_OK,
@@ -41,8 +62,11 @@ def _build_worker_id() -> str:
 )
 async def run_spot_image_task(
     request: SpotImageTaskRequest,
+    http_request: Request,
     db: Session = Depends(get_db),  # noqa: B008
 ) -> dict[str, str]:
+    _validate_cloud_tasks_request_or_raise(http_request)
+
     plan_id = request.plan_id.strip()
     spot_name = request.spot_name.strip()
     if not plan_id:

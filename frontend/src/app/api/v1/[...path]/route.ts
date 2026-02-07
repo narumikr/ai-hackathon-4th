@@ -62,8 +62,25 @@ const sanitizeResponseHeaders = (headers: Headers): Headers => {
   return sanitized;
 };
 
+export const isInternalApiPath = (path: string[]): boolean => {
+  if (!Array.isArray(path) || path.length === 0) {
+    return false;
+  }
+  const firstSegment = path[0]?.trim().toLowerCase();
+  return firstSegment === 'internal';
+};
+
 const proxyRequest = async (request: NextRequest, path: string[]): Promise<NextResponse> => {
   try {
+    if (isInternalApiPath(path)) {
+      return NextResponse.json(
+        {
+          detail: 'Not Found',
+        },
+        { status: 404 }
+      );
+    }
+
     const backendServiceUrl = getBackendServiceUrl();
     const targetUrl = buildTargetUrl(backendServiceUrl, request, path);
 
