@@ -15,6 +15,8 @@ const HOP_BY_HOP_HEADERS = new Set([
   'upgrade',
 ]);
 
+const INTERNAL_API_PREFIX = '/api/v1/internal';
+
 const getBackendServiceUrl = (): string => {
   const url = process.env[BACKEND_SERVICE_URL_ENV]?.trim();
   if (!url) {
@@ -23,9 +25,25 @@ const getBackendServiceUrl = (): string => {
   return url;
 };
 
-const buildTargetUrl = (backendServiceUrl: string, request: NextRequest, path: string[]): URL => {
+const normalizePathSegments = (path: string[]): string[] => {
+  return path
+    .map(segment => {
+      try {
+        return decodeURIComponent(segment);
+      } catch {
+        throw new Error('Invalid path segment encoding.');
+      }
+    })
+    .map(segment => segment.trim().replace(/^\/+|\/+$/g, ''))
+    .filter(Boolean);
+};
+
+const buildTargetUrl = (
+  backendServiceUrl: string,
+  request: NextRequest,
+  normalizedPath: string[]
+): URL => {
   const base = new URL(backendServiceUrl);
-  const normalizedPath = path.map(segment => segment.replace(/^\/+|\/+$/g, '')).filter(Boolean);
   base.pathname = ['/api/v1', ...normalizedPath].join('/').replace(/\/{2,}/g, '/');
   base.search = request.nextUrl.search;
   return base;
@@ -62,17 +80,18 @@ const sanitizeResponseHeaders = (headers: Headers): Headers => {
   return sanitized;
 };
 
-export const isInternalApiPath = (path: string[]): boolean => {
-  if (!Array.isArray(path) || path.length === 0) {
+export const isInternalApiPath = (normalizedPath: string[]): boolean => {
+  if (!Array.isArray(normalizedPath) || normalizedPath.length === 0) {
     return false;
   }
-  const firstSegment = path[0]?.trim().toLowerCase();
+  const firstSegment = normalizedPath[0]?.toLowerCase();
   return firstSegment === 'internal';
 };
 
 const proxyRequest = async (request: NextRequest, path: string[]): Promise<NextResponse> => {
   try {
-    if (isInternalApiPath(path)) {
+    const normalizedPath = normalizePathSegments(path);
+    if (isInternalApiPath(normalizedPath)) {
       return NextResponse.json(
         {
           detail: 'Not Found',
@@ -82,7 +101,18 @@ const proxyRequest = async (request: NextRequest, path: string[]): Promise<NextR
     }
 
     const backendServiceUrl = getBackendServiceUrl();
-    const targetUrl = buildTargetUrl(backendServiceUrl, request, path);
+    const targetUrl = buildTargetUrl(backendServiceUrl, request, normalizedPath);
+    if (
+      targetUrl.pathname === INTERNAL_API_PREFIX ||
+      targetUrl.pathname.startsWith(`${INTERNAL_API_PREFIX}/`)
+    ) {
+      return NextResponse.json(
+        {
+          detail: 'Not Found',
+        },
+        { status: 404 }
+      );
+    }
 
     const forwardHeaders = new Headers(request.headers);
     for (const header of HOP_BY_HOP_HEADERS) {
