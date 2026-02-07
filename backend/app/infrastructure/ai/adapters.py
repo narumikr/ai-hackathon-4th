@@ -261,37 +261,23 @@ class GeminiAIService(IAIService, IImageGenerationService):
             str: 画像生成用プロンプト
         """
         # プロンプトテンプレートを構築
-        prompt_parts = [
-            f"スポット名: {spot_name}",
-        ]
-
-        if historical_background:
-            prompt_parts.append(f"歴史的背景: {historical_background}")
-
-        prompt_parts.extend(
+        background = historical_background.strip() if historical_background else "なし"
+        prompt = "\n".join(
             [
-                "",
-                "上記のスポット情報から、Vertex AI Image Generation APIで使用する画像生成プロンプトを作成してください。",
-                "",
-                "要件:",
-                "- 日本語で記述すること",
-                "- リアルで写真のようなスタイルを指定すること",
-                "- スポットの特徴と歴史的背景を反映すること",
-                "- 具体的で詳細な描写を含めること",
-                "- 100-200文字程度にまとめること",
-                "",
-                "プロンプトのみを出力してください。説明や前置きは不要です。",
+                "Vertex AI Image Generation API用の画像生成プロンプトを1文で作成してください。",
+                f"スポット名: {spot_name}",
+                f"歴史的背景: {background}",
+                "要件: 日本語 / リアルで写真のようなスタイル / 80-140文字 / 説明文や前置きは不要。",
             ]
         )
-
-        prompt = "\n".join(prompt_parts)
 
         # Gemini APIを呼び出してプロンプトを生成
         return await self.client.generate_content(
             prompt=prompt,
             system_instruction=system_instruction,
             temperature=temperature if temperature is not None else self.default_temperature,
-            max_output_tokens=512,  # プロンプトは短いので512トークンで十分
+            # 画像プロンプト生成でMAX_TOKENS打ち切りが発生するため上限を引き上げる
+            max_output_tokens=2048,
             timeout=self.default_timeout_seconds,
         )
 

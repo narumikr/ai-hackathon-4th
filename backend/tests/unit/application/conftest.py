@@ -48,3 +48,25 @@ def fake_job_repository() -> FakeSpotImageJobRepository:
 @pytest.fixture
 def failing_job_repository() -> FailingSpotImageJobRepository:
     return FailingSpotImageJobRepository()
+
+
+class FakeSpotImageTaskDispatcher:
+    """テスト用タスクディスパッチャ."""
+
+    def __init__(self) -> None:
+        self.enqueued: list[tuple[str, str, str | None, str | None]] = []
+
+    def enqueue_spot_image_task(
+        self,
+        plan_id: str,
+        spot_name: str,
+        *,
+        task_idempotency_key: str | None = None,
+        target_url: str | None = None,
+    ) -> None:
+        self.enqueued.append((plan_id, spot_name, task_idempotency_key, target_url))
+
+
+@pytest.fixture
+def fake_task_dispatcher() -> FakeSpotImageTaskDispatcher:
+    return FakeSpotImageTaskDispatcher()

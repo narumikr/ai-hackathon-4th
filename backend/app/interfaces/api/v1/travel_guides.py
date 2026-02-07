@@ -1,8 +1,9 @@
 """旅行ガイドAPIエンドポイント"""
 
 import logging
+from urllib.parse import urlparse, urlunparse
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.application.dto.travel_plan_dto import TravelPlanDTO
@@ -16,6 +17,7 @@ from app.infrastructure.repositories.travel_guide_repository import TravelGuideR
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.interfaces.api.dependencies import (
     get_ai_service_dependency,
+    get_spot_image_task_dispatcher,
 )
 from app.interfaces.schemas.travel_guide import GenerateTravelGuideRequest
 from app.interfaces.schemas.travel_plan import TravelPlanResponse
@@ -86,6 +88,20 @@ def _update_guide_status_or_raise(
         ) from exc
 
 
+def _build_spot_image_task_target_url(http_request: Request) -> str:
+    """Cloud Tasks向けのスポット画像タスクURLをhttpsで構築する。"""
+    base_url = str(http_request.base_url).strip()
+    if not base_url:
+        raise ValueError("http_request.base_url is required and must not be empty.")
+
+    parsed = urlparse(base_url)
+    if not parsed.netloc:
+        raise ValueError("http_request.base_url must include host.")
+
+    secure_base_url = urlunparse(parsed._replace(scheme="https"))
+    return f"{secure_base_url.rstrip('/')}/api/v1/internal/tasks/spot-image"
+
+
 @router.post(
     "",
     response_model=TravelPlanResponse,
@@ -95,6 +111,7 @@ def _update_guide_status_or_raise(
 async def generate_travel_guide(
     request: GenerateTravelGuideRequest,
     background_tasks: BackgroundTasks,
+    http_request: Request,
     db: Session = Depends(get_db),  # noqa: B008
     ai_service: IAIService = Depends(get_ai_service_dependency),  # noqa: B008
 ) -> TravelPlanResponse:
@@ -149,7 +166,14 @@ async def generate_travel_guide(
         extra={"plan_id": plan_id},
     )
 
-    background_tasks.add_task(_run_travel_guide_generation, plan_id, ai_service, db.get_bind())
+    task_target_url = _build_spot_image_task_target_url(http_request)
+    background_tasks.add_task(
+        _run_travel_guide_generation,
+        plan_id,
+        ai_service,
+        db.get_bind(),
+        task_target_url,
+    )
     logger.debug(
         "Travel guide generation background task scheduled",
         extra={"plan_id": plan_id},
@@ -160,7 +184,12 @@ async def generate_travel_guide(
     return TravelPlanResponse(**dto.__dict__)
 
 
-async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bind) -> None:
+async def _run_travel_guide_generation(
+    plan_id: str,
+    ai_service: IAIService,
+    bind,
+    task_target_url: str | None = None,
+) -> None:
     """旅行ガイド生成をバックグラウンドで実行する
 
     Args:
@@ -184,8 +213,9 @@ async def _run_travel_guide_generation(plan_id: str, ai_service: IAIService, bin
             guide_repository=guide_repository,
             ai_service=ai_service,
             job_repository=job_repository,
+            task_dispatcher=get_spot_image_task_dispatcher(),
         )
-        guide_dto = await use_case.execute(plan_id=plan_id)
+        guide_dto = await use_case.execute(plan_id=plan_id, task_target_url=task_target_url)
         logger.debug(
             "Travel guide generation completed",
             extra={"plan_id": plan_id, "guide_id": guide_dto.id},

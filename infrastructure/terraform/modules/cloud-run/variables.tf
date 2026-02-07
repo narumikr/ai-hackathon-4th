@@ -50,8 +50,49 @@ variable "service_account_email" {
   type        = string
 }
 
+variable "frontend_service_account_email" {
+  description = "フロントエンド用サービスアカウントのメールアドレス"
+  type        = string
+}
+
 variable "labels" {
   description = "リソースに付与するラベル"
   type        = map(string)
   default     = {}
+}
+
+variable "image_execution_mode" {
+  description = "画像生成実行モード（local_worker または cloud_tasks）"
+  type        = string
+  default     = "local_worker"
+}
+
+variable "cloud_tasks_location" {
+  description = "Cloud Tasksのロケーション"
+  type        = string
+  default     = ""
+}
+
+variable "cloud_tasks_queue_name" {
+  description = "Cloud Tasksキュー名"
+  type        = string
+  default     = ""
+}
+
+variable "cloud_tasks_target_url" {
+  description = "Cloud TasksのHTTPターゲットURL"
+  type        = string
+  default     = ""
+}
+
+variable "cloud_tasks_service_account_email" {
+  description = "Cloud Tasks OIDCトークン発行に使用するサービスアカウント"
+  type        = string
+  default     = ""
+}
+
+variable "cloud_tasks_dispatch_deadline_seconds" {
+  description = "Cloud Tasksのdispatch deadline秒数"
+  type        = number
+  default     = 1800
 }

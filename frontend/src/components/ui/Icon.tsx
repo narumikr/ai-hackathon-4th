@@ -61,6 +61,7 @@ export function Icon({ name, size = 'md', label, decorative = false, className =
         alt=""
         width={pixelSize}
         height={pixelSize}
+        unoptimized
         className={className}
         aria-hidden="true"
       />
@@ -77,6 +78,7 @@ export function Icon({ name, size = 'md', label, decorative = false, className =
       alt={label}
       width={pixelSize}
       height={pixelSize}
+      unoptimized
       className={className}
     />
   );

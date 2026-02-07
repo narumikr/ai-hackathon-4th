@@ -6,7 +6,6 @@ from app.application.ports.ai_service import IAIService
 from app.application.ports.image_generation_service import IImageGenerationService
 from app.application.ports.storage_service import IStorageService
 from app.application.use_cases.generate_spot_images import GenerateSpotImagesUseCase
-from app.config.settings import Settings
 from app.infrastructure.ai.adapters import GeminiAIService
 from app.infrastructure.ai.gemini_client import GeminiClient
 from app.infrastructure.ai.image_generation_client import ImageGenerationClient
@@ -14,6 +13,7 @@ from app.interfaces.api.dependencies import (
     create_spot_images_use_case,
     get_ai_service,
     get_image_generation_service,
+    get_spot_image_task_dispatcher,
     get_storage_service,
 )
 
@@ -128,3 +128,34 @@ def test_ai_service_has_both_clients(monkeypatch: pytest.MonkeyPatch) -> None:
     assert hasattr(ai_service, "image_client")
     assert isinstance(ai_service.client, GeminiClient)
     assert isinstance(ai_service.image_client, ImageGenerationClient)
+
+
+def test_get_spot_image_task_dispatcher_returns_local_worker_dispatcher(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IMAGE_EXECUTION_MODE", "local_worker")
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
+    get_spot_image_task_dispatcher.cache_clear()
+
+    dispatcher = get_spot_image_task_dispatcher()
+    assert dispatcher.__class__.__name__ == "LocalWorkerDispatcher"
+
+
+def test_get_spot_image_task_dispatcher_raises_when_cloud_tasks_missing_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IMAGE_EXECUTION_MODE", "cloud_tasks")
+    monkeypatch.delenv("CLOUD_TASKS_QUEUE_NAME", raising=False)
+    monkeypatch.delenv("CLOUD_TASKS_TARGET_URL", raising=False)
+    monkeypatch.delenv("CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL", raising=False)
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "test-project")
+
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
+    get_spot_image_task_dispatcher.cache_clear()
+
+    with pytest.raises(ValueError, match="cloud_tasks mode requires settings"):
+        get_spot_image_task_dispatcher()

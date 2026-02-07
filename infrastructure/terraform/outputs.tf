@@ -88,3 +88,8 @@ output "frontend_service_name" {
   description = "フロントエンドCloud Runサービス名"
   value       = local.workspace == "production" && length(module.cloud_run_frontend) > 0 ? module.cloud_run_frontend[0].service_name : null
 }
+
+output "cloud_tasks_queue_name" {
+  description = "Cloud Tasksキュー名"
+  value       = local.workspace == "production" && length(module.cloud_tasks) > 0 ? module.cloud_tasks[0].queue_name : null
+}
