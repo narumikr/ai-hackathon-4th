@@ -93,3 +93,5 @@ infrastructure/terraform/environments/production.tfvars
 service-account-key.json
 *-credentials.json
 package-lock.json
+
+/backend/credentials/*

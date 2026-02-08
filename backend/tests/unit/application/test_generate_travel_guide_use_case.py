@@ -973,14 +973,169 @@ async def test_generate_travel_guide_proceeds_after_retry_failure(
 
 
 @pytest.mark.asyncio
+async def test_generate_travel_guide_with_empty_spots(db_session: Session) -> None:
+    """前提条件: spots未指定（空リスト）の旅行計画が存在する。
+    実行: 旅行ガイドを生成する。
+    検証: AIが生成したスポットが新規スポットとして追加され、ガイド生成が成功する。
+    """
+    # 前提条件: spots未指定の旅行計画を作成
+    travel_plan = TravelPlanModel(
+        user_id="test_user_empty_spots",
+        title="京都自由旅行",
+        destination="京都",
+        status="planning",
+    )
+    travel_plan.spots = []  # スポット未指定
+    db_session.add(travel_plan)
+    db_session.commit()
+    db_session.refresh(travel_plan)
+
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+
+    # AIがスポットを提案するペイロード
+    payload_with_recommended_spots = {
+        "overview": "京都の代表的な寺院を巡る旅行ガイドです。清水寺と金閣寺を中心に、歴史的背景を学べる充実した内容です。奈良時代から室町時代にかけての日本の文化と建築の変遷を体感できる貴重な機会となります。各寺院の特徴や見どころを詳しく解説します。",
+        "timeline": [
+            {
+                "year": 778,
+                "event": "清水寺創建",
+                "significance": "奈良時代から続く歴史的寺院の始まり。",
+                "relatedSpots": ["清水寺"],
+            },
+            {
+                "year": 1397,
+                "event": "金閣寺創建",
+                "significance": "室町時代の文化を象徴する建築。",
+                "relatedSpots": ["金閣寺"],
+            },
+        ],
+        "spotDetails": [
+            {
+                "spotName": "清水寺",
+                "historicalBackground": "奈良時代末期に創建された古刹。",
+                "highlights": ["清水の舞台", "音羽の滝"],
+                "recommendedVisitTime": "早朝",
+                "historicalSignificance": "平安京遷都以前の歴史を持つ寺院。",
+            },
+            {
+                "spotName": "金閣寺",
+                "historicalBackground": "足利義満の別荘として建立された寺院。",
+                "highlights": ["金箔の舎利殿", "鏡湖池"],
+                "recommendedVisitTime": "午後",
+                "historicalSignificance": "室町文化の象徴として重要な建築。",
+            },
+        ],
+        "checkpoints": [
+            {
+                "spotName": "清水寺",
+                "checkpoints": ["清水の舞台の高さを確認"],
+                "historicalContext": "断崖に建つ舞台は江戸時代の信仰文化を示す。",
+            },
+            {
+                "spotName": "金閣寺",
+                "checkpoints": ["金箔装飾の意味を学ぶ"],
+                "historicalContext": "将軍文化が色濃く反映された空間構成。",
+            },
+        ],
+    }
+
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建\n\n### 金閣寺\n- 1397年創建",
+        structured_data=payload_with_recommended_spots,
+    )
+
+    # 実行: 旅行ガイドを生成する
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+    )
+    dto = await use_case.execute(plan_id=travel_plan.id)
+
+    # 検証: ガイド生成が成功し、新規スポットが追加されている
+    assert dto.plan_id == travel_plan.id
+    assert len(dto.spot_details) == 2
+    assert dto.spot_details[0]["spotName"] == "清水寺"
+    assert dto.spot_details[1]["spotName"] == "金閣寺"
+
+    # 旅行計画にスポットが追加されたことを確認
+    updated_plan = plan_repository.find_by_id(travel_plan.id)
+    assert updated_plan is not None
+    assert len(updated_plan.spots) == 2
+    assert updated_plan.spots[0].name == "清水寺"
+    assert updated_plan.spots[1].name == "金閣寺"
+    assert updated_plan.guide_generation_status == GenerationStatus.SUCCEEDED
+
+
+def test_build_spots_text_with_empty_spots() -> None:
+    """前提条件: spots未指定（空リスト）の旅行計画が存在する。
+    実行: _build_spots_text関数を呼び出す。
+    検証: テンプレートファイルの内容が返される。
+    """
+    from app.application.use_cases.generate_travel_guide import _build_spots_text
+    from app.domain.travel_plan.entity import TravelPlan
+
+    # 前提条件: spots未指定の旅行計画
+    travel_plan = TravelPlan(
+        id="test-plan-empty-spots",
+        user_id="test_user",
+        title="京都自由旅行",
+        destination="京都",
+        spots=[],  # スポット未指定
+    )
+
+    # 実行: _build_spots_text関数を呼び出す
+    result = _build_spots_text(travel_plan)
+
+    # 検証: テンプレートファイルの内容が返される
+    expected_text = "指定なし（目的地に基づいておすすめの観光スポットを提案してください）"
+    assert result == expected_text
+
+
+def test_build_spots_text_with_spots() -> None:
+    """前提条件: spotsが指定されている旅行計画が存在する。
+    実行: _build_spots_text関数を呼び出す。
+    検証: スポットのリスト形式が返される。
+    """
+    from app.application.use_cases.generate_travel_guide import _build_spots_text
+    from app.domain.travel_plan.entity import TouristSpot, TravelPlan
+
+    # 前提条件: spotsが指定されている旅行計画
+    travel_plan = TravelPlan(
+        id="test-plan-with-spots",
+        user_id="test_user",
+        title="京都寺院巡り",
+        destination="京都",
+        spots=[
+            TouristSpot(id="spot-1", name="清水寺", description=None, user_notes=None),
+            TouristSpot(id="spot-2", name="金閣寺", description=None, user_notes=None),
+        ],
+    )
+
+    # 実行: _build_spots_text関数を呼び出す
+    result = _build_spots_text(travel_plan)
+
+    # 検証: スポットのリスト形式が返される
+    expected_text = "- 清水寺\n- 金閣寺"
+    assert result == expected_text
+
+
+@pytest.mark.asyncio
 async def test_generate_travel_guide_enqueues_tasks_in_cloud_tasks_mode(
-    db_session: Session, sample_travel_plan, fake_job_repository, fake_task_dispatcher, monkeypatch: pytest.MonkeyPatch
+    db_session: Session,
+    sample_travel_plan,
+    fake_job_repository,
+    fake_task_dispatcher,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("IMAGE_EXECUTION_MODE", "cloud_tasks")
     monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "test-project")
     monkeypatch.setenv("CLOUD_TASKS_LOCATION", "asia-northeast1")
     monkeypatch.setenv("CLOUD_TASKS_QUEUE_NAME", "spot-image-generation")
-    monkeypatch.setenv("CLOUD_TASKS_TARGET_URL", "https://example.com/api/v1/internal/tasks/spot-image")
+    monkeypatch.setenv(
+        "CLOUD_TASKS_TARGET_URL", "https://example.com/api/v1/internal/tasks/spot-image"
+    )
     monkeypatch.setenv("CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL", "worker@example.com")
     from app.config.settings import get_settings
 
@@ -1007,7 +1162,11 @@ async def test_generate_travel_guide_enqueues_tasks_in_cloud_tasks_mode(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_skips_enqueue_in_local_worker_mode(
-    db_session: Session, sample_travel_plan, fake_job_repository, fake_task_dispatcher, monkeypatch: pytest.MonkeyPatch
+    db_session: Session,
+    sample_travel_plan,
+    fake_job_repository,
+    fake_task_dispatcher,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("IMAGE_EXECUTION_MODE", "local_worker")
     from app.config.settings import get_settings
