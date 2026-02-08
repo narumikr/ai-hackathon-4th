@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -96,6 +97,68 @@ async def test_generate_with_search_success():
 
     assert result == "検索結果を含む生成テキスト"
     mock_async_client.models.generate_content.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_logs_diagnostics_when_grounding_present(caplog: pytest.LogCaptureFixture):
+    """Google Search利用時に診断ログが出力されること."""
+    query = "中尊寺 公式サイト"
+
+    part = MagicMock()
+    function_call = MagicMock()
+    function_call.name = "google_search"
+    part.function_call = function_call
+
+    content = MagicMock()
+    content.parts = [part]
+
+    web = MagicMock()
+    web.uri = "https://www.chusonji.or.jp/"
+    chunk = MagicMock()
+    chunk.web = web
+
+    grounding_metadata = MagicMock()
+    grounding_metadata.grounding_chunks = [chunk]
+    grounding_metadata.web_search_queries = [query]
+
+    candidate = MagicMock()
+    candidate.content = content
+    candidate.grounding_metadata = grounding_metadata
+
+    mock_response = MagicMock()
+    mock_response.text = "検索結果を含む生成テキスト"
+    mock_response.candidates = [candidate]
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
+
+    with caplog.at_level(logging.INFO):
+        await gemini_client.generate_content(
+            prompt="中尊寺の歴史を調べて",
+            tools=["google_search"],
+        )
+
+    assert "Google Search tool diagnostics" in caplog.text
+    assert "grounding_chunk_count" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_warns_when_no_evidence(caplog: pytest.LogCaptureFixture):
+    """Google Searchを要求しても証跡がない場合にWarningが出力されること."""
+    mock_response = MagicMock()
+    mock_response.text = "検索結果を含む生成テキスト"
+    mock_response.candidates = []
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
+
+    with caplog.at_level(logging.WARNING):
+        await gemini_client.generate_content(
+            prompt="中尊寺の歴史を調べて",
+            tools=["google_search"],
+        )
+
+    assert "no grounding/function-call evidence was found" in caplog.text
 
 
 @pytest.mark.asyncio

@@ -6,6 +6,7 @@
 
 <task>
 検索結果を使用して、旅行先の歴史的事実と出典候補を抽出してください。
+必ず Google Search ツールを実行し、検索結果に基づいて抽出してください。
 </task>
 
 <language_requirements>

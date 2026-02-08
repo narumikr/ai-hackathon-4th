@@ -113,6 +113,19 @@ class GeminiClient:
                     ),
                     timeout=timeout,
                 )
+                if tools and "google_search" in tools:
+                    search_diagnostics = self._build_search_tool_diagnostics(response)
+                    self._logger.info(
+                        "Google Search tool diagnostics: %s",
+                        search_diagnostics,
+                    )
+                    if (
+                        search_diagnostics["grounded_candidate_count"] == 0
+                        and search_diagnostics["google_search_function_call_count"] == 0
+                    ):
+                        self._logger.warning(
+                            "Google Search was requested but no grounding/function-call evidence was found."
+                        )
                 return self._extract_text(response)
 
             except TimeoutError as e:
@@ -393,6 +406,62 @@ class GeminiClient:
             "candidate_text_lengths": candidate_text_lengths[:10],
             "finish_reasons": finish_reasons[:10],
             "has_prompt_feedback": prompt_feedback is not None,
+        }
+
+    def _build_search_tool_diagnostics(self, response: Any) -> dict[str, Any]:
+        """Google Searchツール利用の診断情報を構築する。"""
+
+        def _field(obj: Any, key: str) -> Any:
+            if obj is None:
+                return None
+            if isinstance(obj, dict):
+                return obj.get(key)
+            return getattr(obj, key, None)
+
+        def _as_list(value: Any) -> list[Any]:
+            if isinstance(value, (list, tuple)):
+                return list(value)
+            return []
+
+        candidates = _as_list(_field(response, "candidates"))
+        grounded_candidate_count = 0
+        grounding_chunk_count = 0
+        web_search_query_count = 0
+        google_search_function_call_count = 0
+        grounded_uris: list[str] = []
+
+        for candidate in candidates:
+            grounding_metadata = _field(candidate, "grounding_metadata")
+            if grounding_metadata is not None:
+                grounded_candidate_count += 1
+
+                grounding_chunks = _as_list(_field(grounding_metadata, "grounding_chunks"))
+                grounding_chunk_count += len(grounding_chunks)
+
+                for chunk in grounding_chunks:
+                    web = _field(chunk, "web")
+                    uri = _field(web, "uri")
+                    if isinstance(uri, str) and uri.strip():
+                        grounded_uris.append(uri.strip())
+
+                web_search_queries = _as_list(_field(grounding_metadata, "web_search_queries"))
+                web_search_query_count += len(web_search_queries)
+
+            content = _field(candidate, "content")
+            parts = _as_list(_field(content, "parts"))
+            for part in parts:
+                function_call = _field(part, "function_call")
+                name = _field(function_call, "name")
+                if name == "google_search":
+                    google_search_function_call_count += 1
+
+        return {
+            "candidate_count": len(candidates),
+            "grounded_candidate_count": grounded_candidate_count,
+            "grounding_chunk_count": grounding_chunk_count,
+            "web_search_query_count": web_search_query_count,
+            "google_search_function_call_count": google_search_function_call_count,
+            "grounded_uri_samples": grounded_uris[:5],
         }
 
     def _extract_structured_data(self, response: Any) -> dict[str, Any]:

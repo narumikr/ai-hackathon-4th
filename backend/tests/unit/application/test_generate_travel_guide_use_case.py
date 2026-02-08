@@ -736,6 +736,40 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
 
 
 @pytest.mark.asyncio
+async def test_generate_travel_guide_logs_fact_extraction_link_diagnostics_on_failure(
+    db_session: Session, sample_travel_plan, fake_job_repository, caplog: pytest.LogCaptureFixture
+) -> None:
+    """前提条件: Step Bで失敗する構造化データ。
+    実行: 旅行ガイドを生成する。
+    検証: 失敗時でもStep AのURL診断ログが出力される。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts=(
+            "中尊寺の情報 [中尊寺公式サイト](https://www.chusonji.or.jp/know/history.html) "
+            "短期リンク https://example.com/path?token=abc"
+        ),
+        structured_data=[],
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=fake_job_repository,
+    )
+
+    caplog.set_level("INFO")
+    with pytest.raises(ValueError):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    assert any(
+        "Fact extraction link diagnostics:" in record.getMessage() for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
 async def test_generate_travel_guide_retries_on_evaluation_failure(
     db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
