@@ -66,7 +66,7 @@ export default function ReflectionDetailPage() {
           isAdded: false,
         }));
         setSpots(initialSpots);
-      } catch (err) {
+      } catch (_err) {
         setError(ERROR_DIALOG_MESSAGES.REFLECTION_TRAVEL_FETCH_FAILED);
       } finally {
         setIsLoading(false);
@@ -168,7 +168,7 @@ export default function ReflectionDetailPage() {
 
       // 3. 成功後、振り返り閲覧ページにリダイレクト
       router.push(`/reflection/${id}/view`);
-    } catch (err) {
+    } catch (_err) {
       setIsSubmitting(false);
       setError(ERROR_DIALOG_MESSAGES.REFLECTION_CREATE_FAILED);
     }

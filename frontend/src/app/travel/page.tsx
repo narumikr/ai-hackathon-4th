@@ -34,7 +34,7 @@ export default function TravelListPage() {
 
       const response = await apiClient.listTravelPlans({ userId });
       setTravels(response);
-    } catch (err) {
+    } catch (_err) {
       setError(ERROR_DIALOG_MESSAGES.TRAVEL_LIST_FETCH_FAILED);
     } finally {
       setIsLoading(false);

@@ -107,14 +107,14 @@ export default function TravelNewPage() {
             planId: response.id,
           },
         });
-      } catch (err) {
+      } catch (_err) {
         setError(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED);
         return;
       }
 
       // 3. 成功後、旅行一覧ページにリダイレクト
       router.push('/travel');
-    } catch (err) {
+    } catch (_err) {
       setError(ERROR_DIALOG_MESSAGES.TRAVEL_CREATE_FAILED);
     } finally {
       setIsSubmitting(false);

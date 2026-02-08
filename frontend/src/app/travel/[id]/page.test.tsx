@@ -587,9 +587,7 @@ describe('TravelGuidePage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(
-          screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_COMPLETE_FAILED)
-        ).toBeInTheDocument();
+        expect(screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_COMPLETE_FAILED)).toBeInTheDocument();
       });
     });
 

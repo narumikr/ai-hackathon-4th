@@ -81,7 +81,7 @@ export default function TravelGuidePage() {
         const apiClient = createApiClientFromEnv();
         const response = await apiClient.getTravelPlan({ planId: id });
         setTravel(response);
-      } catch (err) {
+      } catch (_err) {
         setError(ERROR_DIALOG_MESSAGES.TRAVEL_DETAIL_FETCH_FAILED);
       } finally {
         setIsLoading(false);
@@ -108,7 +108,7 @@ export default function TravelGuidePage() {
       await apiClient.generateTravelGuide({ request: { planId: id } });
       // 生成開始後、一覧ページへ戻る
       router.push('/travel');
-    } catch (err) {
+    } catch (_err) {
       setError(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED);
       setIsRetrying(false);
     }
@@ -136,7 +136,7 @@ export default function TravelGuidePage() {
       await apiClient.deleteTravelPlan({ planId: id });
       setIsDeleteModalOpen(false);
       router.push('/travel');
-    } catch (err) {
+    } catch (_err) {
       setIsDeleteModalOpen(false);
       setError(ERROR_DIALOG_MESSAGES.TRAVEL_DELETE_FAILED);
     } finally {
@@ -165,7 +165,7 @@ export default function TravelGuidePage() {
         },
       });
       router.push('/travel');
-    } catch (err) {
+    } catch (_err) {
       setError(ERROR_DIALOG_MESSAGES.TRAVEL_COMPLETE_FAILED);
     } finally {
       setIsCompleting(false);

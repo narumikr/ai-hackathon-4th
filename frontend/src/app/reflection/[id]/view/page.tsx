@@ -46,7 +46,7 @@ export default function ReflectionViewPage() {
         if (!response.pamphlet && response.reflectionGenerationStatus !== 'processing') {
           setError(MESSAGES.REFLECTION_NOT_FOUND);
         }
-      } catch (err) {
+      } catch (_err) {
         setError(ERROR_DIALOG_MESSAGES.REFLECTION_VIEW_FETCH_FAILED);
       } finally {
         setIsLoading(false);

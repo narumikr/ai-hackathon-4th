@@ -60,7 +60,7 @@ export default function TravelEditPage() {
           })),
         });
         setSpotIdCounter(response.spots.length);
-      } catch (err) {
+      } catch (_err) {
         setError(ERROR_DIALOG_MESSAGES.TRAVEL_DETAIL_FETCH_FAILED);
       } finally {
         setIsLoading(false);
@@ -121,14 +121,14 @@ export default function TravelEditPage() {
             planId: response.id,
           },
         });
-      } catch (err) {
+      } catch (_err) {
         setError(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED);
         return;
       }
 
       // 3. 更新成功後、旅行一覧ページにリダイレクト
       router.push('/travel');
-    } catch (err) {
+    } catch (_err) {
       setError(ERROR_DIALOG_MESSAGES.TRAVEL_UPDATE_FAILED);
     } finally {
       setIsSubmitting(false);

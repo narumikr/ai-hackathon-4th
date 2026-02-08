@@ -43,7 +43,7 @@ export default function ReflectionListPage() {
       // ステータスが completed のもののみをフィルタ
       const completedTravels = response.filter(t => t.status === 'completed');
       setTravels(completedTravels);
-    } catch (err) {
+    } catch (_err) {
       setError(ERROR_DIALOG_MESSAGES.REFLECTION_LIST_FETCH_FAILED);
     } finally {
       setIsLoading(false);
