@@ -24,6 +24,11 @@ graph TB
         Upload[Image Upload]
         Display[Content Display]
     end
+
+    subgraph "Google Maps Platform"
+      MapsJS[Maps JavaScript API]
+      PlacesAPI[Places API]
+    end
     
     subgraph "Backend Deployment"
         CloudRun[Google Cloud Run]
@@ -40,9 +45,8 @@ graph TB
         Gemini[Vertex AI Gemini]
         Tools[Built-in Tools]
         subgraph "Gemini Tools"
-            Search[Google Search]
-            Maps[Google Maps]
-            Vision[Image Analysis]
+          Search[Google Search]
+          Vision[Image Analysis]
         end
     end
     
@@ -53,13 +57,14 @@ graph TB
     
     Firebase --> UI
     UI --> CloudRun
+    UI --> MapsJS
+    MapsJS --> PlacesAPI
     CloudBuild --> CloudRun
     CloudRun --> API
     Upload --> FileHandler
     API --> Gemini
     Gemini --> Tools
     Tools --> Search
-    Tools --> Maps
     Tools --> Vision
     FileHandler --> CloudStorage
     API --> TempStorage
