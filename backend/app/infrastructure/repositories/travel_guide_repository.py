@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.domain.travel_guide.entity import TravelGuide
 from app.domain.travel_guide.repository import ITravelGuideRepository
-from app.domain.travel_guide.value_objects import Checkpoint, HistoricalEvent, SpotDetail
+from app.domain.travel_guide.value_objects import (
+    Checkpoint,
+    HistoricalEvent,
+    SpotDetail,
+    update_spot_image,
+)
 from app.infrastructure.persistence.models import TravelGuideModel
 
 
@@ -113,6 +118,72 @@ class TravelGuideRepository(ITravelGuideRepository):
             self._session.delete(model)
             self._session.commit()
 
+    def update_spot_image_status(
+        self,
+        plan_id: str,
+        spot_name: str,
+        image_url: str | None,
+        image_status: str,
+        *,
+        commit: bool = True,
+    ) -> None:
+        """特定スポットの画像情報のみを更新する（行ロックで競合を回避）"""
+        if not plan_id or not plan_id.strip():
+            raise ValueError("plan_id is required and must not be empty.")
+        if not spot_name or not spot_name.strip():
+            raise ValueError("spot_name is required and must not be empty.")
+
+        model = (
+            self._session.query(TravelGuideModel)
+            .filter(TravelGuideModel.plan_id == plan_id)
+            .with_for_update()
+            .first()
+        )
+        if model is None:
+            raise ValueError(f"TravelGuide not found for plan_id: {plan_id}")
+
+        updated = False
+        updated_spot_details: list[dict] = []
+        for detail in model.spot_details:
+            if detail.get("spotName") == spot_name:
+                spot_detail = SpotDetail(
+                    spot_name=detail["spotName"],
+                    historical_background=detail["historicalBackground"],
+                    highlights=detail["highlights"],
+                    recommended_visit_time=detail["recommendedVisitTime"],
+                    historical_significance=detail["historicalSignificance"],
+                    image_url=detail.get("imageUrl"),
+                    image_status=detail.get("imageStatus", "not_started"),
+                )
+                updated_spot = update_spot_image(
+                    spot_detail=spot_detail,
+                    image_url=image_url,
+                    image_status=image_status,
+                )
+                updated_spot_details.append(
+                    {
+                        "spotName": updated_spot.spot_name,
+                        "historicalBackground": updated_spot.historical_background,
+                        "highlights": list(updated_spot.highlights),
+                        "recommendedVisitTime": updated_spot.recommended_visit_time,
+                        "historicalSignificance": updated_spot.historical_significance,
+                        "imageUrl": updated_spot.image_url,
+                        "imageStatus": updated_spot.image_status,
+                    }
+                )
+                updated = True
+            else:
+                updated_spot_details.append(detail)
+
+        if not updated:
+            raise ValueError(f"Spot not found in TravelGuide: {spot_name}")
+
+        model.spot_details = updated_spot_details
+        if commit:
+            self._session.commit()
+        else:
+            self._session.flush()
+
     def _to_entity(self, model: TravelGuideModel) -> TravelGuide:
         """SQLAlchemyモデル → ドメインエンティティ変換
 
@@ -141,6 +212,8 @@ class TravelGuideRepository(ITravelGuideRepository):
                 highlights=detail["highlights"],
                 recommended_visit_time=detail["recommendedVisitTime"],
                 historical_significance=detail["historicalSignificance"],
+                image_url=detail.get("imageUrl"),  # デフォルトNone
+                image_status=detail.get("imageStatus", "not_started"),  # デフォルト"not_started"
             )
             for detail in model.spot_details
         ]
@@ -201,6 +274,8 @@ class TravelGuideRepository(ITravelGuideRepository):
                 "highlights": list(detail.highlights),
                 "recommendedVisitTime": detail.recommended_visit_time,
                 "historicalSignificance": detail.historical_significance,
+                "imageUrl": detail.image_url,  # 新規追加
+                "imageStatus": detail.image_status,  # 新規追加
             }
             for detail in spot_details
         ]

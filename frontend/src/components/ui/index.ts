@@ -4,6 +4,7 @@ export { Card } from './Card';
 export { Checkbox } from './Checkbox';
 export { Dialog } from './Dialog';
 export { FileUploader } from './FileUploader';
+export { InactivityPrompt } from './InactivityPrompt';
 export { LoadingSpinner } from './LoadingSpinner';
 export { RadioButton } from './RadioButton';
 export { Table } from './Table';

@@ -260,3 +260,104 @@ def test_save_update_not_found(db_session: Session):
     # Act & Assert
     with pytest.raises(ValueError, match="TravelGuide not found"):
         repository.save(travel_guide)
+
+
+def test_spot_detail_with_image_fields(db_session: Session, sample_travel_plan: TravelPlanModel):
+    """検証: 画像フィールド（image_url, image_status）が正しく保存・取得される"""
+    # Arrange
+    repository = TravelGuideRepository(db_session)
+    travel_guide = TravelGuide(
+        id=None,
+        plan_id=sample_travel_plan.id,
+        overview="画像付きスポットのテスト",
+        timeline=[
+            HistoricalEvent(
+                year=1397,
+                event="金閣寺創建",
+                significance="室町時代の文化の象徴",
+                related_spots=["金閣寺"],
+            ),
+        ],
+        spot_details=[
+            SpotDetail(
+                spot_name="金閣寺",
+                historical_background="室町時代に創建された寺院",
+                highlights=["金閣", "鏡湖池"],
+                recommended_visit_time="午前中",
+                historical_significance="北山文化の代表的建築",
+                image_url="https://storage.googleapis.com/bucket/image.jpg",
+                image_status="succeeded",
+            ),
+        ],
+        checkpoints=[
+            Checkpoint(
+                spot_name="金閣寺",
+                checkpoints=["金閣の輝きを確認"],
+                historical_context="足利義満の別荘として建立",
+            ),
+        ],
+    )
+
+    # Act
+    saved = repository.save(travel_guide)
+    retrieved = repository.find_by_id(saved.id)
+
+    # Assert
+    assert retrieved is not None
+    assert len(retrieved.spot_details) == 1
+    detail = retrieved.spot_details[0]
+    assert detail.image_url == "https://storage.googleapis.com/bucket/image.jpg"
+    assert detail.image_status == "succeeded"
+
+
+def test_backward_compatibility_with_legacy_data(db_session: Session, sample_travel_plan: TravelPlanModel):
+    """検証: 画像フィールドがないレガシーデータでもデフォルト値で正しく読み込める（要件8.5）"""
+    # Arrange
+    # 画像フィールドを含まないレガシーデータを直接DBに挿入
+    legacy_model = TravelGuideModel(
+        id="legacy-guide-id",
+        plan_id=sample_travel_plan.id,  # 有効なplan_idを使用
+        overview="レガシーデータのテスト",
+        timeline=[
+            {
+                "year": 778,
+                "event": "清水寺創建",
+                "significance": "平安時代の仏教文化",
+                "relatedSpots": ["清水寺"],
+            }
+        ],
+        spot_details=[
+            {
+                "spotName": "清水寺",
+                "historicalBackground": "平安時代に創建された寺院",
+                "highlights": ["清水の舞台", "音羽の滝"],
+                "recommendedVisitTime": "午前中",
+                "historicalSignificance": "平安時代の仏教建築の傑作",
+                # image_url と image_status は含まれていない
+            }
+        ],
+        checkpoints=[
+            {
+                "spotName": "清水寺",
+                "checkpoints": ["清水の舞台から京都市街を眺める"],
+                "historicalContext": "坂上田村麻呂により創建",
+            }
+        ],
+    )
+    db_session.add(legacy_model)
+    db_session.commit()
+
+    repository = TravelGuideRepository(db_session)
+
+    # Act
+    retrieved = repository.find_by_id("legacy-guide-id")
+
+    # Assert
+    assert retrieved is not None
+    assert len(retrieved.spot_details) == 1
+    detail = retrieved.spot_details[0]
+    # デフォルト値が設定されていることを確認
+    assert detail.image_url is None
+    assert detail.image_status == "not_started"
+    assert detail.spot_name == "清水寺"
+    assert detail.historical_background == "平安時代に創建された寺院"

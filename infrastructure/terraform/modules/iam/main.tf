@@ -47,6 +47,38 @@ resource "google_project_iam_member" "backend_vertex_ai" {
   member  = "serviceAccount:${google_service_account.backend[0].email}"
 }
 
+# Cloud Tasks enqueue権限
+resource "google_project_iam_member" "backend_cloud_tasks_enqueuer" {
+  count   = var.environment == "production" ? 1 : 0
+  project = var.project_id
+  role    = "roles/cloudtasks.enqueuer"
+  member  = "serviceAccount:${google_service_account.backend[0].email}"
+}
+
+# Cloud TasksサービスエージェントがOIDCトークンを発行するための権限
+resource "google_service_account_iam_member" "cloud_tasks_token_creator" {
+  count              = var.environment == "production" ? 1 : 0
+  service_account_id = google_service_account.backend[0].name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:service-${var.project_number}@gcp-sa-cloudtasks.iam.gserviceaccount.com"
+}
+
+# Cloud Runバックエンド自身が署名URL生成でIAM Credentialsを利用できるようにする権限
+resource "google_service_account_iam_member" "backend_token_creator_self" {
+  count              = var.environment == "production" ? 1 : 0
+  service_account_id = google_service_account.backend[0].name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${google_service_account.backend[0].email}"
+}
+
+# Cloud RunバックエンドがCloud Tasksを作成する際、OIDCトークン発行用SAをactAsできるようにする権限
+resource "google_service_account_iam_member" "backend_service_account_user" {
+  count              = var.environment == "production" ? 1 : 0
+  service_account_id = google_service_account.backend[0].name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.backend[0].email}"
+}
+
 # ============================================================================
 # フロントエンド用サービスアカウント
 # ============================================================================
@@ -59,5 +91,3 @@ resource "google_service_account" "frontend" {
   project      = var.project_id
   description  = "Service account for Cloud Run frontend service"
 }
-
-

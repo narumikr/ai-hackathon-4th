@@ -164,6 +164,7 @@ class FakeAIService(IAIService):
         return self.structured_data
 
 
+
 def _structured_guide_payload() -> dict[str, Any]:
     return {
         "overview": "京都の代表的な寺院を巡りながら歴史の流れを学ぶ旅行ガイドです。清水寺と金閣寺を中心に、時代ごとの文化や人々の営みを辿り、現地での体験を通じて理解を深められる内容にまとめています。宗教と政治の背景、町の成り立ちや景観の変化にも触れ、旅全体のテーマと学びをはっきり示します。",
@@ -280,7 +281,7 @@ def _structured_guide_payload_with_recommendations() -> dict[str, Any]:
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_creates_guide(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画が存在する。
     実行: 旅行ガイドを生成する。
@@ -299,6 +300,7 @@ async def test_generate_travel_guide_use_case_creates_guide(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -320,7 +322,7 @@ async def test_generate_travel_guide_use_case_creates_guide(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_allows_recommended_spots(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画とおすすめスポットを含む構造化データ。
     実行: 旅行ガイドを生成する。
@@ -339,6 +341,7 @@ async def test_generate_travel_guide_use_case_allows_recommended_spots(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -352,7 +355,7 @@ async def test_generate_travel_guide_use_case_allows_recommended_spots(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rejects_short_overview(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: overviewが最小文字数を満たさない構造化データ。
     実行: 旅行ガイドを生成する。
@@ -375,6 +378,7 @@ async def test_generate_travel_guide_use_case_rejects_short_overview(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError, match="Invalid AI response structure"):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -386,7 +390,7 @@ async def test_generate_travel_guide_use_case_rejects_short_overview(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画が存在し、AIが新規スポットを追加する。
     実行: 年表に不正な関連スポットを含めてガイド生成を失敗させる。
@@ -416,6 +420,7 @@ async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError, match="relatedSpots contains unknown spot names"):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -430,7 +435,7 @@ async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_updates_existing_guide(
-    db_session: Session, sample_travel_plan, sample_travel_guide
+    db_session: Session, sample_travel_plan, sample_travel_guide, fake_job_repository
 ) -> None:
     """前提条件: 既存の旅行ガイドが存在する。
     実行: 旅行ガイドを再生成する。
@@ -449,6 +454,7 @@ async def test_generate_travel_guide_use_case_updates_existing_guide(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -458,7 +464,7 @@ async def test_generate_travel_guide_use_case_updates_existing_guide(
 
 
 @pytest.mark.asyncio
-async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session) -> None:
+async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session, fake_job_repository) -> None:
     """前提条件: 存在しない旅行計画ID。
     実行: 旅行ガイドを生成する。
     検証: TravelPlanNotFoundErrorが発生する。
@@ -476,14 +482,178 @@ async def test_generate_travel_guide_use_case_plan_not_found(db_session: Session
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     with pytest.raises(TravelPlanNotFoundError):
         await use_case.execute(plan_id="non-existent-id")
 
 
 @pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_fails_when_job_registration_fails(
+    db_session: Session, sample_travel_plan, failing_job_repository
+) -> None:
+    """前提条件: ジョブ登録が失敗する。
+    実行: 旅行ガイドを生成する。
+    検証: 例外が送出され、生成ステータスがFAILEDになる。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
+        structured_data=_structured_guide_payload(),
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=failing_job_repository,
+    )
+
+    with pytest.raises(ValueError, match="job registration failed"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
+    assert guide_repository.find_by_plan_id(sample_travel_plan.id) is None
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rolls_back_existing_guide_update_when_job_registration_fails(
+    db_session: Session, sample_travel_plan, sample_travel_guide, failing_job_repository
+) -> None:
+    """前提条件: 既存ガイドがあり、ジョブ登録が失敗する。
+    実行: 旅行ガイドを再生成する。
+    検証: 既存ガイド更新とスポット追加がロールバックされ、生成ステータスのみFAILEDになる。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
+        structured_data=_structured_guide_payload_with_recommendations(),
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=failing_job_repository,
+    )
+
+    with pytest.raises(ValueError, match="job registration failed"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
+    assert [spot.name for spot in plan.spots] == ["清水寺", "金閣寺"]
+
+    rolled_back_guide = guide_repository.find_by_plan_id(sample_travel_plan.id)
+    assert rolled_back_guide is not None
+    assert rolled_back_guide.id == sample_travel_guide.id
+    assert rolled_back_guide.overview == "京都の歴史的寺院を巡る旅"
+    assert len(rolled_back_guide.spot_details) == 1
+    assert rolled_back_guide.spot_details[0].spot_name == "清水寺"
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_rolls_back_new_spots_when_job_registration_fails(
+    db_session: Session, sample_travel_plan, failing_job_repository
+) -> None:
+    """前提条件: ジョブ登録が失敗し、AI応答に新規スポットが含まれる。
+    実行: 旅行ガイドを生成する。
+    検証: 新規スポットと旅行ガイドがロールバックされ、生成ステータスのみFAILEDになる。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: 清水寺公式サイト]",
+        structured_data={
+            "overview": "京都の代表的な寺院と城郭を巡り、宗教と政治の歴史を比較しながら学ぶ旅行ガイドです。清水寺と金閣寺に加えて二条城を取り上げ、時代ごとの建築様式や権力構造の変遷を現地で確認できるように構成しています。各スポットの背景、見どころ、学習観点を明確に示し、体験を通じて歴史理解を深める内容です。",
+            "timeline": [
+                {
+                    "year": 778,
+                    "event": "清水寺創建",
+                    "significance": "平安初期の信仰文化の形成",
+                    "relatedSpots": ["清水寺"],
+                },
+                {
+                    "year": 1397,
+                    "event": "金閣寺建立",
+                    "significance": "室町文化の象徴",
+                    "relatedSpots": ["金閣寺"],
+                },
+                {
+                    "year": 1603,
+                    "event": "二条城が徳川政権の拠点として整備",
+                    "significance": "江戸幕府の統治体制を示す重要拠点",
+                    "relatedSpots": ["二条城"],
+                },
+            ],
+            "spotDetails": [
+                {
+                    "spotName": "清水寺",
+                    "historicalBackground": "奈良時代末期に創建された寺院で、京都東山の信仰拠点として発展した。",
+                    "highlights": ["清水の舞台", "音羽の滝"],
+                    "recommendedVisitTime": "午前",
+                    "historicalSignificance": "庶民信仰と観音信仰の広がりを示す。",
+                },
+                {
+                    "spotName": "金閣寺",
+                    "historicalBackground": "足利義満の別荘を前身とし、北山文化を代表する寺院として知られる。",
+                    "highlights": ["舎利殿", "鏡湖池"],
+                    "recommendedVisitTime": "午後",
+                    "historicalSignificance": "室町期の権威と美意識を体現する。",
+                },
+                {
+                    "spotName": "二条城",
+                    "historicalBackground": "徳川家康が築城し、将軍権威の象徴として機能した城郭。",
+                    "highlights": ["二の丸御殿", "唐門"],
+                    "recommendedVisitTime": "午後",
+                    "historicalSignificance": "武家政権の政治運営を理解する重要資料。",
+                },
+            ],
+            "checkpoints": [
+                {
+                    "spotName": "清水寺",
+                    "checkpoints": ["舞台構造を観察する"],
+                    "historicalContext": "信仰と景観が結びついた寺院建築。",
+                },
+                {
+                    "spotName": "金閣寺",
+                    "checkpoints": ["庭園と舎利殿の関係を確認する"],
+                    "historicalContext": "室町文化の美的価値観を反映した空間。",
+                },
+                {
+                    "spotName": "二条城",
+                    "checkpoints": ["二の丸御殿の意匠を確認する"],
+                    "historicalContext": "江戸幕府の権威表象としての建築。",
+                },
+            ],
+        },
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=failing_job_repository,
+    )
+
+    with pytest.raises(ValueError, match="job registration failed"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.FAILED
+    assert [spot.name for spot in plan.spots] == ["清水寺", "金閣寺"]
+    assert guide_repository.find_by_plan_id(sample_travel_plan.id) is None
+
+
+@pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
-    db_session: Session,
+    db_session: Session, fake_job_repository
 ) -> None:
     """前提条件: 旅行計画に同名スポットが含まれる。
     実行: 旅行ガイドを生成する。
@@ -528,6 +698,7 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError):
         await use_case.execute(plan_id=duplicate_plan.id)
@@ -535,7 +706,7 @@ async def test_generate_travel_guide_use_case_rejects_duplicate_spot_names(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_rejects_non_dict_structured_response(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: AIサービスが辞書以外の構造化データを返す。
     実行: 旅行ガイドを生成する。
@@ -554,6 +725,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     with pytest.raises(ValueError):
         await use_case.execute(plan_id=sample_travel_plan.id)
@@ -565,7 +737,7 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_retries_on_evaluation_failure(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 初回生成が評価に失敗し、再生成で成功する。
     実行: 旅行ガイドを生成する。
@@ -699,6 +871,7 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -714,7 +887,7 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
 
 @pytest.mark.asyncio
 async def test_generate_travel_guide_proceeds_after_retry_failure(
-    db_session: Session, sample_travel_plan
+    db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
     """前提条件: 初回も再生成も評価に失敗する。
     実行: 旅行ガイドを生成する。
@@ -786,6 +959,7 @@ async def test_generate_travel_guide_proceeds_after_retry_failure(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
@@ -945,3 +1119,73 @@ def test_build_spots_text_with_spots() -> None:
     # 検証: スポットのリスト形式が返される
     expected_text = "- 清水寺\n- 金閣寺"
     assert result == expected_text
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_enqueues_tasks_in_cloud_tasks_mode(
+    db_session: Session,
+    sample_travel_plan,
+    fake_job_repository,
+    fake_task_dispatcher,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IMAGE_EXECUTION_MODE", "cloud_tasks")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "test-project")
+    monkeypatch.setenv("CLOUD_TASKS_LOCATION", "asia-northeast1")
+    monkeypatch.setenv("CLOUD_TASKS_QUEUE_NAME", "spot-image-generation")
+    monkeypatch.setenv(
+        "CLOUD_TASKS_TARGET_URL", "https://example.com/api/v1/internal/tasks/spot-image"
+    )
+    monkeypatch.setenv("CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL", "worker@example.com")
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
+
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="京都の歴史情報。",
+        structured_data=_structured_guide_payload(),
+    )
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=fake_job_repository,
+        task_dispatcher=fake_task_dispatcher,
+    )
+    await use_case.execute(plan_id=sample_travel_plan.id)
+
+    assert len(fake_task_dispatcher.enqueued) == 2
+    assert fake_task_dispatcher.enqueued[0][0] == sample_travel_plan.id
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_skips_enqueue_in_local_worker_mode(
+    db_session: Session,
+    sample_travel_plan,
+    fake_job_repository,
+    fake_task_dispatcher,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IMAGE_EXECUTION_MODE", "local_worker")
+    from app.config.settings import get_settings
+
+    get_settings.cache_clear()
+
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts="京都の歴史情報。",
+        structured_data=_structured_guide_payload(),
+    )
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=fake_job_repository,
+        task_dispatcher=fake_task_dispatcher,
+    )
+    await use_case.execute(plan_id=sample_travel_plan.id)
+
+    assert fake_task_dispatcher.enqueued == []

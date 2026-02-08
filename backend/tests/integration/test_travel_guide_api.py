@@ -157,6 +157,7 @@ class StubAIService(IAIService):
         }
 
 
+
 @pytest.fixture
 def api_client(db_session: Session):
     """テスト用DBセッションとAIサービスを注入したTestClientを返す"""

@@ -125,8 +125,9 @@ class FakeAIService(IAIService):
         return self.structured_data
 
 
+
 @pytest.mark.asyncio
-async def test_new_spot_addition(db_session: Session, sample_travel_plan) -> None:
+async def test_new_spot_addition(db_session: Session, sample_travel_plan, fake_job_repository) -> None:
     """新規スポットが追加されることを確認する"""
     # 前提条件: 旅行計画には清水寺と金閣寺のみが含まれる
     plan_repository = TravelPlanRepository(db_session)
@@ -207,6 +208,7 @@ async def test_new_spot_addition(db_session: Session, sample_travel_plan) -> Non
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     await use_case.execute(plan_id=sample_travel_plan.id)
 

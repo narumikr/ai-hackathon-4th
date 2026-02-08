@@ -17,20 +17,6 @@ const nextConfig = {
       },
     ],
   },
-
-  // 開発環境でのAPIプロキシ設定（CORS回避）
-  async rewrites() {
-    // 本番環境ではCloud Run内部で動作するため、プロキシ不要
-    if (process.env.NODE_ENV === 'production') {
-      return [];
-    }
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'http://localhost:8000/:path*',
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;

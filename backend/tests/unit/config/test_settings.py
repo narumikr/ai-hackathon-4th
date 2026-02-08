@@ -4,6 +4,8 @@ Requirements 4.2: debug=True の場合は DEBUG レベル
 Requirements 4.3: debug=False の場合は INFO レベル以上
 """
 
+import pytest
+
 from app.config.settings import Settings
 
 
@@ -87,3 +89,26 @@ class TestGetEffectiveLogLevel:
         assert settings.get_effective_log_level() == "INFO", (
             "debug=Falseでデフォルト設定の場合、INFOが返されること"
         )
+
+
+def test_cloud_tasks_mode_requires_mandatory_settings() -> None:
+    with pytest.raises(ValueError, match="cloud_tasks mode requires settings"):
+        Settings(
+            database_url="postgresql://test:test@localhost/test",
+            image_execution_mode="cloud_tasks",
+            google_cloud_project="test-project",
+        )
+
+
+def test_cloud_tasks_mode_accepts_complete_settings() -> None:
+    settings = Settings(
+        database_url="postgresql://test:test@localhost/test",
+        image_execution_mode="cloud_tasks",
+        google_cloud_project="test-project",
+        cloud_tasks_location="asia-northeast1",
+        cloud_tasks_queue_name="spot-image-generation",
+        cloud_tasks_target_url="https://example.com/api/v1/internal/tasks/spot-image",
+        cloud_tasks_service_account_email="worker@example.com",
+    )
+
+    assert settings.image_execution_mode == "cloud_tasks"

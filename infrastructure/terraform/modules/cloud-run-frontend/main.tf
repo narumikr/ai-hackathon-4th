@@ -17,6 +17,11 @@ resource "google_cloud_run_service" "frontend" {
         # 環境変数
         env {
           name  = "NEXT_PUBLIC_API_URL"
+          value = "/"
+        }
+
+        env {
+          name  = "BACKEND_SERVICE_URL"
           value = var.backend_service_url
         }
 

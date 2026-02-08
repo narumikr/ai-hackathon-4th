@@ -11,7 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config.logging import setup_logging
 from app.config.settings import get_settings
-from app.interfaces.api.v1 import reflections, travel_guides, travel_plans, uploads
+from app.interfaces.api.v1 import reflections, spot_image_tasks, travel_guides, travel_plans, uploads
 from app.interfaces.middleware import (
     generic_exception_handler,
     http_exception_handler,
@@ -66,6 +66,7 @@ app.include_router(travel_plans.router, prefix="/api/v1")
 app.include_router(travel_guides.router, prefix="/api/v1")
 app.include_router(reflections.router, prefix="/api/v1")
 app.include_router(uploads.router, prefix="/api/v1")
+app.include_router(spot_image_tasks.router, prefix="/api/v1")
 
 
 @app.get("/")

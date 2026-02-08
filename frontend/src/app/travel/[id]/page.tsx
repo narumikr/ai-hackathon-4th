@@ -1,8 +1,8 @@
 'use client';
 
-import { ErrorDialog, GenerationStatusView } from '@/components/features/common';
+import { ErrorDialog, GenerationStatusView, GoogleMapView } from '@/components/features/common';
 import { Container } from '@/components/layout';
-import { Button, Icon, Modal } from '@/components/ui';
+import { Button, Icon, LoadingSpinner, Modal } from '@/components/ui';
 import {
   BUTTON_LABELS,
   CONFIRMATION_MESSAGES,
@@ -16,10 +16,41 @@ import {
   STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+
+// 出典付きテキスト表示コンポーネント
+interface SourceTextProps {
+  text: string;
+}
+
+function SourceText({ text }: SourceTextProps) {
+  const parsed = parseSourceFromMultilineText(text);
+
+  // Only show the raw https:// URL as a clickable link.
+  // If the extracted source is not a URL, do not display any bracketed source text.
+  return (
+    <div>
+      <p className="whitespace-pre-wrap text-neutral-600">{parsed.content}</p>
+      {parsed.source.url && (
+        <p className="mt-2 text-sm">
+          <span className="mr-1 text-neutral-500">出典:</span>
+          <a
+            href={parsed.source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 underline hover:text-primary-700"
+          >
+            {parsed.source.url}
+          </a>
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function TravelGuidePage() {
   const router = useRouter();
@@ -308,6 +339,20 @@ export default function TravelGuidePage() {
               ))}
             </div>
           )}
+
+          {/* マップ */}
+          {travel.spots.length > 0 && (
+            <div className="mt-6">
+              <h3 className="mb-4 flex items-center gap-2 font-semibold text-lg text-neutral-900">
+                <Icon name="map" size="md" label={EMOJI_LABELS.MAP} /> {SECTION_TITLES.MAP}
+              </h3>
+              <GoogleMapView
+                spots={travel.spots.map(spot => spot.name)}
+                destination={travel.destination}
+                height="350px"
+              />
+            </div>
+          )}
         </section>
 
         {/* 旅行ガイド */}
@@ -328,7 +373,7 @@ export default function TravelGuidePage() {
                         {LABELS.YEAR_SUFFIX}
                       </div>
                       <div className="flex-1">
-                        <p className="text-neutral-700">{item.event}</p>
+                        <SourceText text={item.event} />
                       </div>
                     </div>
                   ))}
@@ -349,30 +394,62 @@ export default function TravelGuidePage() {
                       key={`${spot.spotName}-${index}`}
                       className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm"
                     >
-                      <div className="mb-4">
-                        <div className="mb-2 flex items-center gap-3">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-primary-950 text-sm">
-                            {index + 1}
-                          </span>
-                          <h3 className="font-bold text-neutral-900 text-xl">{spot.spotName}</h3>
-                        </div>
-                        {spot.historicalBackground && (
-                          <p className="text-neutral-600">{spot.historicalBackground}</p>
-                        )}
+                      {/* スポット名（一番上） */}
+                      <div className="mb-4 flex items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-400 font-bold text-primary-950 text-sm">
+                          {index + 1}
+                        </span>
+                        <h3 className="font-bold text-neutral-900 text-xl">{spot.spotName}</h3>
                       </div>
 
+                      {/* 画像と歴史的背景を横並び */}
+                      <div className="mb-4 flex gap-6">
+                        {/* 画像表示エリア */}
+                        <div className="shrink-0">
+                          {spot.imageUrl ? (
+                            <img
+                              src={spot.imageUrl}
+                              alt={`${spot.spotName}の画像`}
+                              className="h-48 w-64 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-48 w-64 items-center justify-center rounded-lg bg-neutral-100">
+                              {spot.imageStatus === 'processing' ? (
+                                <div className="flex flex-col items-center gap-2 text-neutral-500">
+                                  <LoadingSpinner size="lg" variant="secondary" />
+                                  <span className="text-sm">画像を生成中</span>
+                                </div>
+                              ) : (
+                                <img
+                                  src="/icons/image.png"
+                                  alt="画像なし"
+                                  className="h-16 w-16 opacity-30"
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 歴史的背景 */}
+                        <div className="flex-1">
+                          {spot.historicalBackground && (
+                            <SourceText text={spot.historicalBackground} />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 歴史的意義 */}
                       {spot.historicalSignificance && (
                         <div className="mb-4">
                           <h4 className="mb-2 flex items-center gap-1 font-semibold text-neutral-700 text-sm">
                             <Icon name="museum" size="sm" label={EMOJI_LABELS.HISTORIC_BUILDING} />{' '}
                             {SECTION_TITLES.HISTORICAL_CONTEXT}
                           </h4>
-                          <p className="text-neutral-700 leading-relaxed">
-                            {spot.historicalSignificance}
-                          </p>
+                          <SourceText text={spot.historicalSignificance} />
                         </div>
                       )}
 
+                      {/* ハイライト */}
                       {spot.highlights && spot.highlights.length > 0 && (
                         <div>
                           <h4 className="mb-2 flex items-center gap-1 font-semibold text-neutral-700 text-sm">
@@ -385,7 +462,7 @@ export default function TravelGuidePage() {
                                 key={`${spot.spotName}-highlight-${idx}`}
                                 className="text-neutral-700"
                               >
-                                {highlight}
+                                <SourceText text={highlight} />
                               </li>
                             ))}
                           </ul>

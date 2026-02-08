@@ -188,6 +188,12 @@ cp backend/.env.example backend/.env
 cp frontend/.env.local.example frontend/.env.local
 ```
 
+`backend/.env` では `IMAGE_EXECUTION_MODE` を明示してください。
+
+- `local_worker`: ローカルで `just dev-worker` を起動して画像生成する。
+- `cloud_tasks`: Cloud Tasksで画像生成を実行する（`CLOUD_TASKS_LOCATION` / `CLOUD_TASKS_QUEUE_NAME` / `CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL` が必須）。
+  - `CLOUD_TASKS_TARGET_URL` は未設定時、受信リクエストのbase URLから自動構築されます。
+
 #### 5. データベース・Redisの起動
 
 ```bash
@@ -235,9 +241,36 @@ just migrate-current
 
 # データベースリセット（開発用）
 just db-reset
+
+# 本番DBマイグレーション適用（ローカル端末から直接実行）
+cd backend
+uv sync
+
+PROJECT_ID=
+DATABASE_HOST=
+DATABASE_NAME="travel_agent"
+DATABASE_USER="backend_user"
+
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic upgrade head
+
+# 適用リビジョン確認
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic current
 ```
 
 **注意**: 本番環境へのマイグレーション適用前には、必ずバックアップを取得してください。
+Cloud Run Service起動時には自動でマイグレーションされないため、本番デプロイ後にローカル端末から直接 `uv run alembic upgrade head` を実行してください。
+`DATABASE_PASSWORD` は Secret Manager の `db-password-production` から取得してください（`roles/secretmanager.secretAccessor` が必要です）。
+`.env` の `DATABASE_URL` が優先されるため、`DATABASE_URL=""` を指定して明示的に無効化してください。
 
 ### pre-commit
 pre-commit（コミット前フック管理ツール）を使い、コミット前に `just check-quality-commit` と `just test-all` を実行します。
@@ -264,6 +297,19 @@ just dev-all
 just dev-backend   # バックエンドのみ（http://localhost:8000）
 just dev-frontend  # フロントエンドのみ（http://localhost:3000）
 ```
+
+#### スポット画像生成ワーカーの起動
+
+スポット画像生成はバックエンドとは別プロセスで実行されます。
+ローカルで画像生成を行う場合は、ワーカーを起動してください。
+
+```bash
+just dev-worker
+```
+
+同時実行数は `backend/.env` の `IMAGE_GENERATION_MAX_CONCURRENT` で調整します。
+`IMAGE_EXECUTION_MODE=local_worker` のときのみ `just dev-worker` を起動してください。
+`IMAGE_EXECUTION_MODE=cloud_tasks` の場合、本番では `dev-worker` は不要です。
 
 #### API仕様書
 

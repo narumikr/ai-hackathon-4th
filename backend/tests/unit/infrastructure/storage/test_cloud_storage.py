@@ -108,6 +108,121 @@ async def test_upload_file_リトライ成功(cloud_storage, mock_storage_client
 
 
 @pytest.mark.asyncio
+async def test_upload_file_秘密鍵なし認証でも署名付きURLを生成できる(
+    cloud_storage, mock_storage_client
+):
+    """
+    前提条件:
+    - 初回のgenerate_signed_urlが秘密鍵なしエラーで失敗する
+    - ADCのservice_account_email/access_tokenで再試行可能
+
+    検証項目:
+    - フォールバック経由で署名付きURLを取得できる
+    """
+    mock_client, mock_bucket = mock_storage_client
+
+    mock_blob = MagicMock()
+    mock_blob.generate_signed_url.side_effect = [
+        ValueError("you need a private key to sign credentials"),
+        "https://storage.googleapis.com/test-bucket/fallback-signed-url",
+    ]
+    mock_bucket.blob.return_value = mock_blob
+
+    mock_credentials = MagicMock()
+    mock_credentials.token = "test-access-token"
+    mock_credentials.service_account_email = "backend-service@example.com"
+    mock_client._credentials = mock_credentials
+
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
+    destination = "travels/123/image.jpg"
+    content_type = "image/jpeg"
+
+    url = await cloud_storage.upload_file(file_data, destination, content_type)
+
+    assert url == "https://storage.googleapis.com/test-bucket/fallback-signed-url"
+    assert mock_blob.generate_signed_url.call_count == 2
+    _, second_call_kwargs = mock_blob.generate_signed_url.call_args_list[1]
+    assert second_call_kwargs["service_account_email"] == "backend-service@example.com"
+    assert second_call_kwargs["access_token"] == "test-access-token"
+
+
+@pytest.mark.asyncio
+async def test_upload_file_秘密鍵なし時にscope付き認証へ切り替えて署名できる(
+    cloud_storage, mock_storage_client
+):
+    """署名フォールバックでcloud-platform scope付き認証へ切り替わること."""
+    mock_client, mock_bucket = mock_storage_client
+
+    mock_blob = MagicMock()
+    mock_blob.generate_signed_url.side_effect = [
+        ValueError("you need a private key to sign credentials"),
+        "https://storage.googleapis.com/test-bucket/fallback-signed-url-scope",
+    ]
+    mock_bucket.blob.return_value = mock_blob
+
+    scoped_credentials = MagicMock()
+    scoped_credentials.token = "scoped-access-token"
+    scoped_credentials.service_account_email = "backend-service@example.com"
+    scoped_credentials.has_scopes.return_value = True
+
+    mock_credentials = MagicMock()
+    mock_credentials.token = None
+    mock_credentials.service_account_email = "backend-service@example.com"
+    mock_credentials.has_scopes.return_value = False
+    mock_credentials.requires_scopes = True
+    mock_credentials.with_scopes.return_value = scoped_credentials
+    mock_client._credentials = mock_credentials
+
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
+    destination = "travels/123/image.jpg"
+    content_type = "image/jpeg"
+
+    url = await cloud_storage.upload_file(file_data, destination, content_type)
+
+    assert url == "https://storage.googleapis.com/test-bucket/fallback-signed-url-scope"
+    mock_credentials.with_scopes.assert_called_once_with(
+        ["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    _, second_call_kwargs = mock_blob.generate_signed_url.call_args_list[1]
+    assert second_call_kwargs["access_token"] == "scoped-access-token"
+
+
+@pytest.mark.asyncio
+async def test_upload_file_秘密鍵なしでcredentialsにemailがなくても設定値で署名できる(
+    mock_storage_client,
+):
+    """service_account_emailがcredentialsに無い場合でも設定値でフォールバックできること."""
+    mock_client, mock_bucket = mock_storage_client
+    cloud_storage = CloudStorageService(
+        bucket_name="test-bucket",
+        project_id="test-project",
+        signing_service_account_email="configured-sa@example.com",
+    )
+
+    mock_blob = MagicMock()
+    mock_blob.generate_signed_url.side_effect = [
+        ValueError("you need a private key to sign credentials"),
+        "https://storage.googleapis.com/test-bucket/fallback-signed-url-2",
+    ]
+    mock_bucket.blob.return_value = mock_blob
+
+    mock_credentials = MagicMock()
+    mock_credentials.token = "test-access-token"
+    mock_credentials.service_account_email = None
+    mock_client._credentials = mock_credentials
+
+    file_data = b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"a" * 1000
+    destination = "travels/123/image.jpg"
+    content_type = "image/jpeg"
+
+    url = await cloud_storage.upload_file(file_data, destination, content_type)
+
+    assert url == "https://storage.googleapis.com/test-bucket/fallback-signed-url-2"
+    _, second_call_kwargs = mock_blob.generate_signed_url.call_args_list[1]
+    assert second_call_kwargs["service_account_email"] == "configured-sa@example.com"
+
+
+@pytest.mark.asyncio
 async def test_upload_file_最大リトライ超過(cloud_storage, mock_storage_client):
     """
     前提条件:

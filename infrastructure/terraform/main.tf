@@ -19,10 +19,6 @@ locals {
   is_production  = local.workspace == "production"
   is_development = local.workspace == "development"
 
-  _dev_project_id_guard    = local.is_development && var.dev_project_id == "" ? error("dev_project_id is required in development workspace.") : true
-  _prod_project_id_guard   = local.is_production && var.prod_project_id == "" ? error("prod_project_id is required in production workspace.") : true
-  _developer_id_guard      = local.is_development && (var.developer_id == "" || !can(regex("^[a-z0-9-]+$", var.developer_id))) ? error("developer_id must be non-empty and match ^[a-z0-9-]+$ in development workspace.") : true
-
   env_config = {
     development = {
       project_id = var.dev_project_id
@@ -46,6 +42,23 @@ locals {
     cost_center = var.cost_center
     managed_by  = "terraform"
     project     = "historical-travel-agent"
+  }
+}
+
+check "required_variables_by_workspace" {
+  assert {
+    condition     = !local.is_development || var.dev_project_id != ""
+    error_message = "dev_project_id is required in development workspace."
+  }
+
+  assert {
+    condition     = !local.is_production || var.prod_project_id != ""
+    error_message = "prod_project_id is required in production workspace."
+  }
+
+  assert {
+    condition     = !local.is_development || (var.developer_id != "" && can(regex("^[a-z0-9-]+$", var.developer_id)))
+    error_message = "developer_id must be non-empty and match ^[a-z0-9-]+$ in development workspace."
   }
 }
 
@@ -124,6 +137,23 @@ module "cloud_sql" {
   depends_on = [module.secret_manager]
 }
 
+# Cloud Tasksモジュール
+# - production: スポット画像生成タスクキュー
+module "cloud_tasks" {
+  source = "./modules/cloud-tasks"
+  count  = 1
+
+  environment               = local.is_production ? "production" : "development"
+  project_id                = local.current_env.project_id
+  location                  = var.cloud_tasks_location
+  queue_name                = var.cloud_tasks_queue_name
+  max_dispatches_per_second = var.cloud_tasks_max_dispatches_per_second
+  max_concurrent_dispatches = var.cloud_tasks_max_concurrent_dispatches
+  max_attempts              = var.cloud_tasks_max_attempts
+  min_backoff_seconds       = var.cloud_tasks_min_backoff_seconds
+  max_backoff_seconds       = var.cloud_tasks_max_backoff_seconds
+}
+
 # IAMモジュール
 # - production: サービスアカウントと権限管理
 module "iam" {
@@ -152,22 +182,30 @@ module "cloud_run" {
   source = "./modules/cloud-run"
   count  = 1
 
-  environment           = local.is_production ? "production" : "development"
-  project_id            = local.current_env.project_id
-  region                = local.current_env.region
-  container_image       = local.is_production ? "${local.current_env.region}-docker.pkg.dev/${local.current_env.project_id}/${module.artifact_registry[0].repository_id}/backend:latest" : ""
-  storage_bucket_name   = local.is_production ? module.cloud_storage[0].bucket_name : ""
-  database_host         = local.is_production ? module.cloud_sql[0].public_ip_address : ""
-  database_name         = local.is_production ? module.cloud_sql[0].database_name : ""
-  database_user         = local.is_production ? module.cloud_sql[0].database_user : ""
-  db_password_secret_id = local.is_production ? module.secret_manager[0].db_password_secret_id : ""
-  service_account_email = local.is_production ? module.iam[0].backend_service_account_email : ""
-  labels                = local.common_labels
+  environment                           = local.is_production ? "production" : "development"
+  project_id                            = local.current_env.project_id
+  region                                = local.current_env.region
+  container_image                       = local.is_production ? "${local.current_env.region}-docker.pkg.dev/${local.current_env.project_id}/${module.artifact_registry[0].repository_id}/backend:latest" : ""
+  storage_bucket_name                   = local.is_production ? module.cloud_storage[0].bucket_name : ""
+  database_host                         = local.is_production ? module.cloud_sql[0].public_ip_address : ""
+  database_name                         = local.is_production ? module.cloud_sql[0].database_name : ""
+  database_user                         = local.is_production ? module.cloud_sql[0].database_user : ""
+  db_password_secret_id                 = local.is_production ? module.secret_manager[0].db_password_secret_id : ""
+  service_account_email                 = local.is_production ? module.iam[0].backend_service_account_email : ""
+  frontend_service_account_email        = local.is_production ? module.iam[0].frontend_service_account_email : ""
+  image_execution_mode                  = local.is_production ? var.image_execution_mode : "local_worker"
+  cloud_tasks_location                  = local.is_production ? var.cloud_tasks_location : ""
+  cloud_tasks_queue_name                = local.is_production ? module.cloud_tasks[0].queue_name : ""
+  cloud_tasks_target_url                = local.is_production ? var.cloud_tasks_target_url : ""
+  cloud_tasks_service_account_email     = local.is_production ? module.iam[0].backend_service_account_email : ""
+  cloud_tasks_dispatch_deadline_seconds = 1800
+  labels                                = local.common_labels
 
   # 他のモジュールに依存
   depends_on = [
     module.cloud_storage,
     module.cloud_sql,
+    module.cloud_tasks,
     module.secret_manager,
     module.artifact_registry,
     module.iam
