@@ -85,7 +85,7 @@ async def test_generate_with_search(gemini_service, mock_gemini_client):
 
     前提条件: GeminiClientのgenerate_contentメソッドがgoogle_searchツールを使用してレスポンスを返す
     検証項目:
-    - GeminiClientのgenerate_contentがtools=["google_search"]で呼び出されること
+    - GeminiClientのgenerate_contentがtools=["google_search", "validate_url"]で呼び出されること
     - 検索結果を含むテキストが返されること
     """
     # モックの戻り値を設定
@@ -105,10 +105,10 @@ async def test_generate_with_search(gemini_service, mock_gemini_client):
     mock_gemini_client.generate_content.assert_called_once_with(
         prompt="最新の観光情報を教えて",
         system_instruction="観光ガイド",
-        tools=["google_search"],
+        tools=["google_search", "validate_url"],
         temperature=0.0,
         max_output_tokens=2048,
-        timeout=60,
+        timeout=120,
     )
 
 

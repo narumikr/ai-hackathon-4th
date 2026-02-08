@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
+from urllib.error import URLError
 
 import pytest
 from google.api_core import exceptions as google_exceptions
@@ -97,6 +98,58 @@ async def test_generate_with_search_success():
 
     assert result == "検索結果を含む生成テキスト"
     mock_async_client.models.generate_content.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_resolves_validate_url_tool_call():
+    """validate_urlツール呼び出しがある場合に検証結果を反映して再生成すること。"""
+    first_response = MagicMock()
+    first_response.text = ""
+    function_call = MagicMock()
+    function_call.name = "validate_url"
+    function_call.args = {"urls": ["https://example.com/source"]}
+    part = MagicMock()
+    part.function_call = function_call
+    content = MagicMock()
+    content.parts = [part]
+    candidate = MagicMock()
+    candidate.content = content
+    first_response.candidates = [candidate]
+
+    second_response = _build_response_with_text("検証済みURLのみを使った抽出結果")
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=[first_response, second_response]
+    )
+
+    with patch.object(
+        gemini_client,
+        "_validate_url_with_http_check",
+        new=AsyncMock(return_value={"url": "https://example.com/source", "verdict": "valid", "reason": "ok"}),
+    ):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search", "validate_url"],
+            temperature=0.0,
+        )
+
+    assert result == "検証済みURLのみを使った抽出結果"
+    assert mock_async_client.models.generate_content.call_count == 2
+
+
+def test_validate_url_with_http_check_detects_certificate_expired() -> None:
+    """validate_urlツールが証明書期限切れを識別できること。"""
+    gemini_client, _ = _build_client_and_async_client()
+
+    with patch("app.infrastructure.ai.gemini_client.urlopen", side_effect=URLError("certificate has expired")):
+        result = gemini_client._validate_url_with_http_check_sync(  # noqa: SLF001
+            "https://www.city.utsunomiya.tochigi.jp/kanko/kankou/spot/shizen/1007109.html"
+        )
+
+    assert result["verdict"] == "invalid"
+    assert result["tls_valid"] is False
+    assert result["tls_error"] == "certificate_expired"
 
 
 @pytest.mark.asyncio

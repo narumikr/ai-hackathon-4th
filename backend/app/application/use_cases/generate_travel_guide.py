@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
 import re
+import ssl
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from pydantic import ValidationError
 
@@ -102,6 +108,23 @@ _NO_SPOTS_TEXT_TEMPLATE = "travel_guide_no_spots_text.txt"
 
 logger = logging.getLogger(__name__)
 _URL_REGEX = re.compile(r"https?://[^\s)\]}>\"']+")
+_MARKDOWN_LINK_REGEX_TEMPLATE = r"\[(?P<label>[^\]]+)\]\(\s*{url}\s*\)"
+_URL_CHECK_TIMEOUT_SECONDS = 10
+_CERT_CHECK_TIMEOUT_SECONDS = 5
+
+UrlAccessChecker = Callable[[str], Awaitable["URLAccessCheckResult"]]
+
+
+@dataclass(frozen=True)
+class URLAccessCheckResult:
+    """URL到達性チェック結果。"""
+
+    url: str
+    reachable: bool
+    status_code: int | None = None
+    content_type: str | None = None
+    final_url: str | None = None
+    reason: str | None = None
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -258,6 +281,268 @@ def _collect_urls_from_guide_payload(guide_data: dict[str, Any]) -> set[str]:
                         urls.update(_extract_urls(checkpoint))
 
     return urls
+
+
+def _sanitize_text_by_urls(text: str, rejected_urls: set[str]) -> str:
+    """テキストから無効URLを除去する。"""
+    sanitized = text
+    for url in sorted(rejected_urls, key=len, reverse=True):
+        escaped_url = re.escape(url)
+        markdown_pattern = _MARKDOWN_LINK_REGEX_TEMPLATE.format(url=escaped_url)
+        sanitized = re.sub(markdown_pattern, r"\g<label>", sanitized)
+        sanitized = sanitized.replace(f"<{url}>", "")
+        sanitized = sanitized.replace(url, "")
+
+    sanitized = re.sub(r"\(\s*\)", "", sanitized)
+    sanitized = re.sub(r"\s{2,}", " ", sanitized)
+    sanitized = re.sub(r"\s+([、。,.!?])", r"\1", sanitized)
+    return sanitized.strip()
+
+
+def _sanitize_guide_payload_urls(
+    guide_data: dict[str, Any], rejected_urls: set[str]
+) -> dict[str, Any]:
+    """旅行ガイド構造化データから無効URLを除去する。"""
+    if not rejected_urls:
+        return guide_data
+
+    sanitized = json.loads(json.dumps(guide_data, ensure_ascii=False))
+
+    if isinstance(sanitized.get("overview"), str):
+        sanitized["overview"] = _sanitize_text_by_urls(sanitized["overview"], rejected_urls)
+
+    timeline = sanitized.get("timeline")
+    if isinstance(timeline, list):
+        for item in timeline:
+            if not isinstance(item, dict):
+                continue
+            for key in ("event", "significance"):
+                if isinstance(item.get(key), str):
+                    item[key] = _sanitize_text_by_urls(item[key], rejected_urls)
+
+    spot_details = sanitized.get("spotDetails")
+    if isinstance(spot_details, list):
+        for item in spot_details:
+            if not isinstance(item, dict):
+                continue
+            for key in ("historicalBackground", "historicalSignificance", "recommendedVisitTime"):
+                if isinstance(item.get(key), str):
+                    item[key] = _sanitize_text_by_urls(item[key], rejected_urls)
+            highlights = item.get("highlights")
+            if isinstance(highlights, list):
+                item["highlights"] = [
+                    _sanitize_text_by_urls(highlight, rejected_urls)
+                    if isinstance(highlight, str)
+                    else highlight
+                    for highlight in highlights
+                ]
+
+    checkpoints = sanitized.get("checkpoints")
+    if isinstance(checkpoints, list):
+        for item in checkpoints:
+            if not isinstance(item, dict):
+                continue
+            if isinstance(item.get("historicalContext"), str):
+                item["historicalContext"] = _sanitize_text_by_urls(
+                    item["historicalContext"], rejected_urls
+                )
+            checkpoint_items = item.get("checkpoints")
+            if isinstance(checkpoint_items, list):
+                item["checkpoints"] = [
+                    _sanitize_text_by_urls(checkpoint, rejected_urls)
+                    if isinstance(checkpoint, str)
+                    else checkpoint
+                    for checkpoint in checkpoint_items
+                ]
+
+    return sanitized
+
+
+def _extract_html_title(html: str) -> str:
+    """HTMLからtitleを抽出する。"""
+    matched = re.search(r"<title[^>]*>(.*?)</title>", html, flags=re.IGNORECASE | re.DOTALL)
+    if not matched:
+        return ""
+    title = re.sub(r"\s+", " ", matched.group(1))
+    return title.strip()
+
+
+def _extract_og_url(html: str) -> str:
+    """HTMLからog:urlを抽出する。"""
+    matched = re.search(
+        r'<meta[^>]+property=["\']og:url["\'][^>]+content=["\']([^"\']+)["\']',
+        html,
+        flags=re.IGNORECASE,
+    )
+    if not matched:
+        return ""
+    return matched.group(1).strip()
+
+
+def _is_soft_404_html(html: str, final_url: str | None) -> tuple[bool, str | None]:
+    """HTML本文からソフト404を判定する。"""
+    lowered = html.lower()
+    title = _extract_html_title(html)
+    og_url = _extract_og_url(html)
+    title_lower = title.lower()
+    og_url_lower = og_url.lower()
+    final_url_lower = (final_url or "").lower()
+
+    if any(token in final_url_lower for token in ("/404", "404.html", "notfound", "not-found")):
+        return True, "soft_404_final_url"
+
+    if og_url and any(token in og_url_lower for token in ("/404", "404.html", "notfound")):
+        return True, "soft_404_og_url"
+
+    soft_404_tokens = (
+        "404",
+        "not found",
+        "お探しのページ",
+        "見つかりません",
+        "ページが存在しません",
+        "統合しました",
+        "移転しました",
+    )
+    if any(token in title_lower for token in soft_404_tokens):
+        return True, "soft_404_title"
+    if any(token in lowered for token in soft_404_tokens):
+        return True, "soft_404_body"
+
+    return False, None
+
+
+def _check_url_accessibility_sync(url: str) -> URLAccessCheckResult:
+    """URL到達性を同期的に確認する。"""
+    parsed = urlparse(url)
+    if parsed.scheme.lower() != "https":
+        return URLAccessCheckResult(
+            url=url,
+            reachable=False,
+            reason="non_https_scheme",
+        )
+
+    try:
+        request = Request(
+            url,
+            headers={"User-Agent": "HistoricalTravelAgent/1.0 (URL validation)"},
+            method="GET",
+        )
+        with urlopen(request, timeout=_URL_CHECK_TIMEOUT_SECONDS) as response:  # noqa: S310
+            status_code = response.getcode()
+            content_type = response.headers.get("Content-Type")
+            final_url = response.geturl()
+            body_bytes = response.read(65536)
+            body_text = body_bytes.decode("utf-8", errors="ignore")
+
+            if status_code < 200 or status_code >= 300:
+                return URLAccessCheckResult(
+                    url=url,
+                    reachable=False,
+                    status_code=status_code,
+                    content_type=content_type,
+                    final_url=final_url,
+                    reason="http_status_error",
+                )
+
+            if parsed.path.lower().endswith(".pdf") and (
+                content_type is None or "application/pdf" not in content_type.lower()
+            ):
+                return URLAccessCheckResult(
+                    url=url,
+                    reachable=False,
+                    status_code=status_code,
+                    content_type=content_type,
+                    final_url=final_url,
+                    reason="unexpected_content_type_for_pdf",
+                )
+
+            if content_type and "text/html" in content_type.lower():
+                is_soft_404, soft_404_reason = _is_soft_404_html(body_text, final_url)
+                if is_soft_404:
+                    return URLAccessCheckResult(
+                        url=url,
+                        reachable=False,
+                        status_code=status_code,
+                        content_type=content_type,
+                        final_url=final_url,
+                        reason=soft_404_reason or "soft_404_html",
+                    )
+
+            return URLAccessCheckResult(
+                url=url,
+                reachable=True,
+                status_code=status_code,
+                content_type=content_type,
+                final_url=final_url,
+            )
+    except HTTPError as exc:
+        return URLAccessCheckResult(
+            url=url,
+            reachable=False,
+            status_code=exc.code,
+            reason="http_error",
+        )
+    except (URLError, TimeoutError, ValueError) as exc:
+        return URLAccessCheckResult(
+            url=url,
+            reachable=False,
+            reason=f"network_error:{type(exc).__name__}",
+        )
+
+
+async def _check_url_accessibility(url: str) -> URLAccessCheckResult:
+    """URL到達性を非同期で確認する。"""
+    return await asyncio.to_thread(_check_url_accessibility_sync, url)
+
+
+def _is_certificate_error_reason(reason: object) -> bool:
+    """証明書エラーの例外理由か判定する。"""
+    reason_text = str(reason).lower()
+    tokens = (
+        "certificate has expired",
+        "certificate verify failed",
+        "certificate expired",
+        "self signed certificate",
+        "hostname mismatch",
+    )
+    return any(token in reason_text for token in tokens)
+
+
+def _is_certificate_error_exception(exc: BaseException) -> bool:
+    """証明書エラー例外か判定する。"""
+    if isinstance(exc, ssl.SSLError):
+        return True
+    if isinstance(exc, URLError):
+        return _is_certificate_error_reason(exc.reason)
+    return _is_certificate_error_reason(exc)
+
+
+def _check_url_certificate_valid_sync(url: str) -> tuple[str, bool]:
+    """URLのTLS証明書が有効か軽量確認する。"""
+    parsed = urlparse(url)
+    if parsed.scheme.lower() != "https":
+        return url, True
+
+    try:
+        request = Request(
+            url,
+            headers={"User-Agent": "HistoricalTravelAgent/1.0 (cert check)"},
+            method="HEAD",
+        )
+        with urlopen(request, timeout=_CERT_CHECK_TIMEOUT_SECONDS):  # noqa: S310
+            return url, True
+    except HTTPError:
+        # 証明書が有効ならHTTPエラーは受け入れる（存在判定はここでしない）
+        return url, True
+    except (URLError, ssl.SSLError, ValueError) as exc:
+        if _is_certificate_error_exception(exc):
+            return url, False
+        return url, True
+
+
+async def _check_url_certificate_valid(url: str) -> tuple[str, bool]:
+    """URLのTLS証明書を非同期で確認する。"""
+    return await asyncio.to_thread(_check_url_certificate_valid_sync, url)
 
 
 def _summarize_url_quality(urls: set[str]) -> dict[str, Any]:
@@ -533,6 +818,7 @@ class GenerateTravelGuideUseCase:
         job_repository: ISpotImageJobRepository,
         task_dispatcher: ISpotImageTaskDispatcher | None = None,
         composer: TravelGuideComposer | None = None,
+        url_access_checker: UrlAccessChecker | None = None,
     ) -> None:
         """ユースケースを初期化する
 
@@ -550,6 +836,7 @@ class GenerateTravelGuideUseCase:
         self._job_repository = job_repository
         self._task_dispatcher = task_dispatcher
         self._composer = composer or TravelGuideComposer()
+        self._url_access_checker = url_access_checker or _check_url_accessibility
 
     async def execute(
         self,
@@ -649,7 +936,6 @@ class GenerateTravelGuideUseCase:
                     extracted_facts=extracted_facts,
                     guide_data=structured,
                 )
-
                 # 評価
                 logger.debug(
                     "Starting travel guide evaluation",
@@ -682,7 +968,6 @@ class GenerateTravelGuideUseCase:
                         extracted_facts=extracted_facts,
                         guide_data=structured,
                     )
-
                     # 再評価（ログ出力のみ、再生成は行わない）
                     logger.debug(
                         "Re-evaluating travel guide after retry",
@@ -842,6 +1127,117 @@ class GenerateTravelGuideUseCase:
                 task_idempotency_key=task_idempotency_key,
                 target_url=task_target_url,
             )
+
+    async def _validate_fact_extraction_urls(
+        self,
+        *,
+        plan_id: str,
+        extracted_facts: str,
+    ) -> tuple[str, set[str]]:
+        """Step Aで抽出したURLを検証し、有効URLのみを残す。"""
+        extracted_urls = _extract_urls(extracted_facts)
+        if not extracted_urls:
+            logger.warning(
+                "Fact extraction contains no URLs.",
+                extra={"plan_id": plan_id},
+            )
+            return extracted_facts, set()
+
+        summary = _summarize_url_quality(extracted_urls)
+        static_rejected_urls = set(
+            summary["malformed_urls"]
+            + summary["non_https_urls"]
+            + summary["possibly_expiring_urls"]
+            + summary["grounding_redirect_urls"]
+        )
+        access_targets = sorted(extracted_urls - static_rejected_urls)
+
+        access_results = await asyncio.gather(
+            *[self._url_access_checker(url) for url in access_targets]
+        )
+        unreachable_urls = {result.url for result in access_results if not result.reachable}
+        validated_urls = {result.url for result in access_results if result.reachable}
+        rejected_urls = static_rejected_urls | unreachable_urls
+
+        if rejected_urls:
+            logger.warning(
+                "Fact extraction contains rejected URLs: total=%d rejected=%d",
+                len(extracted_urls),
+                len(rejected_urls),
+                extra={
+                    "plan_id": plan_id,
+                    "fact_url_count": len(extracted_urls),
+                    "fact_url_rejected_count": len(rejected_urls),
+                    "fact_url_valid_count": len(validated_urls),
+                    "fact_url_rejected_samples": sorted(rejected_urls)[:5],
+                },
+            )
+
+        sanitized_facts = _sanitize_text_by_urls(extracted_facts, rejected_urls)
+        if extracted_urls and not validated_urls:
+            logger.warning(
+                "No validated URLs remained after fact extraction URL validation.",
+                extra={"plan_id": plan_id},
+            )
+        return sanitized_facts, validated_urls
+
+    async def _sanitize_generated_guide_urls(
+        self,
+        *,
+        plan_id: str,
+        stage: str,
+        extracted_facts: str,
+        guide_data: dict[str, Any],
+        validated_fact_urls: set[str],
+    ) -> dict[str, Any]:
+        """Step Bで生成したURLを検証し、無効URLを除去する。"""
+        guide_urls = _collect_urls_from_guide_payload(guide_data)
+        if not guide_urls:
+            return guide_data
+
+        summary = _summarize_url_quality(guide_urls)
+        invalid_urls = set(
+            summary["malformed_urls"]
+            + summary["non_https_urls"]
+            + summary["possibly_expiring_urls"]
+            + summary["grounding_redirect_urls"]
+        )
+        if validated_fact_urls:
+            invalid_urls.update(guide_urls - validated_fact_urls)
+
+        # Step Aで検証済みURL以外がある場合は到達性チェックする。
+        access_targets = sorted(guide_urls - invalid_urls - validated_fact_urls)
+        if access_targets:
+            access_results = await asyncio.gather(
+                *[self._url_access_checker(url) for url in access_targets]
+            )
+            invalid_urls.update(result.url for result in access_results if not result.reachable)
+
+        if not invalid_urls:
+            return guide_data
+
+        logger.warning(
+            "Guide URLs were sanitized: stage=%s total=%d invalid=%d",
+            stage,
+            len(guide_urls),
+            len(invalid_urls),
+            extra={
+                "plan_id": plan_id,
+                "stage": stage,
+                "guide_url_count": len(guide_urls),
+                "guide_invalid_url_count": len(invalid_urls),
+                "guide_invalid_url_samples": sorted(invalid_urls)[:5],
+            },
+        )
+
+        sanitized = _sanitize_guide_payload_urls(guide_data, invalid_urls)
+        _log_link_quality_diagnostics(
+            plan_id=plan_id,
+            stage=f"{stage}_sanitized",
+            extracted_facts=extracted_facts,
+            guide_data=sanitized,
+        )
+        return sanitized
 
     async def _evaluate_guide_data(
         self, guide_data: dict[str, Any], required_spot_names: list[str]

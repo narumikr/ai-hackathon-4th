@@ -8,7 +8,10 @@ import pytest
 from sqlalchemy.orm import Session
 
 from app.application.ports.ai_service import IAIService
-from app.application.use_cases.generate_travel_guide import GenerateTravelGuideUseCase
+from app.application.use_cases.generate_travel_guide import (
+    GenerateTravelGuideUseCase,
+    _is_soft_404_html,
+)
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.value_objects import GenerationStatus
 from app.infrastructure.persistence.models import TravelPlanModel, TravelPlanSpotModel
@@ -1064,3 +1067,24 @@ async def test_generate_travel_guide_skips_enqueue_in_local_worker_mode(
     await use_case.execute(plan_id=sample_travel_plan.id)
 
     assert fake_task_dispatcher.enqueued == []
+
+
+def test_is_soft_404_html_detects_kanko404_page() -> None:
+    html = """
+    <html>
+      <head>
+        <title>稚内観光情報は「稚内・利尻・礼文 観光WEBサイト」に統合しました</title>
+        <meta property="og:url" content="https://www.city.wakkanai.hokkaido.jp/kanko404.html">
+      </head>
+      <body>移転しました。</body>
+    </html>
+    """
+
+    is_soft_404, reason = _is_soft_404_html(
+        html,
+        "https://www.city.wakkanai.hokkaido.jp/kanko/rekishi/ayumi.html",
+    )
+
+    assert is_soft_404 is True
+    assert reason is not None
+

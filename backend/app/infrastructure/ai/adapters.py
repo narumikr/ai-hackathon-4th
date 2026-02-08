@@ -97,12 +97,12 @@ class GeminiAIService(IAIService, IImageGenerationService):
         return await self.client.generate_content(
             prompt=prompt,
             system_instruction=system_instruction,
-            tools=["google_search"],
+            tools=["google_search", "validate_url"],
             temperature=temperature if temperature is not None else 0.0,
             max_output_tokens=max_output_tokens
             if max_output_tokens is not None
             else self.default_max_output_tokens,
-            timeout=self.default_timeout_seconds,
+            timeout=max(self.default_timeout_seconds, 120),
         )
 
     async def analyze_image(
