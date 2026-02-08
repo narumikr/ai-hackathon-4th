@@ -71,6 +71,11 @@ class ISpotImageJobRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def mark_failed(self, job_id: str, *, error_message: str) -> None:
-        """ジョブを失敗として更新する"""
+    def mark_failed(self, job_id: str, *, error_message: str) -> SpotImageJobRecord:
+        """ジョブを失敗として更新して更新後レコードを返す"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def requeue_failed_job(self, job_id: str) -> SpotImageJobRecord:
+        """failed状態のジョブをqueuedに戻して再投入可能にする"""
         raise NotImplementedError

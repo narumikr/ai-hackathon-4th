@@ -22,7 +22,10 @@ class FakeSpotImageJobRepository:
     def mark_succeeded(self, job_id: str) -> None:
         raise NotImplementedError
 
-    def mark_failed(self, job_id: str, *, error_message: str) -> None:
+    def mark_failed(self, job_id: str, *, error_message: str):
+        raise NotImplementedError
+
+    def requeue_failed_job(self, job_id: str):
         raise NotImplementedError
 
 
