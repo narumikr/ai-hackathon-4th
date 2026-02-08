@@ -55,6 +55,17 @@ class ISpotImageJobRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def claim_job(
+        self, plan_id: str, spot_name: str, *, worker_id: str
+    ) -> SpotImageJobRecord | None:
+        """指定スポットのジョブを処理中に遷移して返す.
+
+        Returns:
+            SpotImageJobRecord | None: 処理対象がない場合はNone
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def mark_succeeded(self, job_id: str) -> None:
         """ジョブを成功として更新する"""
         raise NotImplementedError

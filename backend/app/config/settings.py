@@ -90,6 +90,15 @@ class Settings(DatabaseSettings):
     image_generation_max_concurrent: int = 1
     image_generation_aspect_ratio: str = "16:9"
     image_generation_timeout: int = 60
+    image_execution_mode: Literal["local_worker", "cloud_tasks"] = "local_worker"
+
+    # Cloud Tasks設定
+    cloud_tasks_location: str | None = None
+    cloud_tasks_queue_name: str | None = None
+    cloud_tasks_target_url: str | None = None
+    cloud_tasks_service_account_email: str | None = None
+    cloud_tasks_dispatch_deadline_seconds: int = 1800
+    cloud_tasks_max_retry_attempts: int = 10
 
     # ログ設定
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -133,6 +142,30 @@ class Settings(DatabaseSettings):
         if not Path(value).exists():
             raise ValueError(f"GOOGLE_APPLICATION_CREDENTIALS が存在しません: {value}")
         return value
+
+    @model_validator(mode="after")
+    def validate_cloud_tasks_settings(self) -> "Settings":
+        if self.image_execution_mode == "cloud_tasks":
+            required_fields = {
+                "CLOUD_TASKS_LOCATION": self.cloud_tasks_location,
+                "CLOUD_TASKS_QUEUE_NAME": self.cloud_tasks_queue_name,
+                "CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL": self.cloud_tasks_service_account_email,
+                "GOOGLE_CLOUD_PROJECT": self.google_cloud_project,
+            }
+            missing_keys = [
+                key for key, value in required_fields.items() if not value or not value.strip()
+            ]
+            if missing_keys:
+                raise ValueError(
+                    "cloud_tasks mode requires settings: " + ", ".join(sorted(missing_keys))
+                )
+            if self.cloud_tasks_dispatch_deadline_seconds <= 0:
+                raise ValueError(
+                    "CLOUD_TASKS_DISPATCH_DEADLINE_SECONDS must be a positive integer."
+                )
+            if self.cloud_tasks_max_retry_attempts <= 0:
+                raise ValueError("CLOUD_TASKS_MAX_RETRY_ATTEMPTS must be a positive integer.")
+        return self
 
 
 @lru_cache

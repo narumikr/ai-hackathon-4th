@@ -14,7 +14,9 @@
 8. [バックエンドDockerイメージのビルド＆プッシュ](#バックエンドdockerイメージのビルドプッシュ)
 9. [フロントエンドDockerイメージのビルド＆プッシュ](#フロントエンドdockerイメージのビルドプッシュ)
 10. [インフラストラクチャのデプロイ](#インフラストラクチャのデプロイ)
-11. [動作確認](#動作確認)
+11. [データベースマイグレーションの実行](#データベースマイグレーションの実行)
+12. [動作確認](#動作確認)
+13. [トラブルシューティング](#トラブルシューティング)
 
 ## 前提条件
 
@@ -45,7 +47,7 @@ docker --version
 
 ```bash
 # プロジェクトIDを環境変数に設定
-export PROD_PROJECT_ID="natural-ether-481906-c4"
+export PROD_PROJECT_ID=""
 export PROJECT_ID="${PROD_PROJECT_ID}"
 ```
 
@@ -67,6 +69,7 @@ gcloud services enable sqladmin.googleapis.com
 gcloud services enable storage.googleapis.com
 gcloud services enable artifactregistry.googleapis.com
 gcloud services enable secretmanager.googleapis.com
+gcloud services enable cloudtasks.googleapis.com
 
 # IAM関連
 gcloud services enable iam.googleapis.com
@@ -183,6 +186,21 @@ production_domain = ""
 
 # コストセンター
 cost_center = "historical-travel-agent"
+
+# 画像生成実行モード（本番は cloud_tasks 推奨）
+image_execution_mode = "cloud_tasks"
+
+# Cloud Tasks設定
+cloud_tasks_location = "asia-northeast1"
+cloud_tasks_queue_name = "spot-image-generation"
+cloud_tasks_max_dispatches_per_second = 5
+cloud_tasks_max_concurrent_dispatches = 10
+cloud_tasks_max_attempts = 10
+cloud_tasks_min_backoff_seconds = 5
+cloud_tasks_max_backoff_seconds = 300
+
+# 任意: 固定URLを使う場合のみ指定（通常は空文字で自動解決）
+cloud_tasks_target_url = ""
 ```
 
 ## バックエンドDockerイメージのビルド＆プッシュ
@@ -257,13 +275,13 @@ terraform apply -var-file=environments/production.tfvars -target=module.cloud_ru
 
 ```bash
 # バックエンドURLを取得
-cd ../infrastructure/terraform
 export BACKEND_URL=$(terraform output -raw backend_url)
 cd ../../frontend
 
 # .env.productionファイルを作成
 cat > .env.production <<EOF
-NEXT_PUBLIC_API_URL=${BACKEND_URL}
+NEXT_PUBLIC_API_URL=/
+BACKEND_SERVICE_URL=${BACKEND_URL}
 NODE_ENV=production
 NEXT_TELEMETRY_DISABLED=1
 EOF
@@ -321,6 +339,7 @@ terraform plan -var-file=environments/production.tfvars
 - IAM（サービスアカウント、権限）
 - Cloud Run（バックエンドサービス）
 - Cloud Run（フロントエンドサービス）
+- Cloud Tasks（スポット画像生成キュー）
 
 ### 2. デプロイの実行
 
@@ -329,6 +348,41 @@ terraform apply -var-file=environments/production.tfvars
 ```
 
 `yes`と入力して実行します。
+
+## データベースマイグレーションの実行
+
+Cloud Run Serviceは起動時に自動でマイグレーションを実行しません。  
+本番デプロイ後、ローカル端末から本番DBへ直接Alembicマイグレーションを実行します。
+
+```bash
+# backendディレクトリで実行
+cd ../../backend
+uv sync
+
+PROJECT_ID=${PROD_PROJECT_ID}
+DATABASE_HOST="34.180.69.3"
+DATABASE_NAME="travel_agent"
+DATABASE_USER="backend_user"
+
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic upgrade head
+
+# 適用リビジョン確認
+DATABASE_URL="" \
+DATABASE_HOST="${DATABASE_HOST}" \
+DATABASE_NAME="${DATABASE_NAME}" \
+DATABASE_USER="${DATABASE_USER}" \
+DATABASE_PASSWORD="$(gcloud secrets versions access latest --secret=db-password-production --project=${PROJECT_ID})" \
+uv run alembic current
+```
+
+`DATABASE_PASSWORD` は Secret Manager の `db-password-production` から取得します。  
+実行には `roles/secretmanager.secretAccessor` 権限が必要です。
+`.env` の `DATABASE_URL` が設定されている場合はそちらが優先されるため、`DATABASE_URL=""` を指定して無効化してください。
 
 ## 動作確認
 
@@ -362,3 +416,69 @@ open ${FRONTEND_URL}
 - フロントエンドが正常に表示される
 - バックエンドAPIとの通信が正常に動作する
 - アプリケーションの機能が正常に動作する
+
+### 3. Cloud Tasksキューの確認
+
+```bash
+gcloud tasks queues describe spot-image-generation \
+  --location=asia-northeast1 \
+  --project=${PROJECT_ID}
+```
+
+`state: RUNNING` が表示されることを確認します。
+
+## トラブルシューティング
+
+### Cloud Storage署名URL生成で `iam.serviceAccounts.signBlob` が 403 になる場合
+
+画像生成タスク実行時に以下のエラーが出る場合があります。
+
+- `Permission 'iam.serviceAccounts.signBlob' denied on resource`
+- `Error calling the IAM signBytes API`
+
+この場合、Cloud Run実行サービスアカウントに `roles/iam.serviceAccountTokenCreator` が不足しています。
+
+#### 1. 現在の権限を確認
+
+```bash
+gcloud iam service-accounts get-iam-policy \
+  backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com \
+  --project ${PROD_PROJECT_ID}
+```
+
+`roles/iam.serviceAccountTokenCreator` に以下メンバーが含まれていることを確認します。
+
+- `serviceAccount:backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com`
+
+#### 2. 緊急回避として権限を付与
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding \
+  backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com \
+  --member="serviceAccount:backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator" \
+  --project ${PROD_PROJECT_ID}
+```
+
+#### 3. 反映確認
+
+```bash
+gcloud iam service-accounts get-iam-policy \
+  backend-service-production@${PROD_PROJECT_ID}.iam.gserviceaccount.com \
+  --project ${PROD_PROJECT_ID}
+```
+
+#### 4. 恒久対応
+
+手動付与のみだと再作成時に失われる可能性があるため、Terraformで以下を管理します。
+
+- `infrastructure/terraform/modules/iam/main.tf`
+- `google_service_account_iam_member.backend_token_creator_self`
+
+必要に応じて以下を実行して本番へ反映してください。
+
+```bash
+cd infrastructure/terraform
+terraform plan -var-file=environments/production.tfvars
+terraform apply -var-file=environments/production.tfvars
+```

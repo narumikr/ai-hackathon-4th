@@ -35,6 +35,36 @@ resource "google_cloud_run_service" "backend" {
           value = var.storage_bucket_name
         }
 
+        env {
+          name  = "IMAGE_EXECUTION_MODE"
+          value = var.image_execution_mode
+        }
+
+        env {
+          name  = "CLOUD_TASKS_LOCATION"
+          value = var.cloud_tasks_location
+        }
+
+        env {
+          name  = "CLOUD_TASKS_QUEUE_NAME"
+          value = var.cloud_tasks_queue_name
+        }
+
+        env {
+          name  = "CLOUD_TASKS_TARGET_URL"
+          value = var.cloud_tasks_target_url
+        }
+
+        env {
+          name  = "CLOUD_TASKS_SERVICE_ACCOUNT_EMAIL"
+          value = var.cloud_tasks_service_account_email
+        }
+
+        env {
+          name  = "CLOUD_TASKS_DISPATCH_DEADLINE_SECONDS"
+          value = tostring(var.cloud_tasks_dispatch_deadline_seconds)
+        }
+
         # データベース接続設定（個別の環境変数）
         env {
           name  = "DATABASE_HOST"
@@ -122,12 +152,21 @@ resource "google_cloud_run_service" "backend" {
   autogenerate_revision_name = true
 }
 
-# パブリックアクセス許可（一般公開）
-resource "google_cloud_run_service_iam_member" "backend_public" {
+# フロントエンドサービスからのアクセス許可
+resource "google_cloud_run_service_iam_member" "backend_frontend_invoker" {
   count    = var.environment == "production" ? 1 : 0
   service  = google_cloud_run_service.backend[0].name
   location = google_cloud_run_service.backend[0].location
   project  = var.project_id
   role     = "roles/run.invoker"
-  member   = "allUsers"
+  member   = "serviceAccount:${var.frontend_service_account_email}"
+}
+
+resource "google_cloud_run_service_iam_member" "backend_self_invoker" {
+  count    = var.environment == "production" ? 1 : 0
+  service  = google_cloud_run_service.backend[0].name
+  location = google_cloud_run_service.backend[0].location
+  project  = var.project_id
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${var.service_account_email}"
 }

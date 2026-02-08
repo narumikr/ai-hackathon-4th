@@ -46,3 +46,57 @@ variable "cost_center" {
   type        = string
   default     = "historical-travel-agent"
 }
+
+variable "image_execution_mode" {
+  description = "画像生成実行モード（local_worker または cloud_tasks）"
+  type        = string
+  default     = "local_worker"
+}
+
+variable "cloud_tasks_location" {
+  description = "Cloud Tasksロケーション"
+  type        = string
+  default     = "asia-northeast1"
+}
+
+variable "cloud_tasks_queue_name" {
+  description = "Cloud Tasksキュー名"
+  type        = string
+  default     = "spot-image-generation"
+}
+
+variable "cloud_tasks_target_url" {
+  description = "Cloud TasksのHTTPターゲットURL"
+  type        = string
+  default     = ""
+}
+
+variable "cloud_tasks_max_dispatches_per_second" {
+  description = "Cloud Tasksの1秒あたり最大dispatch数"
+  type        = number
+  default     = 5
+}
+
+variable "cloud_tasks_max_concurrent_dispatches" {
+  description = "Cloud Tasksの同時dispatch上限"
+  type        = number
+  default     = 10
+}
+
+variable "cloud_tasks_max_attempts" {
+  description = "Cloud Tasksの最大リトライ回数"
+  type        = number
+  default     = 10
+}
+
+variable "cloud_tasks_min_backoff_seconds" {
+  description = "Cloud Tasksの最小バックオフ秒数"
+  type        = number
+  default     = 5
+}
+
+variable "cloud_tasks_max_backoff_seconds" {
+  description = "Cloud Tasksの最大バックオフ秒数"
+  type        = number
+  default     = 300
+}

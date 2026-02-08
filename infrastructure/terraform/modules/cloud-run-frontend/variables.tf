@@ -21,7 +21,7 @@ variable "container_image" {
 }
 
 variable "backend_service_url" {
-  description = "バックエンドAPIのURL（NEXT_PUBLIC_API_URL環境変数に設定される）"
+  description = "バックエンドAPIのURL（BACKEND_SERVICE_URL環境変数に設定される）"
   type        = string
 }
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from typing import Any
@@ -11,7 +12,9 @@ from pydantic import ValidationError
 from app.application.dto.travel_guide_dto import TravelGuideDTO
 from app.application.ports.ai_service import IAIService
 from app.application.ports.spot_image_job_repository import ISpotImageJobRepository
+from app.application.ports.spot_image_task_dispatcher import ISpotImageTaskDispatcher
 from app.application.use_cases.travel_plan_helpers import validate_required_str
+from app.config.settings import get_settings
 from app.domain.travel_guide.repository import ITravelGuideRepository
 from app.domain.travel_guide.services import TravelGuideComposer
 from app.domain.travel_guide.value_objects import (
@@ -307,6 +310,7 @@ class GenerateTravelGuideUseCase:
         guide_repository: ITravelGuideRepository,
         ai_service: IAIService,
         job_repository: ISpotImageJobRepository,
+        task_dispatcher: ISpotImageTaskDispatcher | None = None,
         composer: TravelGuideComposer | None = None,
     ) -> None:
         """ユースケースを初期化する
@@ -316,12 +320,14 @@ class GenerateTravelGuideUseCase:
             guide_repository: TravelGuideリポジトリ
             ai_service: AIサービス
             job_repository: スポット画像生成ジョブリポジトリ
+            task_dispatcher: スポット画像タスクディスパッチャ
             composer: TravelGuideComposer（省略時はデフォルトを使用）
         """
         self._plan_repository = plan_repository
         self._guide_repository = guide_repository
         self._ai_service = ai_service
         self._job_repository = job_repository
+        self._task_dispatcher = task_dispatcher
         self._composer = composer or TravelGuideComposer()
 
     async def execute(
@@ -329,12 +335,14 @@ class GenerateTravelGuideUseCase:
         plan_id: str,
         *,
         commit: bool = True,
+        task_target_url: str | None = None,
     ) -> TravelGuideDTO:
         """旅行ガイドを生成する
 
         Args:
             plan_id: 旅行計画ID
             commit: Trueの場合はトランザクションをコミットする
+            task_target_url: Cloud Tasks実行先URL（cloud_tasksモード時）
 
         Returns:
             TravelGuideDTO: 生成された旅行ガイド
@@ -515,6 +523,11 @@ class GenerateTravelGuideUseCase:
                     spot_details=saved_guide.spot_details,
                     commit=False,
                 )
+                self._enqueue_spot_image_tasks(
+                    plan_id=plan_id,
+                    spot_details=saved_guide.spot_details,
+                    task_target_url=task_target_url,
+                )
                 logger.info(
                     "Spot image jobs registered",
                     extra={"plan_id": plan_id, "created_jobs": created_jobs},
@@ -559,6 +572,39 @@ class GenerateTravelGuideUseCase:
             max_attempts=3,
             commit=commit,
         )
+
+    def _enqueue_spot_image_tasks(
+        self,
+        plan_id: str,
+        spot_details: list[SpotDetail],
+        *,
+        task_target_url: str | None = None,
+    ) -> None:
+        settings = get_settings()
+        if settings.image_execution_mode == "local_worker":
+            return
+
+        if settings.image_execution_mode != "cloud_tasks":
+            raise ValueError(f"Unsupported IMAGE_EXECUTION_MODE: {settings.image_execution_mode}")
+        if self._task_dispatcher is None:
+            raise ValueError("task_dispatcher is required when IMAGE_EXECUTION_MODE=cloud_tasks.")
+
+        target_spots = [
+            detail.spot_name
+            for detail in spot_details
+            if not (detail.image_status == "succeeded" and detail.image_url)
+        ]
+        for spot_name in target_spots:
+            digest = hashlib.sha1(
+                f"{plan_id}:{_normalize_spot_name(spot_name)}".encode()
+            ).hexdigest()
+            task_idempotency_key = f"spot-image-{digest}"
+            self._task_dispatcher.enqueue_spot_image_task(
+                plan_id=plan_id,
+                spot_name=spot_name,
+                task_idempotency_key=task_idempotency_key,
+                target_url=task_target_url,
+            )
 
     async def _evaluate_guide_data(
         self, guide_data: dict[str, Any], required_spot_names: list[str]

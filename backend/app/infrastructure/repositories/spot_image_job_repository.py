@@ -108,6 +108,55 @@ class SpotImageJobRepository(ISpotImageJobRepository):
             for job in jobs
         ]
 
+    def claim_job(
+        self, plan_id: str, spot_name: str, *, worker_id: str
+    ) -> SpotImageJobRecord | None:
+        if not plan_id or not plan_id.strip():
+            raise ValueError("plan_id is required and must not be empty.")
+        if not spot_name or not spot_name.strip():
+            raise ValueError("spot_name is required and must not be empty.")
+        if not worker_id or not worker_id.strip():
+            raise ValueError("worker_id is required and must not be empty.")
+
+        now = datetime.now(UTC)
+        claimed_job: SpotImageJobModel | None = None
+        with self._session.begin():
+            job = (
+                self._session.query(SpotImageJobModel)
+                .filter(SpotImageJobModel.plan_id == plan_id)
+                .filter(SpotImageJobModel.spot_name == spot_name)
+                .with_for_update()
+                .one_or_none()
+            )
+            if job is None:
+                return None
+
+            if job.status == "processing":
+                return None
+            if job.status == "succeeded":
+                return None
+            if job.status == "failed" and job.attempts >= job.max_attempts:
+                return None
+            if job.status not in {"queued", "failed"}:
+                raise ValueError(f"Unsupported spot image job status: {job.status}")
+
+            job.status = "processing"
+            job.locked_at = now
+            job.locked_by = worker_id
+            job.updated_at = now
+            claimed_job = job
+
+        if claimed_job is None:
+            return None
+        return SpotImageJobRecord(
+            id=claimed_job.id,
+            plan_id=claimed_job.plan_id,
+            spot_name=claimed_job.spot_name,
+            attempts=claimed_job.attempts,
+            max_attempts=claimed_job.max_attempts,
+            status=claimed_job.status,
+        )
+
     def mark_succeeded(self, job_id: str) -> None:
         if not job_id or not job_id.strip():
             raise ValueError("job_id is required and must not be empty.")

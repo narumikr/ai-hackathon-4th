@@ -3,7 +3,9 @@
 import asyncio
 from datetime import timedelta
 
+import google.auth
 from google.api_core import exceptions as google_exceptions
+from google.auth.transport.requests import Request
 from google.cloud import storage
 from google.cloud.storage import Blob, Bucket
 
@@ -19,11 +21,14 @@ class CloudStorageService(IStorageService):
     本番環境でGCSバケットにファイルを保存する
     """
 
+    _CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform"
+
     def __init__(
         self,
         bucket_name: str,
         project_id: str | None = None,
         max_retries: int = 3,
+        signing_service_account_email: str | None = None,
     ) -> None:
         """CloudStorageServiceを初期化する
 
@@ -35,9 +40,13 @@ class CloudStorageService(IStorageService):
         self.bucket_name = bucket_name
         self.project_id = project_id
         self.max_retries = max_retries
+        self.signing_service_account_email = (
+            signing_service_account_email.strip() if signing_service_account_email else None
+        )
 
         # GCSクライアントの初期化
-        self.client = storage.Client(project=project_id)
+        # Cloud Run上でIAM SignBlobを利用するため、cloud-platformスコープ付き認証を優先する。
+        self.client = self._create_storage_client(project_id)
         self.bucket: Bucket = self.client.bucket(bucket_name)
 
     async def upload_file(
@@ -78,12 +87,7 @@ class CloudStorageService(IStorageService):
                 )
 
                 # 署名付きURL（7日間有効）を生成して返す
-                signed_url = await asyncio.to_thread(
-                    blob.generate_signed_url,
-                    version="v4",
-                    expiration=timedelta(days=7),
-                    method="GET",
-                )
+                signed_url = await asyncio.to_thread(self._generate_signed_get_url, blob)
                 return signed_url
 
             except google_exceptions.BadRequest as e:
@@ -154,12 +158,7 @@ class CloudStorageService(IStorageService):
                 raise StorageOperationError(f"ファイルが存在しません: {file_path}")
 
             # 署名付きURL（7日間有効）を生成して返す
-            signed_url = await asyncio.to_thread(
-                blob.generate_signed_url,
-                version="v4",
-                expiration=timedelta(days=7),
-                method="GET",
-            )
+            signed_url = await asyncio.to_thread(self._generate_signed_get_url, blob)
             return signed_url
 
         except StorageOperationError:
@@ -230,3 +229,88 @@ class CloudStorageService(IStorageService):
         """
         wait_time = min(2**attempt, 8)  # 最大8秒
         await asyncio.sleep(wait_time)
+
+    def _create_storage_client(self, project_id: str | None) -> storage.Client:
+        """storage.Clientを生成する。"""
+        try:
+            credentials, detected_project_id = google.auth.default(
+                scopes=[self._CLOUD_PLATFORM_SCOPE]
+            )
+            return storage.Client(
+                project=project_id or detected_project_id,
+                credentials=credentials,
+            )
+        except Exception:
+            # 認証情報の明示取得に失敗した場合は従来の初期化へフォールバックする。
+            return storage.Client(project=project_id)
+
+    def _get_signing_service_account_and_token(self) -> tuple[str, str] | None:
+        """署名用のservice_account_emailとaccess_tokenを取得する。"""
+        credentials_candidates = []
+
+        client_credentials = getattr(self.client, "_credentials", None)
+        if client_credentials is not None:
+            credentials_candidates.append(client_credentials)
+
+        try:
+            default_credentials, _ = google.auth.default(scopes=[self._CLOUD_PLATFORM_SCOPE])
+            credentials_candidates.append(default_credentials)
+        except Exception:
+            pass
+
+        for credentials in credentials_candidates:
+            scoped_credentials = credentials
+
+            has_scopes = getattr(scoped_credentials, "has_scopes", None)
+            needs_scope = getattr(scoped_credentials, "requires_scopes", False)
+            if callable(has_scopes):
+                try:
+                    needs_scope = not has_scopes([self._CLOUD_PLATFORM_SCOPE])
+                except Exception:
+                    pass
+
+            if needs_scope and hasattr(scoped_credentials, "with_scopes"):
+                scoped_credentials = scoped_credentials.with_scopes([self._CLOUD_PLATFORM_SCOPE])
+
+            if not getattr(scoped_credentials, "token", None):
+                scoped_credentials.refresh(Request())
+
+            service_account_email = getattr(scoped_credentials, "service_account_email", None)
+            if not service_account_email or service_account_email == "default":
+                service_account_email = self.signing_service_account_email
+
+            access_token = getattr(scoped_credentials, "token", None)
+            if service_account_email and access_token:
+                return service_account_email, access_token
+
+        return None
+
+    def _generate_signed_get_url(self, blob: Blob) -> str:
+        """署名付きGET URLを生成する.
+
+        Cloud RunのADC（秘密鍵なし）では通常のgenerate_signed_urlが失敗するため、
+        service_account_email + access_token 方式での再試行を行う。
+        """
+        try:
+            return blob.generate_signed_url(
+                version="v4",
+                expiration=timedelta(days=7),
+                method="GET",
+            )
+        except Exception as e:
+            message = str(e)
+            if "private key to sign credentials" not in message:
+                raise
+
+            signing_credentials = self._get_signing_service_account_and_token()
+            if signing_credentials is None:
+                raise
+            service_account_email, access_token = signing_credentials
+
+            return blob.generate_signed_url(
+                version="v4",
+                expiration=timedelta(days=7),
+                method="GET",
+                service_account_email=service_account_email,
+                access_token=access_token,
+            )

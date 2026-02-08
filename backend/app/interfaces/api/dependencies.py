@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from app.application.ports.ai_service import IAIService
 from app.application.ports.image_generation_service import IImageGenerationService
+from app.application.ports.spot_image_task_dispatcher import ISpotImageTaskDispatcher
 from app.application.ports.storage_service import IStorageService
 from app.application.use_cases.generate_spot_images import GenerateSpotImagesUseCase
 from app.config.settings import Settings, get_settings
@@ -94,6 +95,37 @@ def get_image_generation_service() -> IImageGenerationService:
         IImageGenerationService: 画像生成サービス実装
     """
     return get_ai_service()
+
+
+@lru_cache(maxsize=1)
+def get_spot_image_task_dispatcher() -> ISpotImageTaskDispatcher:
+    """スポット画像タスクディスパッチャを返す."""
+    settings = get_settings()
+    mode = settings.image_execution_mode
+
+    if mode == "local_worker":
+        from app.infrastructure.tasks.local_worker_dispatcher import LocalWorkerDispatcher
+
+        return LocalWorkerDispatcher()
+
+    if mode == "cloud_tasks":
+        if not settings.google_cloud_project:
+            raise ValueError(
+                "GOOGLE_CLOUD_PROJECT environment variable is required for cloud_tasks"
+            )
+
+        from app.infrastructure.tasks.cloud_tasks_dispatcher import CloudTasksDispatcher
+
+        return CloudTasksDispatcher(
+            project_id=settings.google_cloud_project,
+            location=settings.cloud_tasks_location or "",
+            queue_name=settings.cloud_tasks_queue_name or "",
+            target_url=settings.cloud_tasks_target_url or "",
+            service_account_email=settings.cloud_tasks_service_account_email or "",
+            dispatch_deadline_seconds=settings.cloud_tasks_dispatch_deadline_seconds,
+        )
+
+    raise ValueError(f"Unsupported IMAGE_EXECUTION_MODE: {mode}")
 
 
 def create_spot_images_use_case(
