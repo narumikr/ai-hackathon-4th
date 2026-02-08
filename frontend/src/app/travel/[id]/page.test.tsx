@@ -5,6 +5,7 @@ import {
   BUTTON_LABELS,
   CONFIRMATION_MESSAGES,
   DATE_LABELS,
+  ERROR_DIALOG_MESSAGES,
   MESSAGES,
   SECTION_TITLES,
   STATUS_LABELS,
@@ -564,7 +565,7 @@ describe('TravelGuidePage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText(/削除に失敗しました/)).toBeInTheDocument();
+        expect(screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_DELETE_FAILED)).toBeInTheDocument();
       });
     });
 
@@ -586,7 +587,9 @@ describe('TravelGuidePage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText(/完了処理に失敗しました/)).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_COMPLETE_FAILED)
+        ).toBeInTheDocument();
       });
     });
 

@@ -8,14 +8,14 @@ import {
   CONFIRMATION_MESSAGES,
   DATE_LABELS,
   EMOJI_LABELS,
-  ERROR_ALERTS,
+  ERROR_DIALOG_MESSAGES,
   LABELS,
   MESSAGES,
   PAGE_TITLES,
   SECTION_TITLES,
   STATUS_LABELS,
 } from '@/constants';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { createApiClientFromEnv } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -51,8 +51,7 @@ export default function TravelGuidePage() {
         const response = await apiClient.getTravelPlan({ planId: id });
         setTravel(response);
       } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
+        setError(ERROR_DIALOG_MESSAGES.TRAVEL_DETAIL_FETCH_FAILED);
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -79,8 +78,7 @@ export default function TravelGuidePage() {
       // 生成開始後、一覧ページへ戻る
       router.push('/travel');
     } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED);
       setIsRetrying(false);
     }
   };
@@ -108,9 +106,8 @@ export default function TravelGuidePage() {
       setIsDeleteModalOpen(false);
       router.push('/travel');
     } catch (err) {
-      const apiError = toApiError(err);
       setIsDeleteModalOpen(false);
-      setError(ERROR_ALERTS.DELETE_FAILED(apiError.message));
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_DELETE_FAILED);
     } finally {
       setIsDeleting(false);
     }
@@ -138,8 +135,7 @@ export default function TravelGuidePage() {
       });
       router.push('/travel');
     } catch (err) {
-      const apiError = toApiError(err);
-      setError(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_COMPLETE_FAILED);
     } finally {
       setIsCompleting(false);
     }

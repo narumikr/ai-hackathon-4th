@@ -6,6 +6,7 @@ import {
   ARIA_LABELS,
   BUTTON_LABELS,
   DEFAULT_USER_ID,
+  ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
   HELP_TEXTS,
   HINTS,
@@ -16,7 +17,7 @@ import {
   PLACEHOLDERS,
   TOOLTIP_MESSAGES,
 } from '@/constants';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { createApiClientFromEnv } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 
@@ -99,18 +100,22 @@ export default function TravelNewPage() {
         },
       });
 
-      // 2. 旅行ガイドを生成
-      await apiClient.generateTravelGuide({
-        request: {
-          planId: response.id,
-        },
-      });
+      try {
+        // 2. 旅行ガイドを生成
+        await apiClient.generateTravelGuide({
+          request: {
+            planId: response.id,
+          },
+        });
+      } catch (err) {
+        setError(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED);
+        return;
+      }
 
       // 3. 成功後、旅行一覧ページにリダイレクト
       router.push('/travel');
     } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_CREATE_FAILED);
     } finally {
       setIsSubmitting(false);
     }

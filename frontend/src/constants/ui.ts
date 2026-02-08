@@ -33,6 +33,23 @@ export const ERROR_ALERTS = {
 } as const;
 
 /**
+ * エラーダイアログ表示文言
+ */
+export const ERROR_DIALOG_MESSAGES = {
+  TRAVEL_LIST_FETCH_FAILED: '旅行一覧の取得に失敗しました。',
+  TRAVEL_DETAIL_FETCH_FAILED: '旅行情報の取得に失敗しました。',
+  TRAVEL_CREATE_FAILED: '旅行計画の作成に失敗しました。',
+  TRAVEL_UPDATE_FAILED: '旅行計画の更新に失敗しました。',
+  TRAVEL_GUIDE_GENERATE_FAILED: '旅行ガイドの生成に失敗しました。',
+  TRAVEL_DELETE_FAILED: '旅行計画の削除に失敗しました。',
+  TRAVEL_COMPLETE_FAILED: '旅行完了処理に失敗しました。',
+  REFLECTION_LIST_FETCH_FAILED: '振り返り一覧の取得に失敗しました。',
+  REFLECTION_TRAVEL_FETCH_FAILED: '振り返り用の旅行情報取得に失敗しました。',
+  REFLECTION_CREATE_FAILED: '振り返りの作成に失敗しました。',
+  REFLECTION_VIEW_FETCH_FAILED: '振り返りの取得に失敗しました。',
+} as const;
+
+/**
  * 日付ラベル
  */
 export const DATE_LABELS = {

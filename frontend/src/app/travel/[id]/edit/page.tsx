@@ -5,6 +5,7 @@ import { Button, TextField, Tooltip } from '@/components/ui';
 import {
   ARIA_LABELS,
   BUTTON_LABELS,
+  ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
   HELP_TEXTS,
   MESSAGES,
@@ -12,7 +13,7 @@ import {
   PLACEHOLDERS,
   TOOLTIP_MESSAGES,
 } from '@/constants';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { createApiClientFromEnv } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
@@ -60,8 +61,7 @@ export default function TravelEditPage() {
         });
         setSpotIdCounter(response.spots.length);
       } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
+        setError(ERROR_DIALOG_MESSAGES.TRAVEL_DETAIL_FETCH_FAILED);
       } finally {
         setIsLoading(false);
       }
@@ -114,18 +114,22 @@ export default function TravelEditPage() {
         },
       });
 
-      // 2. 旅行ガイドを生成
-      await apiClient.generateTravelGuide({
-        request: {
-          planId: response.id,
-        },
-      });
+      try {
+        // 2. 旅行ガイドを生成
+        await apiClient.generateTravelGuide({
+          request: {
+            planId: response.id,
+          },
+        });
+      } catch (err) {
+        setError(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED);
+        return;
+      }
 
       // 3. 更新成功後、旅行一覧ページにリダイレクト
       router.push('/travel');
     } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_UPDATE_FAILED);
     } finally {
       setIsSubmitting(false);
     }

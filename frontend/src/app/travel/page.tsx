@@ -6,13 +6,14 @@ import { Button } from '@/components/ui';
 import {
   BUTTON_LABELS,
   DEFAULT_USER_ID,
+  ERROR_DIALOG_MESSAGES,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
   STATUS_COLORS,
   STATUS_LABELS,
 } from '@/constants';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { createApiClientFromEnv } from '@/lib/api';
 import type { TravelPlanListResponse, TravelPlanStatus } from '@/types';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -34,8 +35,7 @@ export default function TravelListPage() {
       const response = await apiClient.listTravelPlans({ userId });
       setTravels(response);
     } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_LIST_FETCH_FAILED);
     } finally {
       setIsLoading(false);
     }

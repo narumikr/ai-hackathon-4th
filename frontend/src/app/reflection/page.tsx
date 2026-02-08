@@ -7,6 +7,7 @@ import {
   BUTTON_LABELS,
   BUTTON_STATES,
   DEFAULT_USER_ID,
+  ERROR_DIALOG_MESSAGES,
   HINTS,
   LABELS,
   MESSAGES,
@@ -14,7 +15,7 @@ import {
   PAGE_TITLES,
   STATUS_LABELS,
 } from '@/constants';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { createApiClientFromEnv } from '@/lib/api';
 import type { TravelPlanListResponse } from '@/types';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -43,8 +44,7 @@ export default function ReflectionListPage() {
       const completedTravels = response.filter(t => t.status === 'completed');
       setTravels(completedTravels);
     } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
+      setError(ERROR_DIALOG_MESSAGES.REFLECTION_LIST_FETCH_FAILED);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

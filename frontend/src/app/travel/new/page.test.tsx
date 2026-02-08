@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ARIA_LABELS,
   BUTTON_LABELS,
+  ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
   HELP_TEXTS,
   HINTS,
@@ -395,7 +396,7 @@ describe('TravelNewPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('サーバーエラー')).toBeInTheDocument();
+        expect(screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_CREATE_FAILED)).toBeInTheDocument();
       });
     });
 
@@ -420,7 +421,9 @@ describe('TravelNewPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('ガイド生成失敗')).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED)
+        ).toBeInTheDocument();
       });
     });
   });
@@ -461,7 +464,7 @@ describe('TravelNewPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('サーバーエラー')).toBeInTheDocument();
+        expect(screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_CREATE_FAILED)).toBeInTheDocument();
       });
 
       // 実行: 閉じるボタンをクリック
