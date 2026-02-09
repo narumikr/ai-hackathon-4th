@@ -74,7 +74,7 @@ async def create_reflection(
     auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> Response:
     """振り返り生成を開始する
-    
+
     Args:
         request: 振り返り生成リクエスト
         background_tasks: バックグラウンドタスク

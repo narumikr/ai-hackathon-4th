@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.application.use_cases.create_travel_plan import CreateTravelPlanUseCase
-from app.interfaces.middleware.auth import UserContext, require_auth
 from app.application.use_cases.delete_travel_plan import DeleteTravelPlanUseCase
 from app.application.use_cases.get_travel_plan import (
     GetTravelPlanUseCase,
@@ -16,6 +15,7 @@ from app.infrastructure.persistence.database import get_db
 from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
+from app.interfaces.middleware.auth import UserContext, require_auth
 from app.interfaces.schemas.travel_plan import (
     CreateTravelPlanRequest,
     TravelPlanListResponse,

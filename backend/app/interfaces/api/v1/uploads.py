@@ -98,7 +98,7 @@ async def upload_images(
     auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> Response:
     """スポットごとの写真と感想を登録する
-    
+
     Args:
         request: HTTPリクエスト
         plan_id: 旅行計画ID
