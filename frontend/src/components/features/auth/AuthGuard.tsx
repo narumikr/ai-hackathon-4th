@@ -2,18 +2,10 @@
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { redirect } from 'next/navigation';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/signin');
-    }
-  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -24,7 +16,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return null;
+    redirect('/signin');
   }
 
   return <>{children}</>;
