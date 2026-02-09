@@ -6,7 +6,6 @@ import { Button, Icon, LoadingSpinner } from '@/components/ui';
 import {
   BUTTON_LABELS,
   BUTTON_STATES,
-  DEFAULT_USER_ID,
   HINTS,
   LABELS,
   MESSAGES,
@@ -14,43 +13,48 @@ import {
   PAGE_TITLES,
   STATUS_LABELS,
 } from '@/constants';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanListResponse } from '@/types';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function ReflectionListPage() {
+  const { user } = useAuthContext();
   const [travels, setTravels] = useState<TravelPlanListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTravels = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
-    setError(null);
+  const fetchTravels = useCallback(
+    async (isRefresh = false) => {
+      if (!user) return;
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+      setError(null);
 
-    try {
-      const apiClient = createApiClientFromEnv();
-      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = DEFAULT_USER_ID;
+      try {
+        const apiClient = createApiClientFromEnv();
+        const userId = user.uid;
 
-      const response = await apiClient.listTravelPlans({ userId });
-      // ステータスが completed のもののみをフィルタ
-      const completedTravels = response.filter(t => t.status === 'completed');
-      setTravels(completedTravels);
-    } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to fetch travel plans:', apiError);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
+        const response = await apiClient.listTravelPlans({ userId });
+        // ステータスが completed のもののみをフィルタ
+        const completedTravels = response.filter(t => t.status === 'completed');
+        setTravels(completedTravels);
+      } catch (err) {
+        const apiError = toApiError(err);
+        setError(apiError.message || MESSAGES.ERROR);
+        console.error('Failed to fetch travel plans:', apiError);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [user]
+  );
 
   useEffect(() => {
     fetchTravels(false);

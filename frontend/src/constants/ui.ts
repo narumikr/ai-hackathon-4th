@@ -4,11 +4,6 @@
  */
 
 /**
- * デフォルトユーザーID（認証機能実装前の仮の値）
- */
-export const DEFAULT_USER_ID = 'demo-user';
-
-/**
  * ボタン状態テキスト
  */
 export const BUTTON_STATES = {

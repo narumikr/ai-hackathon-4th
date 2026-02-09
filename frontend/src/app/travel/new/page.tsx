@@ -5,7 +5,6 @@ import { Button, Icon, TextField, Tooltip } from '@/components/ui';
 import {
   ARIA_LABELS,
   BUTTON_LABELS,
-  DEFAULT_USER_ID,
   FORM_LABELS,
   HELP_TEXTS,
   HINTS,
@@ -16,11 +15,13 @@ import {
   PLACEHOLDERS,
   TOOLTIP_MESSAGES,
 } from '@/constants';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 
 export default function TravelNewPage() {
+  const { user } = useAuthContext();
   const router = useRouter();
   const componentId = useId();
   const [title, setTitle] = useState('');
@@ -81,8 +82,7 @@ export default function TravelNewPage() {
 
     try {
       const apiClient = createApiClientFromEnv();
-      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = DEFAULT_USER_ID;
+      const userId = user?.uid ?? '';
 
       // スポットリストを整形（空の値を除外）
       const filteredSpots = spots

@@ -3,21 +3,25 @@
 import AuthForm from '@/components/features/auth/AuthForm';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function SignInPage() {
   const { user, loading } = useAuthContext();
+  const router = useRouter();
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/');
+    }
+  }, [user, loading, router]);
+
+  if (loading || user) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <LoadingSpinner size="xl" />
       </div>
     );
-  }
-
-  if (user) {
-    redirect('/');
   }
 
   return (

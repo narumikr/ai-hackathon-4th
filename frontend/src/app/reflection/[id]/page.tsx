@@ -6,7 +6,6 @@ import { Container } from '@/components/layout';
 import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
 import {
   BUTTON_LABELS,
-  DEFAULT_USER_ID,
   EMOJI_LABELS,
   FORM_LABELS,
   HINTS,
@@ -18,6 +17,7 @@ import {
   SECTION_TITLES,
   TOOLTIP_MESSAGES,
 } from '@/constants';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { createApiClientFromEnv, toApiError } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import type { ReflectionSpot } from '@/types/reflection';
@@ -26,6 +26,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function ReflectionDetailPage() {
+  const { user } = useAuthContext();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -138,8 +139,7 @@ export default function ReflectionDetailPage() {
 
     try {
       const apiClient = createApiClientFromEnv();
-      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = DEFAULT_USER_ID;
+      const userId = user?.uid ?? '';
 
       // 1. 各スポットの写真をアップロード
       for (const spot of spots) {
