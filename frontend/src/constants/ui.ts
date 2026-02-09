@@ -28,6 +28,23 @@ export const ERROR_ALERTS = {
 } as const;
 
 /**
+ * エラーダイアログ表示文言
+ */
+export const ERROR_DIALOG_MESSAGES = {
+  TRAVEL_LIST_FETCH_FAILED: '旅行一覧の取得に失敗しました。',
+  TRAVEL_DETAIL_FETCH_FAILED: '旅行情報の取得に失敗しました。',
+  TRAVEL_CREATE_FAILED: '旅行計画の作成に失敗しました。',
+  TRAVEL_UPDATE_FAILED: '旅行計画の更新に失敗しました。',
+  TRAVEL_GUIDE_GENERATE_FAILED: '旅行ガイドの生成に失敗しました。',
+  TRAVEL_DELETE_FAILED: '旅行計画の削除に失敗しました。',
+  TRAVEL_COMPLETE_FAILED: '旅行完了処理に失敗しました。',
+  REFLECTION_LIST_FETCH_FAILED: '振り返り一覧の取得に失敗しました。',
+  REFLECTION_TRAVEL_FETCH_FAILED: '振り返り用の旅行情報取得に失敗しました。',
+  REFLECTION_CREATE_FAILED: '振り返りの作成に失敗しました。',
+  REFLECTION_VIEW_FETCH_FAILED: '振り返りの取得に失敗しました。',
+} as const;
+
+/**
  * 日付ラベル
  */
 export const DATE_LABELS = {
@@ -294,7 +311,7 @@ export const PLACEHOLDERS = {
 export const HELP_TEXTS = {
   DESTINATION: '訪問する都道府県や地域を入力してください',
   SPOTS: '訪問予定の観光スポットを入力してください（複数可）',
-  UPLOAD_FORMAT: 'JPG, PNG, HEIC形式に対応（最大10MB）',
+  UPLOAD_FORMAT: 'JPG, PNG, WebP形式に対応（最大10MB）',
   ADDED_SPOT: '振り返りで追加したスポットです',
   ADD_SPOT_INSTRUCTION:
     '計画になかった立ち寄り場所や、特に印象に残った場所を追加して記録に残しましょう。',
@@ -410,6 +427,7 @@ export const HINTS = {
   ],
   REFLECTION_CREATE: [
     '振り返りパンフレットの生成には写真のアップロードが必須です',
+    '対応形式はJPG、PNG、WebPです',
     '写真は訪問した場所が分かるものがおすすめです',
     '事前学習との違いや新たな発見を記入すると効果的です',
     'パンフレット生成には1-2分程度かかる場合があります',

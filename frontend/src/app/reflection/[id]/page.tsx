@@ -7,6 +7,7 @@ import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
 import {
   BUTTON_LABELS,
   EMOJI_LABELS,
+  ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
   HINTS,
   LABELS,
@@ -18,7 +19,7 @@ import {
   TOOLTIP_MESSAGES,
 } from '@/constants';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { createApiClientFromEnv } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import type { ReflectionSpot } from '@/types/reflection';
 import Link from 'next/link';
@@ -66,10 +67,8 @@ export default function ReflectionDetailPage() {
           isAdded: false,
         }));
         setSpots(initialSpots);
-      } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plan:', apiError);
+      } catch (_err) {
+        setError(ERROR_DIALOG_MESSAGES.REFLECTION_TRAVEL_FETCH_FAILED);
       } finally {
         setIsLoading(false);
       }
@@ -169,10 +168,9 @@ export default function ReflectionDetailPage() {
 
       // 3. 成功後、振り返り閲覧ページにリダイレクト
       router.push(`/reflection/${id}/view`);
-    } catch (err) {
-      const apiError = toApiError(err);
+    } catch (_err) {
       setIsSubmitting(false);
-      setError(apiError.message);
+      setError(ERROR_DIALOG_MESSAGES.REFLECTION_CREATE_FAILED);
     }
   };
 

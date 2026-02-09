@@ -8,14 +8,14 @@ import {
   CONFIRMATION_MESSAGES,
   DATE_LABELS,
   EMOJI_LABELS,
-  ERROR_ALERTS,
+  ERROR_DIALOG_MESSAGES,
   LABELS,
   MESSAGES,
   PAGE_TITLES,
   SECTION_TITLES,
   STATUS_LABELS,
 } from '@/constants';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import { createApiClientFromEnv } from '@/lib/api';
 import { parseSourceFromMultilineText } from '@/lib/sourceUtil';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
@@ -81,10 +81,8 @@ export default function TravelGuidePage() {
         const apiClient = createApiClientFromEnv();
         const response = await apiClient.getTravelPlan({ planId: id });
         setTravel(response);
-      } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plan:', apiError);
+      } catch (_err) {
+        setError(ERROR_DIALOG_MESSAGES.TRAVEL_DETAIL_FETCH_FAILED);
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
@@ -110,10 +108,8 @@ export default function TravelGuidePage() {
       await apiClient.generateTravelGuide({ request: { planId: id } });
       // 生成開始後、一覧ページへ戻る
       router.push('/travel');
-    } catch (err) {
-      const apiError = toApiError(err);
-      setError(apiError.message || MESSAGES.ERROR);
-      console.error('Failed to retry guide generation:', apiError);
+    } catch (_err) {
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED);
       setIsRetrying(false);
     }
   };
@@ -140,11 +136,9 @@ export default function TravelGuidePage() {
       await apiClient.deleteTravelPlan({ planId: id });
       setIsDeleteModalOpen(false);
       router.push('/travel');
-    } catch (err) {
-      const apiError = toApiError(err);
+    } catch (_err) {
       setIsDeleteModalOpen(false);
-      setError(ERROR_ALERTS.DELETE_FAILED(apiError.message));
-      console.error('Failed to delete travel plan:', apiError);
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_DELETE_FAILED);
     } finally {
       setIsDeleting(false);
     }
@@ -171,10 +165,8 @@ export default function TravelGuidePage() {
         },
       });
       router.push('/travel');
-    } catch (err) {
-      const apiError = toApiError(err);
-      setError(ERROR_ALERTS.COMPLETE_FAILED(apiError.message));
-      console.error('Failed to complete travel plan:', apiError);
+    } catch (_err) {
+      setError(ERROR_DIALOG_MESSAGES.TRAVEL_COMPLETE_FAILED);
     } finally {
       setIsCompleting(false);
     }

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ARIA_LABELS,
   BUTTON_LABELS,
+  ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
   MESSAGES,
   PAGE_TITLES,
@@ -429,7 +430,7 @@ describe('TravelEditPage', () => {
 
       // 検証: エラーメッセージが表示される
       await waitFor(() => {
-        expect(screen.getByText('更新失敗')).toBeInTheDocument();
+        expect(screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_UPDATE_FAILED)).toBeInTheDocument();
       });
     });
   });
@@ -534,7 +535,9 @@ describe('TravelEditPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText(/ガイド生成に失敗しました/)).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_GUIDE_GENERATE_FAILED)
+        ).toBeInTheDocument();
       });
     });
   });

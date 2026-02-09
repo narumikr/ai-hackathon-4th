@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   BUTTON_LABELS,
+  ERROR_DIALOG_MESSAGES,
   MESSAGES,
   PAGE_DESCRIPTIONS,
   PAGE_TITLES,
@@ -243,7 +244,9 @@ describe('TravelListPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('ネットワークエラー')).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_LIST_FETCH_FAILED)
+        ).toBeInTheDocument();
       });
     });
   });
@@ -346,7 +349,9 @@ describe('TravelListPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('ネットワークエラー')).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.TRAVEL_LIST_FETCH_FAILED)
+        ).toBeInTheDocument();
       });
 
       // 実行: 閉じるボタンをクリック
