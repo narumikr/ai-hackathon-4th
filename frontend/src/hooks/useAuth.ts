@@ -2,6 +2,7 @@
 import {
   type User as FirebaseUser,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -34,6 +35,10 @@ export function useAuth() {
     return () => unsub();
   }, []);
 
+  const signUpEmail = useCallback(async (email: string, password: string) => {
+    return createUserWithEmailAndPassword(auth, email, password);
+  }, []);
+
   const signInEmail = useCallback(async (email: string, password: string) => {
     return signInWithEmailAndPassword(auth, email, password);
   }, []);
@@ -52,5 +57,5 @@ export function useAuth() {
     return auth.currentUser.getIdToken();
   }, []);
 
-  return { user, loading, signInEmail, signInGoogle, signOut, getIdToken };
+  return { user, loading, signUpEmail, signInEmail, signInGoogle, signOut, getIdToken };
 }

@@ -7,6 +7,7 @@ import { createContext, useContext } from 'react';
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
+  signUpEmail: (email: string, password: string) => Promise<unknown>;
   signInEmail: (email: string, password: string) => Promise<unknown>;
   signInGoogle: () => Promise<unknown>;
   signOut: () => Promise<void>;

@@ -5,8 +5,9 @@ import type React from 'react';
 import { useState } from 'react';
 
 export default function AuthForm() {
-  const { signInEmail, signInGoogle } = useAuthContext();
+  const { signUpEmail, signInEmail, signInGoogle } = useAuthContext();
   const router = useRouter();
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -17,10 +18,19 @@ export default function AuthForm() {
     setError(null);
     setSubmitting(true);
     try {
-      await signInEmail(email, password);
+      if (isSignUp) {
+        await signUpEmail(email, password);
+      } else {
+        await signInEmail(email, password);
+      }
       router.push('/');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'サインインに失敗しました';
+      const message =
+        err instanceof Error
+          ? err.message
+          : isSignUp
+            ? '新規登録に失敗しました'
+            : 'サインインに失敗しました';
       setError(message);
     } finally {
       setSubmitting(false);
@@ -41,12 +51,17 @@ export default function AuthForm() {
     }
   };
 
+  const toggleMode = () => {
+    setIsSignUp(prev => !prev);
+    setError(null);
+  };
+
   return (
     <div className="mx-auto max-w-md rounded bg-white p-6 shadow">
-      <h2 className="mb-4 font-semibold text-2xl">ログイン</h2>
+      <h2 className="mb-4 font-semibold text-2xl">{isSignUp ? '新規登録' : 'ログイン'}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="text-red-600">{error}</div>}
+        {error && <div className="text-red-600 text-sm">{error}</div>}
         <div>
           <label htmlFor="auth-email" className="block font-medium text-sm">
             メールアドレス
@@ -80,7 +95,7 @@ export default function AuthForm() {
             className="flex-1 rounded bg-blue-600 px-4 py-2 text-white"
             disabled={submitting}
           >
-            {submitting ? '処理中…' : 'メールでサインイン'}
+            {submitting ? '処理中…' : isSignUp ? 'メールで新規登録' : 'メールでサインイン'}
           </button>
           <button
             type="button"
@@ -92,6 +107,12 @@ export default function AuthForm() {
           </button>
         </div>
       </form>
+
+      <div className="mt-4 text-center text-sm">
+        <button type="button" onClick={toggleMode} className="text-blue-600 hover:underline">
+          {isSignUp ? 'アカウントをお持ちの方はこちら' : 'アカウントをお持ちでない方はこちら'}
+        </button>
+      </div>
     </div>
   );
 }
