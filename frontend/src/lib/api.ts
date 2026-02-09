@@ -196,24 +196,39 @@ const parseJsonResponse = async (response: Response): Promise<unknown> => {
   }
 };
 
-const parseErrorDetail = async (response: Response): Promise<ApiErrorDetail> => {
+type ParsedErrorResponse = {
+  message: string | null;
+  detail: ApiErrorDetail;
+};
+
+const parseErrorResponse = async (response: Response): Promise<ParsedErrorResponse> => {
   const contentType = response.headers.get('content-type') ?? '';
   if (contentType.includes('application/json')) {
     try {
-      const payload = (await response.json()) as { detail?: ApiErrorDetail };
-      if (payload && typeof payload === 'object' && 'detail' in payload) {
-        return payload.detail ?? payload;
+      const payload = (await response.json()) as Record<string, unknown>;
+      // Backend format: { error: { type, message, ... } }
+      const errorObj = payload?.error as Record<string, unknown> | undefined;
+      if (errorObj && typeof errorObj.message === 'string') {
+        return { message: errorObj.message, detail: errorObj as ApiErrorDetail };
       }
-      return payload as ApiErrorDetail;
+      // Legacy format: { detail: ... }
+      if (payload && typeof payload === 'object' && 'detail' in payload) {
+        const detail = payload.detail as ApiErrorDetail;
+        return {
+          message: typeof detail === 'string' ? detail : null,
+          detail: detail ?? (payload as ApiErrorDetail),
+        };
+      }
+      return { message: null, detail: payload as ApiErrorDetail };
     } catch (error) {
-      return { parseError: String(error) };
+      return { message: null, detail: { parseError: String(error) } };
     }
   }
   try {
     const text = await response.text();
-    return text ? text : null;
+    return { message: text || null, detail: text ? text : null };
   } catch (error) {
-    return { parseError: String(error) };
+    return { message: null, detail: { parseError: String(error) } };
   }
 };
 
@@ -254,8 +269,8 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
     });
 
     if (!response.ok) {
-      const detail = await parseErrorDetail(response);
-      throw new ApiError(`Request failed with status ${response.status}.`, {
+      const { message, detail } = await parseErrorResponse(response);
+      throw new ApiError(message || `Request failed with status ${response.status}.`, {
         status: response.status,
         statusText: response.statusText,
         detail,

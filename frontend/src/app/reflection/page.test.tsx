@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   BUTTON_LABELS,
+  ERROR_DIALOG_MESSAGES,
   HINTS,
   LABELS,
   MESSAGES,
@@ -338,7 +339,9 @@ describe('ReflectionListPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('ネットワークエラー')).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.REFLECTION_LIST_FETCH_FAILED)
+        ).toBeInTheDocument();
       });
     });
 
@@ -351,7 +354,9 @@ describe('ReflectionListPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('ネットワークエラー')).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.REFLECTION_LIST_FETCH_FAILED)
+        ).toBeInTheDocument();
       });
 
       // 実行: 閉じるボタンをクリック

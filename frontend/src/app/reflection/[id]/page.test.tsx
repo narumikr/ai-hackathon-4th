@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   BUTTON_LABELS,
+  ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
   HINTS,
   LABELS,
@@ -221,7 +222,9 @@ describe('ReflectionDetailPage', () => {
 
       // 検証: エラーダイアログが表示され、戻るボタンがある
       await waitFor(() => {
-        expect(screen.getByText('旅行計画が見つかりません')).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.REFLECTION_TRAVEL_FETCH_FAILED)
+        ).toBeInTheDocument();
       });
       expect(screen.getByRole('button', { name: BUTTON_LABELS.BACK })).toBeInTheDocument();
     });
@@ -401,7 +404,9 @@ describe('ReflectionDetailPage', () => {
 
       // 検証: エラーダイアログが表示される
       await waitFor(() => {
-        expect(screen.getByText('データ取得エラー')).toBeInTheDocument();
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.REFLECTION_TRAVEL_FETCH_FAILED)
+        ).toBeInTheDocument();
       });
 
       // 実行: 閉じるボタンをクリック

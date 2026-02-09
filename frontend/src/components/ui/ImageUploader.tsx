@@ -65,11 +65,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
+  const allowedMimeTypes = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+  const allowedExtensions = new Set(['jpg', 'jpeg', 'png', 'webp']);
+
   const isImageFile = (file: File): boolean => {
-    if (file.type.startsWith('image/')) return true;
-    // HEIC/HEIF はブラウザによってMIMEタイプが空になる場合があるため拡張子でもチェック
+    if (allowedMimeTypes.has(file.type)) return true;
     const extension = file.name.toLowerCase().split('.').pop();
-    return extension === 'heic' || extension === 'heif';
+    return extension ? allowedExtensions.has(extension) : false;
   };
 
   const processFiles = (newFiles: File[]) => {
@@ -123,7 +125,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept="image/*,.heic,.heif"
+        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
         multiple
       />
 

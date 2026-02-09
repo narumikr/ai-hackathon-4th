@@ -4,8 +4,14 @@ import { ErrorDialog, GenerationStatusView } from '@/components/features/common'
 import { ReflectionViewer } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
 import { Button } from '@/components/ui';
-import { BUTTON_LABELS, MESSAGES, PAGE_TITLES, STATUS_LABELS } from '@/constants';
-import { createApiClientFromEnv, toApiError } from '@/lib/api';
+import {
+  BUTTON_LABELS,
+  ERROR_DIALOG_MESSAGES,
+  MESSAGES,
+  PAGE_TITLES,
+  STATUS_LABELS,
+} from '@/constants';
+import { createApiClientFromEnv } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -40,10 +46,8 @@ export default function ReflectionViewPage() {
         if (!response.pamphlet && response.reflectionGenerationStatus !== 'processing') {
           setError(MESSAGES.REFLECTION_NOT_FOUND);
         }
-      } catch (err) {
-        const apiError = toApiError(err);
-        setError(apiError.message || MESSAGES.ERROR);
-        console.error('Failed to fetch travel plan:', apiError);
+      } catch (_err) {
+        setError(ERROR_DIALOG_MESSAGES.REFLECTION_VIEW_FETCH_FAILED);
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);
