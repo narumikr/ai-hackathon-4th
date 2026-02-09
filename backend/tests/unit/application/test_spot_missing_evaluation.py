@@ -135,10 +135,10 @@ class FakeAIServiceWithMissingSpot(IAIService):
 
 
 @pytest.mark.asyncio
-async def test_retries_when_spot_is_missing(db_session: Session, sample_travel_plan, fake_job_repository) -> None:
+async def test_does_not_retry_when_spot_is_missing(db_session: Session, sample_travel_plan, fake_job_repository) -> None:
     """前提条件: 初回生成でスポットが漏れている。
     実行: 旅行ガイドを生成する。
-    検証: 再生成が実行され、全スポットが含まれる。
+    検証: 評価処理がないため再生成されず、spot不足として失敗する。
     """
     # 前提条件: 初回は金閣寺が漏れている、2回目は全て含まれる
     plan_repository = TravelPlanRepository(db_session)
@@ -233,15 +233,12 @@ async def test_retries_when_spot_is_missing(db_session: Session, sample_travel_p
         ai_service=ai_service,
         job_repository=fake_job_repository,
     )
-    dto = await use_case.execute(plan_id=sample_travel_plan.id)
+    with pytest.raises(ValueError, match="spotDetails is missing travel plan spots"):
+        await use_case.execute(plan_id=sample_travel_plan.id)
 
-    # 検証: 2回目のデータが使用され、全スポットが含まれている
-    assert len(dto.spot_details) == 2
-    spot_names = {detail["spotName"] for detail in dto.spot_details}
-    assert "清水寺" in spot_names
-    assert "金閣寺" in spot_names
-    assert ai_service.call_count == 2
+    # 検証: 初回の不正データで失敗し、再生成は行われない
+    assert ai_service.call_count == 1
 
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
-    assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
+    assert plan.guide_generation_status == GenerationStatus.FAILED

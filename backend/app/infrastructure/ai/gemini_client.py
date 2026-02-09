@@ -40,7 +40,7 @@ class GeminiClient:
     def __init__(
         self,
         project_id: str,
-        location: str = "asia-northeast1",
+        location: str = "global",
         model_name: str = "gemini-2.5-flash",
     ) -> None:
         """GeminiClientを初期化する
@@ -74,7 +74,7 @@ class GeminiClient:
         images: list[str] | None = None,
         model_name_override: str | None = None,
         timeout: int = 60,
-        max_retries: int = 3,
+        max_retries: int = 10,
     ) -> str:
         """基本的なコンテンツ生成を行う
 
@@ -273,7 +273,7 @@ class GeminiClient:
         max_output_tokens: int = 8192,
         images: list[str] | None = None,
         timeout: int = 60,
-        max_retries: int = 3,
+        max_retries: int = 10,
     ) -> dict[str, Any]:
         """JSON構造化データを生成する
 

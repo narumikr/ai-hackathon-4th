@@ -67,7 +67,7 @@ class Settings(DatabaseSettings):
 
     # Google Cloud設定
     google_cloud_project: str | None = None
-    google_cloud_location: str = "asia-northeast1"
+    google_cloud_location: str = "global"
     google_application_credentials: str | None = None  # ADC使用時は不要
 
     # ストレージ設定
@@ -77,9 +77,9 @@ class Settings(DatabaseSettings):
     gcs_bucket_name: str | None = None  # GCSバケット名（本番環境用）
 
     # Gemini設定
-    gemini_model_name: str = "gemini-2.5-flash"
+    gemini_model_name: str = "gemini-3-flash-preview"
     gemini_temperature: float = 0.7
-    gemini_max_output_tokens: int = 8192
+    gemini_max_output_tokens: int = 12288
     gemini_timeout_seconds: int = 60
     # TODO: 将来の拡張用 - thinking_levelパラメータの活用
     gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）

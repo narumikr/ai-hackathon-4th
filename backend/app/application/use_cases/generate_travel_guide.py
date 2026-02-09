@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import re
 from typing import Any
@@ -28,7 +27,6 @@ from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
-from app.infrastructure.ai.schemas.evaluation import TravelGuideEvaluationSchema
 from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
 from app.prompts import load_template, render_template
 
@@ -96,8 +94,6 @@ _FACT_EXTRACTION_PROMPT_TEMPLATE = "travel_guide_fact_extraction_prompt.txt"
 _TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
 _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_fact_extraction_system_instruction.txt"
 _TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
-_EVALUATION_PROMPT_TEMPLATE = "travel_guide_evaluation_prompt.txt"
-_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_evaluation_system_instruction.txt"
 _NO_SPOTS_TEXT_TEMPLATE = "travel_guide_no_spots_text.txt"
 
 logger = logging.getLogger(__name__)
@@ -649,54 +645,6 @@ class GenerateTravelGuideUseCase:
                     extracted_facts=extracted_facts,
                     guide_data=structured,
                 )
-                # 評価
-                logger.debug(
-                    "Starting travel guide evaluation",
-                    extra={"plan_id": plan_id},
-                )
-                evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
-                logger.debug(
-                    "Travel guide evaluation completed",
-                    extra={"plan_id": plan_id},
-                )
-
-                # 評価結果を解析
-                is_valid = self._check_evaluation_result(evaluation)
-
-                # 不合格の場合は1回だけ再生成
-                if not is_valid:
-                    failure_reasons = self._get_failure_reasons(evaluation)
-                    logger.warning(
-                        "Travel guide evaluation failed. Reasons: %s. Retrying once...",
-                        "; ".join(failure_reasons),
-                    )
-                    logger.debug(
-                        "Retrying travel guide generation after evaluation failure",
-                        extra={"plan_id": plan_id},
-                    )
-                    structured = await self._generate_guide_data(travel_plan, extracted_facts)
-                    _log_link_quality_diagnostics(
-                        plan_id=plan_id,
-                        stage="retry_generation",
-                        extracted_facts=extracted_facts,
-                        guide_data=structured,
-                    )
-                    # 再評価（ログ出力のみ、再生成は行わない）
-                    logger.debug(
-                        "Re-evaluating travel guide after retry",
-                        extra={"plan_id": plan_id},
-                    )
-                    re_evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
-                    re_is_valid = self._check_evaluation_result(re_evaluation)
-                    if not re_is_valid:
-                        re_failure_reasons = self._get_failure_reasons(re_evaluation)
-                        logger.warning(
-                            "Travel guide evaluation failed after retry. Reasons: %s. Proceeding anyway.",
-                            "; ".join(re_failure_reasons),
-                        )
-                    else:
-                        logger.info("Travel guide evaluation passed after retry.")
-
                 # レスポンスバリデーション
                 try:
                     TravelGuideResponseSchema.model_validate(structured)
@@ -840,78 +788,6 @@ class GenerateTravelGuideUseCase:
                 task_idempotency_key=task_idempotency_key,
                 target_url=task_target_url,
             )
-
-    async def _evaluate_guide_data(
-        self, guide_data: dict[str, Any], required_spot_names: list[str]
-    ) -> dict[str, Any]:
-        """旅行ガイドデータを評価する
-
-        Args:
-            guide_data: 評価対象の旅行ガイドデータ
-            required_spot_names: 旅行計画に含まれるべきスポット名のリスト
-
-        Returns:
-            評価結果
-        """
-        logger.debug(
-            "Evaluating guide data with AI",
-            extra={
-                "required_spot_count": len(required_spot_names),
-                "guide_key_count": len(guide_data.keys()),
-            },
-        )
-        guide_data_json = json.dumps(guide_data, ensure_ascii=False, indent=2)
-        required_spots_text = "\n".join([f"- {name}" for name in required_spot_names])
-        prompt = render_template(
-            _EVALUATION_PROMPT_TEMPLATE,
-            guide_data=guide_data_json,
-            required_spots=required_spots_text,
-        )
-        system_instruction = render_template(_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE)
-
-        return await self._ai_service.generate_structured_data(
-            prompt=prompt,
-            response_schema=TravelGuideEvaluationSchema,
-            system_instruction=system_instruction,
-        )
-
-    def _check_evaluation_result(self, evaluation: dict[str, Any]) -> bool:
-        """評価結果が合格かどうかをチェックする
-
-        Args:
-            evaluation: AIサービスからの評価結果
-
-        Returns:
-            合格の場合True
-        """
-        has_historical_comparison = evaluation.get("hasHistoricalComparison", False)
-        all_spots_included = evaluation.get("allSpotsIncluded", False)
-
-        # スポット網羅性と歴史的対比のみを評価基準にする
-        return all_spots_included and has_historical_comparison
-
-    def _get_failure_reasons(self, evaluation: dict[str, Any]) -> list[str]:
-        """評価結果から不合格の理由を取得する
-
-        Args:
-            evaluation: AIサービスからの評価結果
-
-        Returns:
-            不合格の理由のリスト
-        """
-        reasons: list[str] = []
-
-        # スポット漏れチェック
-        if not evaluation.get("allSpotsIncluded", False):
-            missing_spots = evaluation.get("missingSpots", [])
-            if missing_spots:
-                reasons.append(f"spotDetailsに含まれていないスポット: {', '.join(missing_spots)}")
-
-        # 歴史的対比チェック
-        if not evaluation.get("hasHistoricalComparison", False):
-            reasons.append("overviewに歴史の有名な話題との対比が含まれていません")
-
-        return reasons
 
     async def _generate_guide_data(
         self, travel_plan: TravelPlan, extracted_facts: str
