@@ -7,6 +7,8 @@ import type {
   UpdateTravelPlanRequest,
 } from '@/types/travel';
 
+import { auth } from './firebase';
+
 export type ApiErrorDetail = string | Record<string, unknown> | null;
 
 export class ApiError extends Error {
@@ -370,7 +372,21 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
   };
 };
 
+const authFetch: typeof fetch = async (input, init) => {
+  let token: string | null = null;
+  try {
+    token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+  } catch {
+    token = null;
+  }
+  const headers = new Headers(init?.headers);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  return fetch(input, { ...init, headers });
+};
+
 export const createApiClientFromEnv = (options?: { prefix?: string }): ApiClient => {
   const baseUrl = getRequiredEnv();
-  return createApiClient({ baseUrl, prefix: options?.prefix });
+  return createApiClient({ baseUrl, prefix: options?.prefix, fetcher: authFetch });
 };
