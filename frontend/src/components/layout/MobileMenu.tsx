@@ -10,7 +10,13 @@ import { useEffect } from 'react';
  * MobileMenu Component
  * モバイル用ナビゲーションメニュー
  */
-export function MobileMenu({ isOpen, onClose, currentPath }: MobileMenuProps) {
+export function MobileMenu({
+  isOpen,
+  onClose,
+  currentPath,
+  onSignOut,
+  userEmail,
+}: MobileMenuProps) {
   const pathname = usePathname();
   const activePath = currentPath ?? pathname;
 
@@ -90,6 +96,20 @@ export function MobileMenu({ isOpen, onClose, currentPath }: MobileMenuProps) {
               );
             })}
           </nav>
+
+          {/* Sign Out */}
+          {onSignOut && (
+            <div className="border-neutral-200 border-t p-4">
+              {userEmail && <p className="mb-2 truncate text-neutral-500 text-xs">{userEmail}</p>}
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="w-full rounded-md px-4 py-2 text-left text-red-600 text-sm hover:bg-neutral-50"
+              >
+                サインアウト
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

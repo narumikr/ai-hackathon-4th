@@ -2,9 +2,10 @@
 
 import { Icon } from '@/components/ui';
 import { APP_NAME, ARIA_LABELS, EMOJI_LABELS } from '@/constants';
+import { useAuthContext } from '@/contexts/AuthContext';
 import type { HeaderProps } from '@/types';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MobileMenu } from './MobileMenu';
 import { Navigation } from './Navigation';
 
@@ -14,6 +15,24 @@ import { Navigation } from './Navigation';
  */
 export function Header({ className = '' }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { user, signOut } = useAuthContext();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSignOut = async () => {
+    setIsUserMenuOpen(false);
+    await signOut();
+  };
 
   return (
     <header
@@ -35,7 +54,7 @@ export function Header({ className = '' }: HeaderProps) {
           {/* Desktop Navigation */}
           <Navigation />
 
-          {/* User Icon (placeholder) */}
+          {/* User Icon */}
           <div className="flex items-center gap-2">
             {/* Hamburger Menu Button (Mobile) */}
             <button
@@ -60,20 +79,47 @@ export function Header({ className = '' }: HeaderProps) {
               </svg>
             </button>
 
-            {/* User Icon (Desktop) */}
-            <button
-              type="button"
-              className="hidden h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200 lg:flex"
-              aria-label={ARIA_LABELS.USER_MENU}
-            >
-              <Icon name="user" size="md" label={EMOJI_LABELS.USER} />
-            </button>
+            {/* User Menu (Desktop) */}
+            {user && (
+              <div ref={userMenuRef} className="relative hidden lg:block">
+                <button
+                  type="button"
+                  onClick={() => setIsUserMenuOpen(prev => !prev)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700 transition-colors hover:bg-primary-200"
+                  aria-label={ARIA_LABELS.USER_MENU}
+                >
+                  <Icon name="user" size="md" label={EMOJI_LABELS.USER} />
+                </button>
+
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-md border border-neutral-200 bg-white py-1 shadow-lg">
+                    <div className="border-neutral-200 border-b px-4 py-2">
+                      <p className="truncate text-neutral-500 text-sm">
+                        {user.email || user.displayName || user.uid}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="w-full px-4 py-2 text-left text-red-600 text-sm hover:bg-neutral-50"
+                    >
+                      サインアウト
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        onSignOut={user ? handleSignOut : undefined}
+        userEmail={user?.email || user?.displayName || undefined}
+      />
     </header>
   );
 }
