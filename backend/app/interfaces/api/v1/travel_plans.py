@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.application.use_cases.create_travel_plan import CreateTravelPlanUseCase
+from app.interfaces.middleware.auth import UserContext, require_auth
 from app.application.use_cases.delete_travel_plan import DeleteTravelPlanUseCase
 from app.application.use_cases.get_travel_plan import (
     GetTravelPlanUseCase,
@@ -72,18 +73,20 @@ def get_reflection_repository(
 def create_travel_plan(
     request: CreateTravelPlanRequest,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行計画を作成する
 
     Args:
         request: 旅行計画作成リクエスト
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         TravelPlanResponse: 作成された旅行計画
 
     Raises:
-        HTTPException: バリデーションエラー（400）
+        HTTPException: バリデーションエラー（400）、認証エラー（401）
     """
     use_case = CreateTravelPlanUseCase(repository)
 
@@ -92,7 +95,7 @@ def create_travel_plan(
 
     try:
         dto = use_case.execute(
-            user_id=request.user_id,
+            user_id=auth.uid,
             title=request.title,
             destination=request.destination,
             spots=spots_dict,
@@ -111,21 +114,21 @@ def create_travel_plan(
     summary="旅行計画一覧を取得",
 )
 def list_travel_plans(
-    user_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> list[TravelPlanListResponse]:
     """ユーザーの旅行計画一覧を取得する
 
     Args:
-        user_id: ユーザーID
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         list[TravelPlanListResponse]: 旅行計画リスト
     """
     use_case = ListTravelPlansUseCase(repository)
     try:
-        dtos = use_case.execute(user_id=user_id)
+        dtos = use_case.execute(user_id=auth.uid)
         return [TravelPlanListResponse.from_dto(dto) for dto in dtos]
     except ValueError as e:
         raise HTTPException(
@@ -144,18 +147,20 @@ def get_travel_plan(
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
     guide_repository: TravelGuideRepository = Depends(get_guide_repository),  # noqa: B008
     reflection_repository: ReflectionRepository = Depends(get_reflection_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行計画を取得する
 
     Args:
         plan_id: 旅行計画ID
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         TravelPlanResponse: 旅行計画
 
     Raises:
-        HTTPException: 旅行計画が見つからない（404）
+        HTTPException: 旅行計画が見つからない（404）、認証エラー（401）
     """
     use_case = GetTravelPlanUseCase(
         repository,
@@ -187,6 +192,7 @@ def update_travel_plan(
     plan_id: str,
     request: UpdateTravelPlanRequest,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行計画を更新する
 
@@ -194,12 +200,13 @@ def update_travel_plan(
         plan_id: 旅行計画ID
         request: 旅行計画更新リクエスト
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         TravelPlanResponse: 更新された旅行計画
 
     Raises:
-        HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）
+        HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）、認証エラー（401）
     """
     use_case = UpdateTravelPlanUseCase(repository)
 
@@ -237,18 +244,20 @@ def update_travel_plan(
 def delete_travel_plan(
     plan_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> Response:
     """旅行計画を削除する
 
     Args:
         plan_id: 旅行計画ID
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         Response: 204 No Content
 
     Raises:
-        HTTPException: 旅行計画が見つからない（404）
+        HTTPException: 旅行計画が見つからない（404）、認証エラー（401）
     """
     use_case = DeleteTravelPlanUseCase(repository)
 

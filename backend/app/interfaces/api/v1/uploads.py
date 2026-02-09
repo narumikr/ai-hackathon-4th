@@ -31,6 +31,7 @@ from app.interfaces.api.dependencies import (
     get_ai_service_dependency,
     get_storage_service_dependency,
 )
+from app.interfaces.middleware.auth import UserContext, require_auth
 
 router = APIRouter(prefix="/spot-reflections", tags=["spot-reflections"])
 
@@ -88,17 +89,28 @@ def _ensure_non_empty(value: str, field_name: str) -> str:
 async def upload_images(
     request: Request,  # noqa: B008
     plan_id: str = Form(..., alias="planId"),  # noqa: B008
-    user_id: str = Form(..., alias="userId"),  # noqa: B008
     spot_id: str = Form(..., alias="spotId"),  # noqa: B008
     spot_note: str | None = Form(None, alias="spotNote"),  # noqa: B008
     files: list[UploadFile] = File(...),  # noqa: B008
     db: Session = Depends(get_db),  # noqa: B008
     ai_service: IAIService = Depends(get_ai_service_dependency),  # noqa: B008
     storage_service: IStorageService = Depends(get_storage_service_dependency),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> Response:
-    """スポットごとの写真と感想を登録する"""
+    """スポットごとの写真と感想を登録する
+    
+    Args:
+        request: HTTPリクエスト
+        plan_id: 旅行計画ID
+        spot_id: スポットID
+        spot_note: スポット感想（オプション）
+        files: アップロード画像ファイル
+        db: SQLAlchemyセッション
+        ai_service: AIサービス
+        storage_service: ストレージサービス
+        auth: 認証ユーザー（Firebase ID token検証済み）
+    """
     plan_id = _ensure_non_empty(plan_id, "plan_id")
-    user_id = _ensure_non_empty(user_id, "user_id")
     spot_id = _ensure_non_empty(spot_id, "spot_id")
     # spotNoteの未送信と空文字送信を区別するためにキーの有無を見る
     form_data = await request.form()
@@ -121,10 +133,10 @@ async def upload_images(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Travel plan not found: {plan_id}",
         )
-    if travel_plan.user_id != user_id:
+    if travel_plan.user_id != auth.uid:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="user_id does not match the travel plan owner.",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this travel plan.",
         )
 
     plan_spot_ids = {spot.id for spot in travel_plan.spots}
@@ -187,7 +199,7 @@ async def upload_images(
     )
     await analyze_use_case.execute(
         plan_id=plan_id,
-        user_id=user_id,
+        user_id=auth.uid,
         photos=photos,
         spot_note=spot_note,
         spot_note_provided=spot_note_provided,

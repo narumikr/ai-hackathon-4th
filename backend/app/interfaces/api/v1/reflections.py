@@ -16,6 +16,7 @@ from app.infrastructure.repositories.reflection_repository import ReflectionRepo
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
 from app.interfaces.api.dependencies import get_ai_service_dependency
+from app.interfaces.middleware.auth import UserContext, require_auth
 from app.interfaces.schemas.reflection import CreateReflectionRequest
 
 logger = logging.getLogger(__name__)
@@ -70,8 +71,17 @@ async def create_reflection(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),  # noqa: B008
     ai_service: IAIService = Depends(get_ai_service_dependency),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> Response:
-    """振り返り生成を開始する"""
+    """振り返り生成を開始する
+    
+    Args:
+        request: 振り返り生成リクエスト
+        background_tasks: バックグラウンドタスク
+        db: SQLAlchemyセッション
+        ai_service: AIサービス
+        auth: 認証ユーザー（Firebase ID token検証済み）
+    """
     plan_repository = TravelPlanRepository(db)
     travel_plan = plan_repository.find_by_id(request.plan_id)
     if travel_plan is None:
@@ -80,10 +90,10 @@ async def create_reflection(
             detail=f"Travel plan not found: {request.plan_id}",
         )
 
-    if travel_plan.user_id != request.user_id:
+    if travel_plan.user_id != auth.uid:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="user_id does not match the travel plan owner.",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this travel plan.",
         )
 
     guide_repository = TravelGuideRepository(db)
@@ -114,7 +124,7 @@ async def create_reflection(
     background_tasks.add_task(
         _run_reflection_generation,
         request.plan_id,
-        request.user_id,
+        auth.uid,
         request.user_notes,
         ai_service,
         db.get_bind(),

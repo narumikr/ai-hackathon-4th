@@ -100,6 +100,11 @@ class Settings(DatabaseSettings):
     cloud_tasks_dispatch_deadline_seconds: int = 1800
     cloud_tasks_max_retry_attempts: int = 10
 
+    # Firebase設定
+    firebase_project_id: str | None = None
+    firebase_client_email: str | None = None
+    firebase_private_key: str | None = None
+
     # ログ設定
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     log_force_override: bool = False  # 既存のロガー設定を強制上書きするか
