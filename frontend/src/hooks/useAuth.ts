@@ -1,56 +1,56 @@
-'use client'
-import { useEffect, useState, useCallback } from 'react'
+'use client';
 import {
+  type User as FirebaseUser,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  GoogleAuthProvider,
   signInWithPopup,
-  User as FirebaseUser,
-} from 'firebase/auth'
-import { auth, initializeFirebase } from '../lib/firebase'
+} from 'firebase/auth';
+import { useCallback, useEffect, useState } from 'react';
+import { auth, initializeFirebase } from '../lib/firebase';
 
-initializeFirebase()
+initializeFirebase();
 
 export type User = {
-  uid: string
-  email?: string | null
-  displayName?: string | null
-}
+  uid: string;
+  email?: string | null;
+  displayName?: string | null;
+};
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u: FirebaseUser | null) => {
       if (u) {
-        setUser({ uid: u.uid, email: u.email, displayName: u.displayName })
+        setUser({ uid: u.uid, email: u.email, displayName: u.displayName });
       } else {
-        setUser(null)
+        setUser(null);
       }
-      setLoading(false)
-    })
-    return () => unsub()
-  }, [])
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   const signInEmail = useCallback(async (email: string, password: string) => {
-    return signInWithEmailAndPassword(auth, email, password)
-  }, [])
+    return signInWithEmailAndPassword(auth, email, password);
+  }, []);
 
   const signInGoogle = useCallback(async () => {
-    const provider = new GoogleAuthProvider()
-    return signInWithPopup(auth, provider)
-  }, [])
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(auth, provider);
+  }, []);
 
   const signOut = useCallback(async () => {
-    return firebaseSignOut(auth)
-  }, [])
+    return firebaseSignOut(auth);
+  }, []);
 
   const getIdToken = useCallback(async (): Promise<string | null> => {
-    if (!auth.currentUser) return null
-    return auth.currentUser.getIdToken()
-  }, [])
+    if (!auth.currentUser) return null;
+    return auth.currentUser.getIdToken();
+  }, []);
 
-  return { user, loading, signInEmail, signInGoogle, signOut, getIdToken }
+  return { user, loading, signInEmail, signInGoogle, signOut, getIdToken };
 }

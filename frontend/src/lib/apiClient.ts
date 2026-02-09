@@ -1,25 +1,25 @@
-import { auth } from './firebase'
+import { auth } from './firebase';
 
-type FetchOptions = Omit<RequestInit, 'headers'> & { headers?: Record<string, string> }
+type FetchOptions = Omit<RequestInit, 'headers'> & { headers?: Record<string, string> };
 
 async function getIdToken(): Promise<string | null> {
-  if (!auth || !auth.currentUser) return null
+  if (!auth || !auth.currentUser) return null;
   try {
-    return await auth.currentUser.getIdToken()
+    return await auth.currentUser.getIdToken();
   } catch (e) {
-    return null
+    return null;
   }
 }
 
 export async function apiFetch(input: RequestInfo, init?: FetchOptions) {
-  const token = await getIdToken()
+  const token = await getIdToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init && init.headers ? init.headers : {}),
-  }
-  if (token) headers['Authorization'] = `Bearer ${token}`
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  return fetch(input, { ...init, headers })
+  return fetch(input, { ...init, headers });
 }
 
-export default { apiFetch }
+export default { apiFetch };
