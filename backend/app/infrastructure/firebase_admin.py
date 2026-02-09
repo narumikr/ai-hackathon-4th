@@ -40,6 +40,10 @@ def initialize_firebase_admin(
             "project_id": project_id,
             "client_email": client_email,
             "private_key": private_key,
+            "private_key_id": "",
+            "client_id": "",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
         }
         
         # Create credential
