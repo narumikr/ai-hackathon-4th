@@ -65,6 +65,12 @@ def require_auth(request: Request) -> UserContext:
 
     try:
         claims = verify_id_token(token)
+    except RuntimeError as e:
+        logger.error(f"Firebase Admin not initialized: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service is unavailable",
+        ) from e
     except ValueError as e:
         logger.debug(f"Token verification failed: {e}")
         raise HTTPException(
@@ -108,7 +114,7 @@ def optional_auth(request: Request) -> UserContext | None:
 
     try:
         claims = verify_id_token(token)
-    except ValueError as e:
+    except (RuntimeError, ValueError) as e:
         logger.debug(f"Token verification failed in optional auth: {e}")
         return None
 

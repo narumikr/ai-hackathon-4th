@@ -40,15 +40,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Firebase Admin SDKの初期化
     if settings.firebase_project_id and settings.firebase_client_email and settings.firebase_private_key:
-        try:
-            initialize_firebase_admin(
-                project_id=settings.firebase_project_id,
-                client_email=settings.firebase_client_email,
-                private_key=settings.firebase_private_key,
-            )
-            logger.info("Firebase Admin SDK initialized successfully")
-        except Exception as e:
-            logger.warning(f"Firebase Admin SDK initialization failed: {e}")
+        initialize_firebase_admin(
+            project_id=settings.firebase_project_id,
+            client_email=settings.firebase_client_email,
+            private_key=settings.firebase_private_key,
+        )
+        logger.info("Firebase Admin SDK initialized successfully")
     else:
         logger.warning("Firebase credentials not fully configured. Auth features will be disabled.")
 

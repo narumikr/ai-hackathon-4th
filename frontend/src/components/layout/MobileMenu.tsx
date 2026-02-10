@@ -1,6 +1,6 @@
 'use client';
 
-import { ARIA_LABELS, NAVIGATION_ITEMS } from '@/constants';
+import { ARIA_LABELS, BUTTON_LABELS, NAVIGATION_ITEMS } from '@/constants';
 import type { MobileMenuProps } from '@/types';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -106,7 +106,7 @@ export function MobileMenu({
                 onClick={onSignOut}
                 className="w-full rounded-md px-4 py-2 text-left text-red-600 text-sm hover:bg-neutral-50"
               >
-                サインアウト
+                {BUTTON_LABELS.SIGN_OUT}
               </button>
             </div>
           )}

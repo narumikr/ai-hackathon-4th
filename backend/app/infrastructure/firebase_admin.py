@@ -32,12 +32,15 @@ def initialize_firebase_admin(
         return _app
 
     try:
+        # Normalize escaped newlines in private_key (common in .env files)
+        normalized_private_key = private_key.replace("\\n", "\n")
+
         # Build service account dict
         service_account_dict = {
             "type": "service_account",
             "project_id": project_id,
             "client_email": client_email,
-            "private_key": private_key,
+            "private_key": normalized_private_key,
             "private_key_id": "",
             "client_id": "",
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",

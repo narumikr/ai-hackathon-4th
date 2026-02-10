@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui';
-import { APP_NAME, ARIA_LABELS, EMOJI_LABELS } from '@/constants';
+import { APP_NAME, ARIA_LABELS, BUTTON_LABELS, EMOJI_LABELS } from '@/constants';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { HeaderProps } from '@/types';
 import Link from 'next/link';
@@ -103,7 +103,7 @@ export function Header({ className = '' }: HeaderProps) {
                       onClick={handleSignOut}
                       className="w-full px-4 py-2 text-left text-red-600 text-sm hover:bg-neutral-50"
                     >
-                      サインアウト
+                      {BUTTON_LABELS.SIGN_OUT}
                     </button>
                   </div>
                 )}
