@@ -5,7 +5,9 @@ from fastapi import HTTPException, status
 from app.interfaces.middleware.auth import UserContext
 
 
-def verify_ownership(resource_user_id: str, auth: UserContext, resource_type: str = "resource") -> None:
+def verify_ownership(
+    resource_user_id: str, auth: UserContext, resource_type: str = "resource"
+) -> None:
     """リソースの所有者を検証する
 
     Args:
