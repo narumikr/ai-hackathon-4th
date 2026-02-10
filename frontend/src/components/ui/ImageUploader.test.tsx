@@ -65,7 +65,10 @@ describe('ImageUploader', () => {
       );
 
       const input = container.querySelector('input[type="file"]');
-      expect(input).toHaveAttribute('accept', 'image/*,.heic,.heif');
+      expect(input).toHaveAttribute(
+        'accept',
+        '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp'
+      );
     });
   });
 
