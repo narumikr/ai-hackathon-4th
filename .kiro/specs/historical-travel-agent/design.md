@@ -26,8 +26,8 @@ graph TB
     end
 
     subgraph "Google Maps Platform"
-      MapsJS[Maps JavaScript API]
-      PlacesAPI[Places API]
+        MapsJS[Maps JavaScript API]
+        PlacesAPI[Places API]
     end
     
     subgraph "Backend Deployment"
