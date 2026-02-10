@@ -19,6 +19,7 @@ from app.interfaces.api.dependencies import (
     get_ai_service_dependency,
     get_spot_image_task_dispatcher,
 )
+from app.interfaces.api.v1.ownership import verify_ownership
 from app.interfaces.middleware.auth import UserContext, require_auth
 from app.interfaces.schemas.travel_guide import GenerateTravelGuideRequest
 from app.interfaces.schemas.travel_plan import TravelPlanResponse
@@ -143,6 +144,7 @@ async def generate_travel_guide(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Travel plan not found: {plan_id}",
         )
+    verify_ownership(travel_plan.user_id, auth, "travel plan")
     logger.debug(
         "Travel plan loaded for guide generation",
         extra={

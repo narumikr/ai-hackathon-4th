@@ -16,13 +16,11 @@ import {
   PLACEHOLDERS,
   TOOLTIP_MESSAGES,
 } from '@/constants';
-import { useAuthContext } from '@/contexts/AuthContext';
 import { createApiClientFromEnv } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 
 export default function TravelNewPage() {
-  const { user } = useAuthContext();
   const router = useRouter();
   const componentId = useId();
   const [title, setTitle] = useState('');
@@ -83,7 +81,6 @@ export default function TravelNewPage() {
 
     try {
       const apiClient = createApiClientFromEnv();
-      const userId = user?.uid ?? '';
 
       // スポットリストを整形（空の値を除外）
       const filteredSpots = spots
@@ -93,7 +90,6 @@ export default function TravelNewPage() {
       // 1. 旅行計画を作成
       const response = await apiClient.createTravelPlan({
         request: {
-          userId,
           title: title.trim(),
           destination: destination.trim(),
           spots: filteredSpots.length > 0 ? filteredSpots : undefined,

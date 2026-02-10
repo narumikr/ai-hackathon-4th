@@ -68,7 +68,6 @@ type ApiClientConfig = {
 
 export type SpotReflectionUploadRequest = {
   planId: string;
-  userId: string;
   spotId: string;
   spotNote?: string;
   files: File[];
@@ -77,7 +76,6 @@ export type SpotReflectionUploadRequest = {
 
 export type ApiClient = {
   listTravelPlans: (params: {
-    userId: string;
     signal?: AbortSignal;
   }) => Promise<TravelPlanListResponse[]>;
   getTravelPlan: (params: {
@@ -290,12 +288,10 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
   };
 
   return {
-    listTravelPlans: async ({ userId, signal }) => {
-      assertNonEmpty(userId, 'userId');
+    listTravelPlans: async ({ signal }) => {
       return request<TravelPlanListResponse[]>({
         method: 'GET',
         path: '/travel-plans',
-        query: { user_id: userId },
         signal,
       });
     },
@@ -308,7 +304,6 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
       });
     },
     createTravelPlan: async ({ request: payload, signal }) => {
-      assertNonEmpty(payload.userId, 'userId');
       assertNonEmpty(payload.title, 'title');
       assertNonEmpty(payload.destination, 'destination');
       return request<TravelPlanResponse, CreateTravelPlanRequest>({
@@ -347,7 +342,6 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
     },
     createReflection: async ({ request: payload, signal }) => {
       assertNonEmpty(payload.planId, 'planId');
-      assertNonEmpty(payload.userId, 'userId');
       if (payload.userNotes !== undefined && payload.userNotes !== null) {
         assertNonEmpty(payload.userNotes, 'userNotes');
       }
@@ -359,15 +353,13 @@ export const createApiClient = (config: ApiClientConfig): ApiClient => {
         responseType: 'void',
       });
     },
-    uploadSpotReflection: async ({ planId, userId, spotId, spotNote, files, signal }) => {
+    uploadSpotReflection: async ({ planId, spotId, spotNote, files, signal }) => {
       assertNonEmpty(planId, 'planId');
-      assertNonEmpty(userId, 'userId');
       assertNonEmpty(spotId, 'spotId');
       assertNonEmptyFiles(files);
 
       const formData = new FormData();
       formData.append('planId', planId);
-      formData.append('userId', userId);
       formData.append('spotId', spotId);
       if (spotNote?.trim()) {
         formData.append('spotNote', spotNote);

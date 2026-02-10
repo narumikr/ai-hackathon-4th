@@ -15,6 +15,7 @@ from app.infrastructure.persistence.database import get_db
 from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
+from app.interfaces.api.v1.ownership import verify_ownership
 from app.interfaces.middleware.auth import UserContext, require_auth
 from app.interfaces.schemas.travel_plan import (
     CreateTravelPlanRequest,
@@ -170,6 +171,7 @@ def get_travel_plan(
 
     try:
         dto = use_case.execute(plan_id=plan_id)
+        verify_ownership(dto.user_id, auth, "travel plan")
         return TravelPlanResponse(**dto.__dict__)
     except ValueError as e:
         raise HTTPException(
@@ -208,6 +210,15 @@ def update_travel_plan(
     Raises:
         HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）、認証エラー（401）
     """
+    # 所有者チェック
+    travel_plan = repository.find_by_id(plan_id)
+    if travel_plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Travel plan not found: {plan_id}",
+        )
+    verify_ownership(travel_plan.user_id, auth, "travel plan")
+
     use_case = UpdateTravelPlanUseCase(repository)
 
     # Pydanticスキーマ → 辞書変換
@@ -259,6 +270,15 @@ def delete_travel_plan(
     Raises:
         HTTPException: 旅行計画が見つからない（404）、認証エラー（401）
     """
+    # 所有者チェック
+    travel_plan = repository.find_by_id(plan_id)
+    if travel_plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Travel plan not found: {plan_id}",
+        )
+    verify_ownership(travel_plan.user_id, auth, "travel plan")
+
     use_case = DeleteTravelPlanUseCase(repository)
 
     try:

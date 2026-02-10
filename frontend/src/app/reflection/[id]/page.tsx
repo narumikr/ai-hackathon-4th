@@ -18,7 +18,6 @@ import {
   SECTION_TITLES,
   TOOLTIP_MESSAGES,
 } from '@/constants';
-import { useAuthContext } from '@/contexts/AuthContext';
 import { createApiClientFromEnv } from '@/lib/api';
 import type { TravelPlanResponse } from '@/types';
 import type { ReflectionSpot } from '@/types/reflection';
@@ -27,7 +26,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function ReflectionDetailPage() {
-  const { user } = useAuthContext();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -138,7 +136,6 @@ export default function ReflectionDetailPage() {
 
     try {
       const apiClient = createApiClientFromEnv();
-      const userId = user?.uid ?? '';
 
       // 1. 各スポットの写真をアップロード
       for (const spot of spots) {
@@ -149,7 +146,6 @@ export default function ReflectionDetailPage() {
         if (files.length > 0) {
           await apiClient.uploadSpotReflection({
             planId: id,
-            userId,
             spotId: spot.id,
             spotNote: spot.comment,
             files,
@@ -161,7 +157,6 @@ export default function ReflectionDetailPage() {
       await apiClient.createReflection({
         request: {
           planId: id,
-          userId,
           userNotes: overallComment || undefined,
         },
       });

@@ -39,9 +39,8 @@ export default function ReflectionListPage() {
 
       try {
         const apiClient = createApiClientFromEnv();
-        const userId = user.uid;
 
-        const response = await apiClient.listTravelPlans({ userId });
+        const response = await apiClient.listTravelPlans({});
         // ステータスが completed のもののみをフィルタ
         const completedTravels = response.filter(t => t.status === 'completed');
         setTravels(completedTravels);
