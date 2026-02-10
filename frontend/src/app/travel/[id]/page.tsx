@@ -30,8 +30,7 @@ interface SourceTextProps {
 function SourceText({ text }: SourceTextProps) {
   const parsed = parseSourceFromMultilineText(text);
 
-  // Only show the raw https:// URL as a clickable link.
-  // If the extracted source is not a URL, do not display any bracketed source text.
+  // 出典内にURLがある場合のみリンクを表示し、表示テキストは出典名を優先する。
   return (
     <div>
       <p className="whitespace-pre-wrap text-neutral-600">{parsed.content}</p>
@@ -44,7 +43,7 @@ function SourceText({ text }: SourceTextProps) {
             rel="noopener noreferrer"
             className="text-primary-600 underline hover:text-primary-700"
           >
-            {parsed.source.url}
+            {parsed.source.label}
           </a>
         </p>
       )}

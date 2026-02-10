@@ -25,7 +25,7 @@ class ImageGenerationClient:
     def __init__(
         self,
         project_id: str,
-        location: str = "asia-northeast1",
+        location: str = "global",
         model_name: str = "gemini-2.5-flash-image",
     ) -> None:
         """ImageGenerationClientを初期化する

@@ -95,7 +95,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
                     rel="noopener noreferrer"
                     className="text-primary-600 underline hover:text-primary-700"
                   >
-                    {parsed.source.url}
+                    {parsed.source.label}
                   </a>
                 </p>
               )}
@@ -157,7 +157,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
                             rel="noopener noreferrer"
                             className="text-primary-600 underline hover:text-primary-700"
                           >
-                            {parsed.source.url}
+                            {parsed.source.label}
                           </a>
                         </p>
                       )}
@@ -190,7 +190,7 @@ export const ReflectionViewer: React.FC<ReflectionViewerProps> = ({ travel, pamp
                         rel="noopener noreferrer"
                         className="text-primary-600 underline hover:text-primary-700"
                       >
-                        {parsed.source.url}
+                        {parsed.source.label}
                       </a>
                     </span>
                   )}

@@ -736,20 +736,52 @@ async def test_generate_travel_guide_use_case_rejects_non_dict_structured_respon
 
 
 @pytest.mark.asyncio
-async def test_generate_travel_guide_retries_on_evaluation_failure(
+async def test_generate_travel_guide_logs_fact_extraction_link_diagnostics_on_failure(
+    db_session: Session, sample_travel_plan, fake_job_repository, caplog: pytest.LogCaptureFixture
+) -> None:
+    """前提条件: Step Bで失敗する構造化データ。
+    実行: 旅行ガイドを生成する。
+    検証: 失敗時でもStep AのURL診断ログが出力される。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    ai_service = FakeAIService(
+        extracted_facts=(
+            "中尊寺の情報 [中尊寺公式サイト](https://www.chusonji.or.jp/know/history.html) "
+            "短期リンク https://example.com/path?token=abc"
+        ),
+        structured_data=[],
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=fake_job_repository,
+    )
+
+    caplog.set_level("INFO")
+    with pytest.raises(ValueError):
+        await use_case.execute(plan_id=sample_travel_plan.id)
+
+    assert any(
+        "Fact extraction link diagnostics:" in record.getMessage() for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
+async def test_generate_travel_guide_does_not_retry_without_evaluation(
     db_session: Session, sample_travel_plan, fake_job_repository
 ) -> None:
-    """前提条件: 初回生成が評価に失敗し、再生成で成功する。
+    """前提条件: 生成データを2パターン用意する。
     実行: 旅行ガイドを生成する。
-    検証: 再生成が実行され、最終的に成功する。
+    検証: 評価処理がないため再生成されず、初回データが採用される。
     """
-    # 前提条件: 初回は評価失敗、2回目は成功するデータ
     plan_repository = TravelPlanRepository(db_session)
     guide_repository = TravelGuideRepository(db_session)
 
-    # 初回: 出典なし、歴史的対比なし
     first_payload = {
-        "overview": "京都の代表的な寺院を巡る旅行ガイドです。",
+        "overview": "京都の代表的な寺院を巡る旅行ガイドです。清水寺と金閣寺を中心に、時代ごとの建築様式や信仰文化の変遷をたどりながら学べるように構成しています。歴史背景と現地での観察ポイントを整理し、旅行中に理解を深められる内容にしています。",
         "timeline": [
             {
                 "year": 778,
@@ -788,7 +820,6 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
         ],
     }
 
-    # 2回目: 出典あり、歴史的対比あり
     second_payload = {
         "overview": "京都の代表的な寺院を巡る旅行ガイドです。同時期のヨーロッパではルネサンスが始まっており、世界的な文化の転換期でした。清水寺と金閣寺を訪問し、それぞれの時代背景と文化的意義を学びます。奈良時代から室町時代にかけての日本の歴史を体感できる貴重な機会となります。",
         "timeline": [
@@ -866,7 +897,6 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
         ],
     )
 
-    # 実行: 旅行ガイドを生成する
     use_case = GenerateTravelGuideUseCase(
         plan_repository=plan_repository,
         guide_repository=guide_repository,
@@ -875,97 +905,8 @@ async def test_generate_travel_guide_retries_on_evaluation_failure(
     )
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
-    # 検証: 2回目のデータが使用されている
-    assert "ヨーロッパ" in dto.overview
-    assert "『京都の歴史』" in dto.spot_details[0]["historicalBackground"]
-    assert ai_service.call_count == 2
-
-    plan = plan_repository.find_by_id(sample_travel_plan.id)
-    assert plan is not None
-    assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
-
-
-@pytest.mark.asyncio
-async def test_generate_travel_guide_proceeds_after_retry_failure(
-    db_session: Session, sample_travel_plan, fake_job_repository
-) -> None:
-    """前提条件: 初回も再生成も評価に失敗する。
-    実行: 旅行ガイドを生成する。
-    検証: 警告ログを出力しつつ処理を続行する。
-    """
-    # 前提条件: 両方とも評価失敗するデータ
-    plan_repository = TravelPlanRepository(db_session)
-    guide_repository = TravelGuideRepository(db_session)
-
-    # 出典なし、歴史的対比なし（両方とも同じ）
-    payload = {
-        "overview": "京都の代表的な寺院を巡る旅行ガイドです。清水寺と金閣寺を訪問し、それぞれの歴史的背景を学びます。奈良時代から室町時代にかけての日本の文化と建築の変遷を体感できる貴重な機会となります。各寺院の特徴や見どころを詳しく解説します。",
-        "timeline": [
-            {
-                "year": 778,
-                "event": "清水寺創建",
-                "significance": "奈良時代から続く歴史的寺院の始まり。",
-                "relatedSpots": ["清水寺"],
-            },
-        ],
-        "spotDetails": [
-            {
-                "spotName": "清水寺",
-                "historicalBackground": "奈良時代末期に創建された古刹。",
-                "highlights": ["清水の舞台"],
-                "recommendedVisitTime": "早朝",
-                "historicalSignificance": "平安京遷都以前の歴史を持つ。",
-            },
-            {
-                "spotName": "金閣寺",
-                "historicalBackground": "足利義満の別荘として建立された寺院。",
-                "highlights": ["金箔の舎利殿"],
-                "recommendedVisitTime": "午後",
-                "historicalSignificance": "室町文化の象徴として知られる重要な建築物。",
-            },
-        ],
-        "checkpoints": [
-            {
-                "spotName": "清水寺",
-                "checkpoints": ["清水の舞台の高さを確認"],
-                "historicalContext": "断崖に建つ舞台は江戸時代の信仰文化を示す。",
-            },
-            {
-                "spotName": "金閣寺",
-                "checkpoints": ["金箔装飾の意味を学ぶ"],
-                "historicalContext": "将軍文化が色濃く反映された空間構成。",
-            },
-        ],
-    }
-
-    ai_service = FakeAIService(
-        extracted_facts="京都の歴史情報を検索結果から取得。",
-        structured_data=payload,
-        evaluation_data={
-            # 両方とも不合格
-            "spotEvaluations": [
-                {"spotName": "清水寺", "hasCitation": False, "citationExample": ""},
-                {"spotName": "金閣寺", "hasCitation": False, "citationExample": ""},
-            ],
-            "hasHistoricalComparison": False,
-            "historicalComparisonExample": "",
-            "allSpotsIncluded": True,
-            "missingSpots": [],
-        },
-    )
-
-    # 実行: 旅行ガイドを生成する（エラーにならず処理が続行される）
-    use_case = GenerateTravelGuideUseCase(
-        plan_repository=plan_repository,
-        guide_repository=guide_repository,
-        ai_service=ai_service,
-        job_repository=fake_job_repository,
-    )
-    dto = await use_case.execute(plan_id=sample_travel_plan.id)
-
-    # 検証: 処理は成功するが、評価は失敗している
-    assert dto.plan_id == sample_travel_plan.id
-    assert ai_service.call_count == 2  # 初回 + 再生成
+    assert dto.overview == first_payload["overview"]
+    assert ai_service.call_count == 1
 
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
