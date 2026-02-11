@@ -26,15 +26,13 @@ published: false
 
 <img src="./images/user-journey.svg" alt="ユーザージャーニー: 事前学習→現地体験→振り返り" width="400" />
 
-**事前学習（旅行前）**: 目的地と訪れたいスポットを入力するだけで、AIが旅行ガイドを生成します。歴史年表、各スポットの歴史的背景、見どころ、チェックポイントを含み、Google Search groundingで正確な歴史情報を提供します。
+**事前学習（旅行前）**: 目的地と訪れたいスポットを入力するだけで、AIが歴史に紐づいた旅行ガイドを生成します。歴史年表、各スポットの歴史的背景、見どころ、チェックポイントを含み、Google Searchで正確な歴史情報を提供します。
 
 **現地体験（旅行中）**: 生成されたガイドとGoogle Mapsを使って、歴史的文脈を理解しながらスポットを巡ります。チェックポイントに沿って観察することで、ただ見るだけでは気づかない歴史の痕跡を発見できます。
 
 **振り返り（旅行後）**: 旅行で撮った写真と感想をアップロードすると、AIが旅行の振り返りパンフレットを生成します。写真の分析結果と感想を統合し、体験を記録として残します。
 
 ## 主な機能
-
-<img src="./images/feature-flow.svg" alt="機能フロー: 旅行計画作成からパンフレット生成まで" width="700" />
 
 ### 旅行計画の作成
 
@@ -72,7 +70,7 @@ published: false
 
 ## システムアーキテクチャ
 
-<img src="./images/architecture.svg" alt="システムアーキテクチャ" width="600" />
+<img src="./images/infrastructure.drawio.png" alt="システムアーキテクチャ" width="600" />
 
 Frontend（Next.js 16）とBackend（FastAPI）はそれぞれCloud Runにデプロイしています。BackendはVertex AI（gemini-3-preview）で旅行ガイドと振り返りパンフレットを生成し、スポット画像はgemini-2.5-flash-imageで生成します。データはCloud SQLに永続化し、画像はCloud Storageに保存します。スポット画像の生成はCloud Tasks経由で非同期に実行されます。
 
@@ -82,17 +80,7 @@ Frontend（Next.js 16）とBackend（FastAPI）はそれぞれCloud Runにデプ
 
 各機能はそれぞれ独立したエージェントとして実装しており、Google SearchやCloud Storageなどのツールを組み合わせて動作します。
 
-**ガイド生成エージェント**: 旅行ガイドの生成を担当
-<img src="./images/agent-guide.svg" alt="ガイド生成エージェント" width="500" />
-
-**写真分析エージェント**: アップロード写真の分析を担当
-<img src="./images/agent-photo.svg" alt="写真分析エージェント" width="300" />
-
-**画像生成エージェント**: スポット画像の生成を担当
-<img src="./images/agent-image.svg" alt="画像生成エージェント" width="400" />
-
-**振り返り生成エージェント**: 振り返りパンフレットの生成を担当
-<img src="./images/agent-reflection.svg" alt="振り返り生成エージェント" width="250" />
+<img src="./images/agent.drawio.png" alt="エージェント構成" width="600" />
 
 ### 2段階のガイド生成
 
