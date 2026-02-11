@@ -1,4 +1,11 @@
-"""Firebase Admin SDK initialization"""
+"""Firebase Admin SDK initialization
+
+Supports two authentication methods:
+1. ADC (Application Default Credentials) - recommended for GCP environments
+   - Cloud Run: automatic via attached service account
+   - Local: `gcloud auth application-default login`
+2. Explicit service account credentials via environment variables (fallback)
+"""
 
 import logging
 
@@ -11,16 +18,19 @@ _app: firebase_admin.App | None = None
 
 
 def initialize_firebase_admin(
-    project_id: str,
-    client_email: str,
-    private_key: str,
+    project_id: str | None = None,
+    client_email: str | None = None,
+    private_key: str | None = None,
 ) -> firebase_admin.App:
-    """Initialize Firebase Admin SDK with service account credentials.
+    """Initialize Firebase Admin SDK.
+
+    Uses explicit credentials if all three parameters are provided,
+    otherwise falls back to Application Default Credentials (ADC).
 
     Args:
-        project_id: Firebase project ID
-        client_email: Service account client email
-        private_key: Service account private key (PEM format)
+        project_id: Firebase project ID (used for both explicit and ADC modes)
+        client_email: Service account client email (explicit mode only)
+        private_key: Service account private key in PEM format (explicit mode only)
 
     Returns:
         Firebase app instance
@@ -32,31 +42,50 @@ def initialize_firebase_admin(
         return _app
 
     try:
-        # Normalize escaped newlines in private_key (common in .env files)
-        normalized_private_key = private_key.replace("\\n", "\n")
-
-        # Build service account dict
-        service_account_dict = {
-            "type": "service_account",
-            "project_id": project_id,
-            "client_email": client_email,
-            "private_key": normalized_private_key,
-            "private_key_id": "",
-            "client_id": "",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-        }
-
-        # Create credential
-        cred = credentials.Certificate(service_account_dict)
-
-        # Initialize app
-        _app = firebase_admin.initialize_app(cred)
-        logger.info(f"Firebase Admin initialized for project: {project_id}")
+        if all([client_email, private_key]):
+            _app = _initialize_with_credentials(project_id, client_email, private_key)  # type: ignore[arg-type]
+        else:
+            _app = _initialize_with_adc(project_id)
         return _app
     except Exception as e:
         logger.error(f"Failed to initialize Firebase Admin: {e}")
         raise
+
+
+def _initialize_with_credentials(
+    project_id: str | None,
+    client_email: str,
+    private_key: str,
+) -> firebase_admin.App:
+    """Initialize with explicit service account credentials."""
+    normalized_private_key = private_key.replace("\\n", "\n")
+
+    service_account_dict = {
+        "type": "service_account",
+        "project_id": project_id or "",
+        "client_email": client_email,
+        "private_key": normalized_private_key,
+        "private_key_id": "",
+        "client_id": "",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+    }
+
+    cred = credentials.Certificate(service_account_dict)
+    app = firebase_admin.initialize_app(cred)
+    logger.info(f"Firebase Admin initialized with explicit credentials (project: {project_id})")
+    return app
+
+
+def _initialize_with_adc(project_id: str | None = None) -> firebase_admin.App:
+    """Initialize with Application Default Credentials (ADC)."""
+    options: dict[str, str] = {}
+    if project_id:
+        options["projectId"] = project_id
+
+    app = firebase_admin.initialize_app(options=options if options else None)
+    logger.info(f"Firebase Admin initialized with ADC (project: {project_id})")
+    return app
 
 
 def get_firebase_app() -> firebase_admin.App:
