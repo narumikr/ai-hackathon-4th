@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.info("Set GOOGLE_APPLICATION_CREDENTIALS.")
 
     # Firebase Admin SDKの初期化
-    if settings.firebase_project_id and settings.firebase_client_email and settings.firebase_private_key:
+    if settings.firebase_project_id:
         initialize_firebase_admin(
             project_id=settings.firebase_project_id,
             client_email=settings.firebase_client_email,
@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         )
         logger.info("Firebase Admin SDK initialized successfully")
     else:
-        logger.warning("Firebase credentials not fully configured. Auth features will be disabled.")
+        logger.warning("FIREBASE_PROJECT_ID not set. Auth features will be disabled.")
 
     yield
     # 終了時の処理
