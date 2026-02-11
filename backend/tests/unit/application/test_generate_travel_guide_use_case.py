@@ -914,7 +914,9 @@ async def test_generate_travel_guide_does_not_retry_without_evaluation(
 
 
 @pytest.mark.asyncio
-async def test_generate_travel_guide_with_empty_spots(db_session: Session) -> None:
+async def test_generate_travel_guide_with_empty_spots(
+    db_session: Session, fake_job_repository
+) -> None:
     """前提条件: spots未指定（空リスト）の旅行計画が存在する。
     実行: 旅行ガイドを生成する。
     検証: AIが生成したスポットが新規スポットとして追加され、ガイド生成が成功する。
@@ -991,6 +993,7 @@ async def test_generate_travel_guide_with_empty_spots(db_session: Session) -> No
         plan_repository=plan_repository,
         guide_repository=guide_repository,
         ai_service=ai_service,
+        job_repository=fake_job_repository,
     )
     dto = await use_case.execute(plan_id=travel_plan.id)
 

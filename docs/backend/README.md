@@ -2,13 +2,13 @@
 
 ## 概要
 
-Historical Travel Agent APIの仕様書です。
+Historical Travel Agent APIの仕様書です
 
 ## 仕様書の閲覧
 
 ### ローカル開発環境
 
-開発サーバー起動後、以下のURLで閲覧できます。
+開発サーバー起動後、以下のURLで閲覧できます
 
 ```bash
 just dev-backend
@@ -24,7 +24,7 @@ just dev-backend
 
 ## 仕様書の更新
 
-APIエンドポイントやスキーマを変更した後、以下のコマンドで仕様書を更新します。
+APIエンドポイントやスキーマを変更した後、以下のコマンドで仕様書を更新します
 
 ```bash
 just docs-generate-openapi
@@ -32,7 +32,7 @@ just docs-generate-openapi
 
 ## Git管理
 
-生成された`openapi.json`はGit管理下に置かれています。
+生成された`openapi.json`はGit管理下に置かれています
 
 これにより以下が可能になります：
 
