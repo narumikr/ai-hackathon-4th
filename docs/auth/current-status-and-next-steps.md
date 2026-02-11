@@ -48,13 +48,13 @@ Firebase Authenticationによる認証基盤を環境変数ベースで導入済
 
 **環境変数**（`backend/.env.example` に定義済み）:
 
-| 変数名 | 用途 |
-|--------|------|
-| `FIREBASE_PROJECT_ID` | Firebase project ID |
-| `FIREBASE_CLIENT_EMAIL` | サービスアカウントのメールアドレス |
-| `FIREBASE_PRIVATE_KEY` | サービスアカウントの秘密鍵（PEM形式） |
+| 変数名 | 用途 | 必須 |
+|--------|------|------|
+| `FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
+| `FIREBASE_CLIENT_EMAIL` | サービスアカウントのメールアドレス | ADC未使用時のみ |
+| `FIREBASE_PRIVATE_KEY` | サービスアカウントの秘密鍵（PEM形式） | ADC未使用時のみ |
 
-**補足**: Firebase Admin SDKの初期化は環境変数がすべて設定されている場合のみ実行される。未設定時は警告ログを出力するが、アプリの起動自体は可能。
+**補足**: Firebase Admin SDKはADC (Application Default Credentials) に対応済み。GCP上では `FIREBASE_PROJECT_ID` のみ設定すれば、Cloud Runにアタッチされたサービスアカウントで自動認証される。ローカル開発では `gcloud auth application-default login` でADCを使用するか、従来通り3つの環境変数をすべて設定する。初期化失敗時は警告ログを出力し、アプリの起動自体は可能。詳細は [GCPデプロイガイド](./gcp-deployment-guide.md) を参照。
 
 ### 1.3 認証フロー
 
@@ -180,9 +180,10 @@ sequenceDiagram
 
 ### 4.2 秘密鍵の取り扱い
 
-- `FIREBASE_PRIVATE_KEY` はPEM形式の秘密鍵であり、改行は `\n` で表現する
-- ローカル開発では `.env` ファイルに記載（`.gitignore` で除外済み）
-- 本番環境ではGoogle Cloud Secret Managerでの管理を推奨
+- **GCP (Cloud Run)**: ADCを使用するため `FIREBASE_PRIVATE_KEY` の設定は不要
+- **ローカル開発（ADC方式）**: `gcloud auth application-default login` で認証。秘密鍵不要
+- **ローカル開発（従来方式）**: `FIREBASE_PRIVATE_KEY` はPEM形式で `.env` ファイルに記載（`.gitignore` で除外済み）
+- DBパスワード等の秘密情報は本番環境ではGoogle Cloud Secret Managerで管理を推奨
 - フロントエンドの `NEXT_PUBLIC_*` 環境変数はクライアントに公開されるため、秘密情報を含めないこと
 
 ### 4.3 設定値の確認方法
