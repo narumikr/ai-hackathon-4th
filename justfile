@@ -205,5 +205,9 @@ docs-generate-openapi:
 # バックエンドドキュメント全体を生成
 docs-generate-backend: docs-generate-openapi
 
+# Mermaid図をSVG画像として生成
+docs-generate-diagrams:
+	node scripts/generate-diagrams.mjs
+
 # 全ドキュメントを生成
-docs-generate: docs-generate-backend
+docs-generate: docs-generate-backend docs-generate-diagrams
