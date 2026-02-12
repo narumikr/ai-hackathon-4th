@@ -15,7 +15,10 @@ from app.interfaces.api.dependencies import (
     get_ai_service_dependency,
     get_storage_service_dependency,
 )
+from app.interfaces.middleware.auth import UserContext, require_auth
 from main import app
+
+TEST_USER_ID = "test_user_001"
 
 
 class StubAIService(IAIService):
@@ -161,9 +164,13 @@ def api_client(db_session: Session):
     async def override_get_storage_service():
         return StubStorageService()
 
+    def override_require_auth() -> UserContext:
+        return UserContext(uid=TEST_USER_ID)
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_ai_service_dependency] = override_get_ai_service
     app.dependency_overrides[get_storage_service_dependency] = override_get_storage_service
+    app.dependency_overrides[require_auth] = override_require_auth
     client = TestClient(app)
 
     yield client
@@ -181,7 +188,7 @@ def test_upload_images(
     """
     data = {
         "planId": sample_travel_plan.id,
-        "userId": sample_travel_plan.user_id,
+
         "spotId": "spot-001",
         "spotNote": "清水寺の舞台が印象的だった",
     }
@@ -205,7 +212,7 @@ def test_upload_images_accepts_empty_spot_note(
     """
     data = {
         "planId": sample_travel_plan.id,
-        "userId": sample_travel_plan.user_id,
+
         "spotId": "spot-001",
         "spotNote": "",
     }
@@ -238,7 +245,7 @@ def test_upload_images_clears_spot_note_when_empty(
     """
     initial_data = {
         "planId": sample_travel_plan.id,
-        "userId": sample_travel_plan.user_id,
+
         "spotId": "spot-001",
         "spotNote": "最初のメモ",
     }
@@ -252,7 +259,7 @@ def test_upload_images_clears_spot_note_when_empty(
 
     empty_data = {
         "planId": sample_travel_plan.id,
-        "userId": sample_travel_plan.user_id,
+
         "spotId": "spot-001",
         "spotNote": "",
     }
@@ -284,7 +291,7 @@ def test_create_reflection(
     """
     upload_data = {
         "planId": sample_travel_plan.id,
-        "userId": sample_travel_plan.user_id,
+
         "spotId": "spot-001",
         "spotNote": "清水寺の舞台からの眺めが最高だった",
     }
@@ -297,7 +304,7 @@ def test_create_reflection(
         "/api/v1/reflections",
         json={
             "planId": sample_travel_plan.id,
-            "userId": sample_travel_plan.user_id,
+    
         },
     )
 
@@ -339,7 +346,7 @@ def test_create_reflection_accepts_empty_user_notes(
     """
     upload_data = {
         "planId": sample_travel_plan.id,
-        "userId": sample_travel_plan.user_id,
+
         "spotId": "spot-001",
     }
 
@@ -351,7 +358,7 @@ def test_create_reflection_accepts_empty_user_notes(
         "/api/v1/reflections",
         json={
             "planId": sample_travel_plan.id,
-            "userId": sample_travel_plan.user_id,
+    
             "userNotes": "",
         },
     )
@@ -386,7 +393,7 @@ def test_create_reflection_without_travel_guide(
     """
     request_data = {
         "planId": sample_travel_plan.id,
-        "userId": sample_travel_plan.user_id,
+
     }
 
     response = api_client.post("/api/v1/reflections", json=request_data)
@@ -401,7 +408,6 @@ def test_create_reflection_plan_not_found(api_client: TestClient):
     """
     request_data = {
         "planId": "non-existent-plan-id",
-        "userId": "test-user",
     }
 
     response = api_client.post("/api/v1/reflections", json=request_data)

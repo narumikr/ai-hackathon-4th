@@ -61,6 +61,5 @@ export interface ReflectionPamphletResponse {
 
 export interface CreateReflectionRequest {
   planId: string;
-  userId: string;
   userNotes?: string | null;
 }

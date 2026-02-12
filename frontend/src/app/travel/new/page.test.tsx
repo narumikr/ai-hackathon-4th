@@ -294,7 +294,6 @@ describe('TravelNewPage', () => {
       await waitFor(() => {
         expect(mockCreateTravelPlan).toHaveBeenCalledWith({
           request: {
-            userId: 'demo-user',
             title: '京都歴史探訪の旅',
             destination: '京都府',
             spots: [{ name: '金閣寺' }, { name: '清水寺' }],
@@ -334,7 +333,6 @@ describe('TravelNewPage', () => {
       await waitFor(() => {
         expect(mockCreateTravelPlan).toHaveBeenCalledWith({
           request: {
-            userId: 'demo-user',
             title: '京都歴史探訪の旅',
             destination: '京都府',
             spots: undefined,

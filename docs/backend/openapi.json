@@ -7,22 +7,46 @@
   },
   "paths": {
     "/api/v1/travel-plans": {
+      "get": {
+        "tags": [
+          "travel-plans"
+        ],
+        "summary": "旅行計画一覧を取得",
+        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    repository: TravelPlanRepository\n    auth: 認証ユーザー（Firebase ID token検証済み）\n\nReturns:\n    list[TravelPlanListResponse]: 旅行計画リスト",
+        "operationId": "list_travel_plans_api_v1_travel_plans_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TravelPlanListResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Travel Plans Api V1 Travel Plans Get"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "travel-plans"
         ],
         "summary": "旅行計画を作成",
-        "description": "旅行計画を作成する\n\nArgs:\n    request: 旅行計画作成リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 作成された旅行計画\n\nRaises:\n    HTTPException: バリデーションエラー（400）",
+        "description": "旅行計画を作成する\n\nArgs:\n    request: 旅行計画作成リクエスト\n    repository: TravelPlanRepository\n    auth: 認証ユーザー（Firebase ID token検証済み）\n\nReturns:\n    TravelPlanResponse: 作成された旅行計画\n\nRaises:\n    HTTPException: バリデーションエラー（400）、認証エラー（401）",
         "operationId": "create_travel_plan_api_v1_travel_plans_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateTravelPlanRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "201": {
@@ -46,51 +70,6 @@
             }
           }
         }
-      },
-      "get": {
-        "tags": [
-          "travel-plans"
-        ],
-        "summary": "旅行計画一覧を取得",
-        "description": "ユーザーの旅行計画一覧を取得する\n\nArgs:\n    user_id: ユーザーID\n    repository: TravelPlanRepository\n\nReturns:\n    list[TravelPlanListResponse]: 旅行計画リスト",
-        "operationId": "list_travel_plans_api_v1_travel_plans_get",
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "User Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TravelPlanListResponse"
-                  },
-                  "title": "Response List Travel Plans Api V1 Travel Plans Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/v1/travel-plans/{plan_id}": {
@@ -99,7 +78,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を取得",
-        "description": "旅行計画を取得する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
+        "description": "旅行計画を取得する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n    auth: 認証ユーザー（Firebase ID token検証済み）\n\nReturns:\n    TravelPlanResponse: 旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、認証エラー（401）",
         "operationId": "get_travel_plan_api_v1_travel_plans__plan_id__get",
         "parameters": [
           {
@@ -140,7 +119,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を更新",
-        "description": "旅行計画を更新する\n\nArgs:\n    plan_id: 旅行計画ID\n    request: 旅行計画更新リクエスト\n    repository: TravelPlanRepository\n\nReturns:\n    TravelPlanResponse: 更新された旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）",
+        "description": "旅行計画を更新する\n\nArgs:\n    plan_id: 旅行計画ID\n    request: 旅行計画更新リクエスト\n    repository: TravelPlanRepository\n    auth: 認証ユーザー（Firebase ID token検証済み）\n\nReturns:\n    TravelPlanResponse: 更新された旅行計画\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）、認証エラー（401）",
         "operationId": "update_travel_plan_api_v1_travel_plans__plan_id__put",
         "parameters": [
           {
@@ -191,7 +170,7 @@
           "travel-plans"
         ],
         "summary": "旅行計画を削除",
-        "description": "旅行計画を削除する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n\nReturns:\n    Response: 204 No Content\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）",
+        "description": "旅行計画を削除する\n\nArgs:\n    plan_id: 旅行計画ID\n    repository: TravelPlanRepository\n    auth: 認証ユーザー（Firebase ID token検証済み）\n\nReturns:\n    Response: 204 No Content\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、認証エラー（401）",
         "operationId": "delete_travel_plan_api_v1_travel_plans__plan_id__delete",
         "parameters": [
           {
@@ -227,7 +206,7 @@
           "travel-guides"
         ],
         "summary": "旅行ガイド生成を開始",
-        "description": "旅行ガイド生成を開始する\n\nArgs:\n    request: 旅行ガイド生成リクエスト\n    background_tasks: バックグラウンドタスク\n    db: SQLAlchemyセッション\n    ai_service: AIサービス\n\nReturns:\n    TravelPlanResponse: 旅行計画（生成中ステータス）\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）など",
+        "description": "旅行ガイド生成を開始する\n\nArgs:\n    request: 旅行ガイド生成リクエスト\n    background_tasks: バックグラウンドタスク\n    http_request: HTTPリクエスト\n    db: SQLAlchemyセッション\n    ai_service: AIサービス\n    auth: 認証ユーザー（Firebase ID token検証済み）\n\nReturns:\n    TravelPlanResponse: 旅行計画（生成中ステータス）\n\nRaises:\n    HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）、認証エラー（401）など",
         "operationId": "generate_travel_guide_api_v1_travel_guides_post",
         "requestBody": {
           "content": {
@@ -269,7 +248,7 @@
           "reflections"
         ],
         "summary": "振り返り生成を開始",
-        "description": "振り返り生成を開始する",
+        "description": "振り返り生成を開始する\n\nArgs:\n    request: 振り返り生成リクエスト\n    background_tasks: バックグラウンドタスク\n    db: SQLAlchemyセッション\n    ai_service: AIサービス\n    auth: 認証ユーザー（Firebase ID token検証済み）",
         "operationId": "create_reflection_api_v1_reflections_post",
         "requestBody": {
           "content": {
@@ -304,7 +283,7 @@
           "spot-reflections"
         ],
         "summary": "スポットの写真と感想を登録",
-        "description": "スポットごとの写真と感想を登録する",
+        "description": "スポットごとの写真と感想を登録する\n\nArgs:\n    request: HTTPリクエスト\n    plan_id: 旅行計画ID\n    spot_id: スポットID\n    spot_note: スポット感想（オプション）\n    files: アップロード画像ファイル\n    db: SQLAlchemyセッション\n    ai_service: AIサービス\n    storage_service: ストレージサービス\n    auth: 認証ユーザー（Firebase ID token検証済み）",
         "operationId": "upload_images_api_v1_spot_reflections_post",
         "requestBody": {
           "content": {
@@ -319,6 +298,51 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/internal/tasks/spot-image": {
+      "post": {
+        "tags": [
+          "spot-image-tasks"
+        ],
+        "summary": "Cloud Tasksからスポット画像生成を実行",
+        "operationId": "run_spot_image_task_api_v1_internal_tasks_spot_image_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpotImageTaskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Run Spot Image Task Api V1 Internal Tasks Spot Image Post"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -388,10 +412,6 @@
             "type": "string",
             "title": "Planid"
           },
-          "userId": {
-            "type": "string",
-            "title": "Userid"
-          },
           "spotId": {
             "type": "string",
             "title": "Spotid"
@@ -419,7 +439,6 @@
         "type": "object",
         "required": [
           "planId",
-          "userId",
           "spotId",
           "files"
         ],
@@ -459,11 +478,6 @@
             "minLength": 1,
             "title": "Planid"
           },
-          "userId": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Userid"
-          },
           "userNotes": {
             "anyOf": [
               {
@@ -478,20 +492,13 @@
         },
         "type": "object",
         "required": [
-          "planId",
-          "userId"
+          "planId"
         ],
         "title": "CreateReflectionRequest",
         "description": "振り返り作成リクエスト"
       },
       "CreateTravelPlanRequest": {
         "properties": {
-          "userId": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Userid",
-            "description": "ユーザーID"
-          },
           "title": {
             "type": "string",
             "minLength": 1,
@@ -515,7 +522,6 @@
         },
         "type": "object",
         "required": [
-          "userId",
           "title",
           "destination"
         ],
@@ -740,6 +746,24 @@
           "historicalSignificance": {
             "type": "string",
             "title": "Historicalsignificance"
+          },
+          "imageUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imageurl",
+            "description": "生成された画像の署名付きURL"
+          },
+          "imageStatus": {
+            "type": "string",
+            "title": "Imagestatus",
+            "description": "画像生成ステータス: not_started, processing, succeeded, failed",
+            "default": "not_started"
           }
         },
         "type": "object",
@@ -752,6 +776,25 @@
         ],
         "title": "SpotDetailSchema",
         "description": "スポット詳細スキーマ"
+      },
+      "SpotImageTaskRequest": {
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "title": "Plan Id"
+          },
+          "spot_name": {
+            "type": "string",
+            "title": "Spot Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_id",
+          "spot_name"
+        ],
+        "title": "SpotImageTaskRequest",
+        "description": "スポット画像タスクの受信ペイロード."
       },
       "SpotReflectionResponse": {
         "properties": {

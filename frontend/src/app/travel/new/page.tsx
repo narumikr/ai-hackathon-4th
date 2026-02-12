@@ -5,7 +5,6 @@ import { Button, Icon, TextField, Tooltip } from '@/components/ui';
 import {
   ARIA_LABELS,
   BUTTON_LABELS,
-  DEFAULT_USER_ID,
   ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
   HELP_TEXTS,
@@ -82,8 +81,6 @@ export default function TravelNewPage() {
 
     try {
       const apiClient = createApiClientFromEnv();
-      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = DEFAULT_USER_ID;
 
       // スポットリストを整形（空の値を除外）
       const filteredSpots = spots
@@ -93,7 +90,6 @@ export default function TravelNewPage() {
       // 1. 旅行計画を作成
       const response = await apiClient.createTravelPlan({
         request: {
-          userId,
           title: title.trim(),
           destination: destination.trim(),
           spots: filteredSpots.length > 0 ? filteredSpots : undefined,

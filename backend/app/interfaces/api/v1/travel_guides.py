@@ -19,6 +19,8 @@ from app.interfaces.api.dependencies import (
     get_ai_service_dependency,
     get_spot_image_task_dispatcher,
 )
+from app.interfaces.api.v1.ownership import verify_ownership
+from app.interfaces.middleware.auth import UserContext, require_auth
 from app.interfaces.schemas.travel_guide import GenerateTravelGuideRequest
 from app.interfaces.schemas.travel_plan import TravelPlanResponse
 
@@ -114,20 +116,23 @@ async def generate_travel_guide(
     http_request: Request,
     db: Session = Depends(get_db),  # noqa: B008
     ai_service: IAIService = Depends(get_ai_service_dependency),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行ガイド生成を開始する
 
     Args:
         request: 旅行ガイド生成リクエスト
         background_tasks: バックグラウンドタスク
+        http_request: HTTPリクエスト
         db: SQLAlchemyセッション
         ai_service: AIサービス
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         TravelPlanResponse: 旅行計画（生成中ステータス）
 
     Raises:
-        HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）など
+        HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）、認証エラー（401）など
     """
     plan_id = request.plan_id
     logger.debug("Travel guide generation requested", extra={"plan_id": plan_id})
@@ -139,6 +144,7 @@ async def generate_travel_guide(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Travel plan not found: {plan_id}",
         )
+    verify_ownership(travel_plan.user_id, auth, "travel plan")
     logger.debug(
         "Travel plan loaded for guide generation",
         extra={

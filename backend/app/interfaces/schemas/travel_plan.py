@@ -27,14 +27,13 @@ class TouristSpotSchema(BaseModel):
 class CreateTravelPlanRequest(BaseModel):
     """旅行計画作成リクエスト"""
 
-    user_id: str = Field(..., min_length=1, alias="userId", description="ユーザーID")
     title: str = Field(..., min_length=1, description="旅行タイトル")
     destination: str = Field(..., min_length=1, description="目的地")
     spots: list[TouristSpotSchema] = Field(default_factory=list, description="観光スポットリスト")
 
     model_config = {"populate_by_name": True}
 
-    @field_validator("user_id", "title", "destination")
+    @field_validator("title", "destination")
     @classmethod
     def validate_not_empty(cls, value: str) -> str:
         """空文字列でないことを検証する"""

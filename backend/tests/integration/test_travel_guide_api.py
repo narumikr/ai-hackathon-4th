@@ -13,7 +13,19 @@ from app.application.ports.ai_service import IAIService
 from app.infrastructure.persistence.database import get_db
 from app.infrastructure.persistence.models import TravelGuideModel, TravelPlanModel
 from app.interfaces.api.dependencies import get_ai_service_dependency
+from app.interfaces.middleware.auth import UserContext, require_auth
 from main import app
+
+TEST_USER_ID = "test_user_001"
+
+
+def _make_auth_override(uid: str = TEST_USER_ID):
+    """テスト用の認証オーバーライドを返す"""
+
+    def override_require_auth() -> UserContext:
+        return UserContext(uid=uid)
+
+    return override_require_auth
 
 if TYPE_CHECKING:
     from app.infrastructure.ai.schemas.base import GeminiResponseSchema
@@ -175,6 +187,7 @@ def api_client(db_session: Session):
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_ai_service_dependency] = override_get_ai_service
+    app.dependency_overrides[require_auth] = _make_auth_override()
     client = TestClient(app)
 
     yield client

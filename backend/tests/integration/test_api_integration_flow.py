@@ -16,7 +16,10 @@ from app.interfaces.api.dependencies import (
     get_ai_service_dependency,
     get_storage_service_dependency,
 )
+from app.interfaces.middleware.auth import UserContext, require_auth
 from main import app
+
+TEST_USER_ID = "test_user_010"
 
 if TYPE_CHECKING:
     from app.infrastructure.ai.schemas.base import GeminiResponseSchema
@@ -195,9 +198,13 @@ def api_client(db_session: Session):
     async def override_get_storage_service():
         return StubStorageService()
 
+    def override_require_auth() -> UserContext:
+        return UserContext(uid=TEST_USER_ID)
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_ai_service_dependency] = override_get_ai_service
     app.dependency_overrides[get_storage_service_dependency] = override_get_storage_service
+    app.dependency_overrides[require_auth] = override_require_auth
     client = TestClient(app)
 
     yield client
@@ -254,7 +261,6 @@ def test_api_end_to_end_flow(api_client: TestClient):
     create_response = api_client.post(
         "/api/v1/travel-plans",
         json={
-            "userId": "test_user_010",
             "title": "京都歴史探訪",
             "destination": "京都",
             "spots": [
@@ -293,7 +299,6 @@ def test_api_end_to_end_flow(api_client: TestClient):
         "/api/v1/spot-reflections",
         data={
             "planId": plan_id,
-            "userId": "test_user_010",
             "spotId": "spot-010",
             "spotNote": "清水寺の舞台が印象的だった",
         },
@@ -306,7 +311,7 @@ def test_api_end_to_end_flow(api_client: TestClient):
     # 実行: 振り返り生成
     reflection_response = api_client.post(
         "/api/v1/reflections",
-        json={"planId": plan_id, "userId": "test_user_010"},
+        json={"planId": plan_id},
     )
 
     # 検証: ステータスコード204
@@ -334,7 +339,6 @@ def test_api_error_handling_flow(api_client: TestClient):
     create_response = api_client.post(
         "/api/v1/travel-plans",
         json={
-            "userId": "test_user_011",
             "title": "奈良歴史巡り",
             "destination": "奈良",
             "spots": [
@@ -351,27 +355,11 @@ def test_api_error_handling_flow(api_client: TestClient):
     assert create_response.status_code == 201
     plan_id = create_response.json()["id"]
 
-    # 実行: 誤ったユーザーIDで画像アップロード
-    wrong_user_response = api_client.post(
-        "/api/v1/spot-reflections",
-        data={
-            "planId": plan_id,
-            "userId": "different_user",
-            "spotId": "spot-011",
-            "spotNote": "ユーザー違いのテスト",
-        },
-        files=[("files", ("nara.jpg", b"dummy-bytes", "image/jpeg"))],
-    )
-
-    # 検証: ステータスコード400
-    assert wrong_user_response.status_code == 400
-
     # 実行: 存在しないスポットIDで画像アップロード
     wrong_spot_response = api_client.post(
         "/api/v1/spot-reflections",
         data={
             "planId": plan_id,
-            "userId": "test_user_011",
             "spotId": "spot-unknown",
             "spotNote": "スポット違いのテスト",
         },
@@ -391,7 +379,7 @@ def test_api_error_handling_flow(api_client: TestClient):
     # 実行: 画像未登録で振り返り生成
     reflection_response = api_client.post(
         "/api/v1/reflections",
-        json={"planId": plan_id, "userId": "test_user_011"},
+        json={"planId": plan_id},
     )
 
     # 検証: ステータスコード409

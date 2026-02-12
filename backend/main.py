@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config.logging import setup_logging
 from app.config.settings import get_settings
+from app.infrastructure.firebase_admin import initialize_firebase_admin
 from app.interfaces.api.v1 import reflections, spot_image_tasks, travel_guides, travel_plans, uploads
 from app.interfaces.middleware import (
     generic_exception_handler,
@@ -36,6 +37,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if settings.google_application_credentials:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.google_application_credentials
         logger.info("Set GOOGLE_APPLICATION_CREDENTIALS.")
+
+    # Firebase Admin SDKの初期化
+    if settings.firebase_project_id:
+        initialize_firebase_admin(
+            project_id=settings.firebase_project_id,
+            client_email=settings.firebase_client_email,
+            private_key=settings.firebase_private_key,
+        )
+        logger.info("Firebase Admin SDK initialized successfully")
+    else:
+        logger.warning("FIREBASE_PROJECT_ID not set. Auth features will be disabled.")
 
     yield
     # 終了時の処理

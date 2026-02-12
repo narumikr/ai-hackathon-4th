@@ -4,11 +4,6 @@
  */
 
 /**
- * デフォルトユーザーID（認証機能実装前の仮の値）
- */
-export const DEFAULT_USER_ID = 'demo-user';
-
-/**
  * ボタン状態テキスト
  */
 export const BUTTON_STATES = {
@@ -36,6 +31,9 @@ export const ERROR_ALERTS = {
  * エラーダイアログ表示文言
  */
 export const ERROR_DIALOG_MESSAGES = {
+  SIGN_UP_FAILED: '新規登録に失敗しました',
+  SIGN_IN_FAILED: 'サインインに失敗しました',
+  SIGN_IN_GOOGLE_FAILED: 'Googleサインインに失敗しました',
   TRAVEL_LIST_FETCH_FAILED: '旅行一覧の取得に失敗しました。',
   TRAVEL_DETAIL_FETCH_FAILED: '旅行情報の取得に失敗しました。',
   TRAVEL_CREATE_FAILED: '旅行計画の作成に失敗しました。',
@@ -175,6 +173,8 @@ export const COPYRIGHT_TEXT = '© 2026 Historical Travel Agent. All rights reser
  * ページタイトル
  */
 export const PAGE_TITLES = {
+  SIGN_IN: 'ログイン',
+  SIGN_UP: '新規登録',
   HOME: 'ホーム',
   TRAVEL_LIST: '旅行一覧',
   TRAVEL_NEW: '新規旅行作成',
@@ -199,6 +199,10 @@ export const PAGE_DESCRIPTIONS = {
  * ボタン文言
  */
 export const BUTTON_LABELS = {
+  SIGN_OUT: 'サインアウト',
+  SIGN_IN_EMAIL: 'メールでサインイン',
+  SIGN_UP_EMAIL: 'メールで新規登録',
+  SIGN_IN_GOOGLE: 'Google',
   CREATE_NEW_TRAVEL: '新しい旅行を作成',
   VIEW_DETAILS: '詳細を見る',
   EDIT: '編集',
@@ -232,6 +236,8 @@ export const BUTTON_LABELS = {
  * メッセージ
  */
 export const MESSAGES = {
+  SWITCH_TO_SIGN_IN: 'アカウントをお持ちの方はこちら',
+  SWITCH_TO_SIGN_UP: 'アカウントをお持ちでない方はこちら',
   NO_TRAVELS: '旅行計画がありません。新しい旅行を作成してください。',
   NO_REFLECTIONS: '振り返りがありません。計画中の旅行を完了させて振り返りを作成してください。',
   LOADING: '読み込み中...',
@@ -281,6 +287,8 @@ export const STATUS_COLORS = {
  * フォームラベル
  */
 export const FORM_LABELS = {
+  EMAIL: 'メールアドレス',
+  PASSWORD: 'パスワード',
   TRAVEL_TITLE: '旅行タイトル',
   DESTINATION: '目的地',
   SPOTS: '観光スポット',
