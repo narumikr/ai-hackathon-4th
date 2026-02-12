@@ -72,14 +72,23 @@ jobs:
           pnpm install --lockfile-only
 
       - name: Commit lockfile changes
+        if: |
+          steps.changes.outputs.backend == 'true' ||
+          steps.changes.outputs.frontend == 'true'
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email \
             'github-actions[bot]@users.noreply.github.com'
 
           if [[ -n $(git status --porcelain) ]]; then
-            git add backend/uv.lock frontend/pnpm-lock.yaml || true
-            git commit -m "chore(deps): update lockfiles" || true
+            # 変更されたロックファイルのみを追加
+            if [[ "${{ steps.changes.outputs.backend }}" == "true" ]]; then
+              git add backend/uv.lock
+            fi
+            if [[ "${{ steps.changes.outputs.frontend }}" == "true" ]]; then
+              git add frontend/pnpm-lock.yaml
+            fi
+            git commit -m "chore(deps): update lockfiles"
             git push
           else
             echo "No lockfile changes to commit"
