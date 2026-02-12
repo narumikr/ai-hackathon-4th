@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
+import re
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import ValidationError
 
@@ -26,7 +27,6 @@ from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
-from app.infrastructure.ai.schemas.evaluation import TravelGuideEvaluationSchema
 from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
 from app.prompts import load_template, render_template
 
@@ -94,11 +94,10 @@ _FACT_EXTRACTION_PROMPT_TEMPLATE = "travel_guide_fact_extraction_prompt.txt"
 _TRAVEL_GUIDE_PROMPT_TEMPLATE = "travel_guide_prompt.txt"
 _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_fact_extraction_system_instruction.txt"
 _TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_system_instruction.txt"
-_EVALUATION_PROMPT_TEMPLATE = "travel_guide_evaluation_prompt.txt"
-_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE = "travel_guide_evaluation_system_instruction.txt"
 _NO_SPOTS_TEXT_TEMPLATE = "travel_guide_no_spots_text.txt"
 
 logger = logging.getLogger(__name__)
+_URL_REGEX = re.compile(r"https?://[^\s)\]}>\"']+")
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -195,6 +194,224 @@ def _require_int(value: object, field_name: str) -> int:
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{field_name} must be an int.")
     return value
+
+
+def _extract_urls(text: str) -> set[str]:
+    """テキストからURLを抽出する。"""
+    urls: set[str] = set()
+    for match in _URL_REGEX.findall(text):
+        url = match.rstrip(".,;:!?。、）】＞")
+        if url:
+            urls.add(url)
+    return urls
+
+
+def _collect_urls_from_guide_payload(guide_data: dict[str, Any]) -> set[str]:
+    """旅行ガイド構造化データからURLを収集する。"""
+    urls: set[str] = set()
+
+    overview = guide_data.get("overview")
+    if isinstance(overview, str):
+        urls.update(_extract_urls(overview))
+
+    timeline = guide_data.get("timeline")
+    if isinstance(timeline, list):
+        for item in timeline:
+            if not isinstance(item, dict):
+                continue
+            for key in ("event", "significance"):
+                value = item.get(key)
+                if isinstance(value, str):
+                    urls.update(_extract_urls(value))
+
+    spot_details = guide_data.get("spotDetails")
+    if isinstance(spot_details, list):
+        for item in spot_details:
+            if not isinstance(item, dict):
+                continue
+            for key in ("historicalBackground", "historicalSignificance", "recommendedVisitTime"):
+                value = item.get(key)
+                if isinstance(value, str):
+                    urls.update(_extract_urls(value))
+            highlights = item.get("highlights")
+            if isinstance(highlights, list):
+                for highlight in highlights:
+                    if isinstance(highlight, str):
+                        urls.update(_extract_urls(highlight))
+
+    checkpoints = guide_data.get("checkpoints")
+    if isinstance(checkpoints, list):
+        for item in checkpoints:
+            if not isinstance(item, dict):
+                continue
+            historical_context = item.get("historicalContext")
+            if isinstance(historical_context, str):
+                urls.update(_extract_urls(historical_context))
+            checkpoint_items = item.get("checkpoints")
+            if isinstance(checkpoint_items, list):
+                for checkpoint in checkpoint_items:
+                    if isinstance(checkpoint, str):
+                        urls.update(_extract_urls(checkpoint))
+
+    return urls
+
+
+def _summarize_url_quality(urls: set[str]) -> dict[str, Any]:
+    """URLセットの品質情報を集計する。"""
+    parsed_pairs = [(url, urlparse(url)) for url in urls]
+
+    malformed_urls = sorted(url for url, parsed in parsed_pairs if not parsed.netloc)
+    non_https_urls = sorted(url for url, parsed in parsed_pairs if parsed.scheme.lower() != "https")
+
+    possibly_expiring_urls = sorted(
+        url
+        for url, parsed in parsed_pairs
+        if any(
+            token in parsed.query.lower()
+            for token in ("x-goog-expires", "x-amz-expires", "x-goog-signature", "token=")
+        )
+    )
+    grounding_redirect_urls = sorted(
+        url
+        for url, parsed in parsed_pairs
+        if parsed.netloc == "vertexaisearch.cloud.google.com"
+        and "grounding-api-redirect" in parsed.path
+    )
+    domains = {parsed.netloc for _, parsed in parsed_pairs if parsed.netloc}
+
+    return {
+        "url_count": len(urls),
+        "domain_count": len(domains),
+        "domains": sorted(domains),
+        "malformed_urls": malformed_urls,
+        "non_https_urls": non_https_urls,
+        "possibly_expiring_urls": possibly_expiring_urls,
+        "grounding_redirect_urls": grounding_redirect_urls,
+    }
+
+
+def _log_fact_extraction_link_diagnostics(*, plan_id: str, extracted_facts: str) -> None:
+    """Step Aの抽出URL品質をログ出力する。"""
+    extracted_urls = _extract_urls(extracted_facts)
+    summary = _summarize_url_quality(extracted_urls)
+
+    logger.info(
+        "Fact extraction link diagnostics: extracted_urls=%d domains=%d malformed=%d non_https=%d expiring=%d grounding_redirect=%d",
+        summary["url_count"],
+        summary["domain_count"],
+        len(summary["malformed_urls"]),
+        len(summary["non_https_urls"]),
+        len(summary["possibly_expiring_urls"]),
+        len(summary["grounding_redirect_urls"]),
+        extra={
+            "plan_id": plan_id,
+            "extracted_url_count": summary["url_count"],
+            "extracted_domain_count": summary["domain_count"],
+            "malformed_url_count": len(summary["malformed_urls"]),
+            "non_https_url_count": len(summary["non_https_urls"]),
+            "possibly_expiring_url_count": len(summary["possibly_expiring_urls"]),
+            "grounding_redirect_url_count": len(summary["grounding_redirect_urls"]),
+            "extracted_url_samples": sorted(extracted_urls)[:5],
+            "malformed_url_samples": summary["malformed_urls"][:5],
+            "non_https_url_samples": summary["non_https_urls"][:5],
+            "possibly_expiring_url_samples": summary["possibly_expiring_urls"][:5],
+            "grounding_redirect_url_samples": summary["grounding_redirect_urls"][:5],
+        },
+    )
+
+
+def _log_link_quality_diagnostics(
+    *,
+    plan_id: str,
+    stage: str,
+    extracted_facts: str,
+    guide_data: dict[str, Any],
+) -> None:
+    """抽出結果と生成ガイドのURL整合性をログ出力する。"""
+    extracted_urls = _extract_urls(extracted_facts)
+    guide_urls = _collect_urls_from_guide_payload(guide_data)
+
+    extracted_summary = _summarize_url_quality(extracted_urls)
+    guide_summary = _summarize_url_quality(guide_urls)
+    unmatched_urls = sorted(guide_urls - extracted_urls)
+    matched_url_count = len(guide_urls & extracted_urls)
+    grounding_coverage = (
+        (matched_url_count / guide_summary["url_count"]) if guide_summary["url_count"] > 0 else 1.0
+    )
+    step_b_urls_fully_grounded = len(unmatched_urls) == 0
+
+    logger.info(
+        "Guide link diagnostics: stage=%s extracted_urls=%d guide_urls=%d matched=%d unmatched=%d coverage=%.3f fully_grounded=%s non_https=%d",
+        stage,
+        extracted_summary["url_count"],
+        guide_summary["url_count"],
+        matched_url_count,
+        len(unmatched_urls),
+        grounding_coverage,
+        step_b_urls_fully_grounded,
+        len(guide_summary["non_https_urls"]),
+        extra={
+            "plan_id": plan_id,
+            "stage": stage,
+            "extracted_url_count": extracted_summary["url_count"],
+            "guide_url_count": guide_summary["url_count"],
+            "matched_url_count": matched_url_count,
+            "unmatched_url_count": len(unmatched_urls),
+            "grounding_coverage": grounding_coverage,
+            "step_b_urls_fully_grounded": step_b_urls_fully_grounded,
+            "non_https_url_count": len(guide_summary["non_https_urls"]),
+            "malformed_url_count": len(guide_summary["malformed_urls"]),
+            "possibly_expiring_url_count": len(guide_summary["possibly_expiring_urls"]),
+            "grounding_redirect_url_count": len(guide_summary["grounding_redirect_urls"]),
+            "extracted_domain_count": extracted_summary["domain_count"],
+            "guide_domain_count": guide_summary["domain_count"],
+            "unmatched_url_samples": unmatched_urls[:5],
+            "guide_url_samples": sorted(guide_urls)[:5],
+            "possibly_expiring_url_samples": guide_summary["possibly_expiring_urls"][:5],
+        },
+    )
+
+    if unmatched_urls:
+        logger.warning(
+            "Guide contains URLs not found in extracted facts: stage=%s unmatched=%d samples=%s",
+            stage,
+            len(unmatched_urls),
+            unmatched_urls[:5],
+            extra={
+                "plan_id": plan_id,
+                "stage": stage,
+                "unmatched_url_count": len(unmatched_urls),
+                "unmatched_url_samples": unmatched_urls[:5],
+            },
+        )
+
+    if guide_summary["non_https_urls"]:
+        logger.warning(
+            "Guide contains non-HTTPS URLs: stage=%s count=%d samples=%s",
+            stage,
+            len(guide_summary["non_https_urls"]),
+            guide_summary["non_https_urls"][:5],
+            extra={
+                "plan_id": plan_id,
+                "stage": stage,
+                "non_https_url_count": len(guide_summary["non_https_urls"]),
+                "non_https_url_samples": guide_summary["non_https_urls"][:5],
+            },
+        )
+
+    if guide_summary["possibly_expiring_urls"]:
+        logger.warning(
+            "Guide contains possibly expiring URLs: stage=%s count=%d samples=%s",
+            stage,
+            len(guide_summary["possibly_expiring_urls"]),
+            guide_summary["possibly_expiring_urls"][:5],
+            extra={
+                "plan_id": plan_id,
+                "stage": stage,
+                "possibly_expiring_url_count": len(guide_summary["possibly_expiring_urls"]),
+                "possibly_expiring_url_samples": guide_summary["possibly_expiring_urls"][:5],
+            },
+        )
 
 
 def _build_timeline(items: list, allowed_spot_names: set[str]) -> list[HistoricalEvent]:
@@ -404,6 +621,10 @@ class GenerateTravelGuideUseCase:
                     "Fact extraction completed",
                     extra={"plan_id": plan_id, "facts_length": len(extracted_facts)},
                 )
+                _log_fact_extraction_link_diagnostics(
+                    plan_id=plan_id,
+                    extracted_facts=extracted_facts,
+                )
 
                 # 初回生成（Step Aの出力を使用）
                 logger.debug(
@@ -418,50 +639,12 @@ class GenerateTravelGuideUseCase:
                         "structured_keys": sorted(structured.keys()),
                     },
                 )
-
-                # 評価
-                logger.debug(
-                    "Starting travel guide evaluation",
-                    extra={"plan_id": plan_id},
+                _log_link_quality_diagnostics(
+                    plan_id=plan_id,
+                    stage="initial_generation",
+                    extracted_facts=extracted_facts,
+                    guide_data=structured,
                 )
-                evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
-                logger.debug(
-                    "Travel guide evaluation completed",
-                    extra={"plan_id": plan_id},
-                )
-
-                # 評価結果を解析
-                is_valid = self._check_evaluation_result(evaluation)
-
-                # 不合格の場合は1回だけ再生成
-                if not is_valid:
-                    failure_reasons = self._get_failure_reasons(evaluation)
-                    logger.warning(
-                        "Travel guide evaluation failed. Reasons: %s. Retrying once...",
-                        "; ".join(failure_reasons),
-                    )
-                    logger.debug(
-                        "Retrying travel guide generation after evaluation failure",
-                        extra={"plan_id": plan_id},
-                    )
-                    structured = await self._generate_guide_data(travel_plan, extracted_facts)
-
-                    # 再評価（ログ出力のみ、再生成は行わない）
-                    logger.debug(
-                        "Re-evaluating travel guide after retry",
-                        extra={"plan_id": plan_id},
-                    )
-                    re_evaluation = await self._evaluate_guide_data(structured, plan_spot_names)
-                    re_is_valid = self._check_evaluation_result(re_evaluation)
-                    if not re_is_valid:
-                        re_failure_reasons = self._get_failure_reasons(re_evaluation)
-                        logger.warning(
-                            "Travel guide evaluation failed after retry. Reasons: %s. Proceeding anyway.",
-                            "; ".join(re_failure_reasons),
-                        )
-                    else:
-                        logger.info("Travel guide evaluation passed after retry.")
-
                 # レスポンスバリデーション
                 try:
                     TravelGuideResponseSchema.model_validate(structured)
@@ -605,92 +788,6 @@ class GenerateTravelGuideUseCase:
                 task_idempotency_key=task_idempotency_key,
                 target_url=task_target_url,
             )
-
-    async def _evaluate_guide_data(
-        self, guide_data: dict[str, Any], required_spot_names: list[str]
-    ) -> dict[str, Any]:
-        """旅行ガイドデータを評価する
-
-        Args:
-            guide_data: 評価対象の旅行ガイドデータ
-            required_spot_names: 旅行計画に含まれるべきスポット名のリスト
-
-        Returns:
-            評価結果
-        """
-        logger.debug(
-            "Evaluating guide data with AI",
-            extra={
-                "required_spot_count": len(required_spot_names),
-                "guide_key_count": len(guide_data.keys()),
-            },
-        )
-        guide_data_json = json.dumps(guide_data, ensure_ascii=False, indent=2)
-        required_spots_text = "\n".join([f"- {name}" for name in required_spot_names])
-        prompt = render_template(
-            _EVALUATION_PROMPT_TEMPLATE,
-            guide_data=guide_data_json,
-            required_spots=required_spots_text,
-        )
-        system_instruction = render_template(_EVALUATION_SYSTEM_INSTRUCTION_TEMPLATE)
-
-        return await self._ai_service.generate_structured_data(
-            prompt=prompt,
-            response_schema=TravelGuideEvaluationSchema,
-            system_instruction=system_instruction,
-        )
-
-    def _check_evaluation_result(self, evaluation: dict[str, Any]) -> bool:
-        """評価結果が合格かどうかをチェックする
-
-        Args:
-            evaluation: AIサービスからの評価結果
-
-        Returns:
-            合格の場合True
-        """
-        spot_evaluations = evaluation.get("spotEvaluations", [])
-        has_historical_comparison = evaluation.get("hasHistoricalComparison", False)
-        all_spots_included = evaluation.get("allSpotsIncluded", False)
-
-        # 全てのスポットが含まれ、全てのスポットに出典があり、歴史的対比もある場合のみ合格
-        all_spots_have_citation = all(spot.get("hasCitation", False) for spot in spot_evaluations)
-
-        return all_spots_included and all_spots_have_citation and has_historical_comparison
-
-    def _get_failure_reasons(self, evaluation: dict[str, Any]) -> list[str]:
-        """評価結果から不合格の理由を取得する
-
-        Args:
-            evaluation: AIサービスからの評価結果
-
-        Returns:
-            不合格の理由のリスト
-        """
-        reasons: list[str] = []
-
-        # スポット漏れチェック
-        if not evaluation.get("allSpotsIncluded", False):
-            missing_spots = evaluation.get("missingSpots", [])
-            if missing_spots:
-                reasons.append(f"spotDetailsに含まれていないスポット: {', '.join(missing_spots)}")
-
-        # 出典チェック
-        spot_evaluations = evaluation.get("spotEvaluations", [])
-        missing_citations = [
-            spot.get("spotName", "")
-            for spot in spot_evaluations
-            if not spot.get("hasCitation", False)
-        ]
-
-        if missing_citations:
-            reasons.append(f"出典が不足しているスポット: {', '.join(missing_citations)}")
-
-        # 歴史的対比チェック
-        if not evaluation.get("hasHistoricalComparison", False):
-            reasons.append("overviewに歴史の有名な話題との対比が含まれていません")
-
-        return reasons
 
     async def _generate_guide_data(
         self, travel_plan: TravelPlan, extracted_facts: str

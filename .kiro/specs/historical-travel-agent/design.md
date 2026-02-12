@@ -24,6 +24,11 @@ graph TB
         Upload[Image Upload]
         Display[Content Display]
     end
+
+    subgraph "Google Maps Platform"
+        MapsJS[Maps JavaScript API]
+        PlacesAPI[Places API]
+    end
     
     subgraph "Backend Deployment"
         CloudRun[Google Cloud Run]
@@ -40,9 +45,8 @@ graph TB
         Gemini[Vertex AI Gemini]
         Tools[Built-in Tools]
         subgraph "Gemini Tools"
-            Search[Google Search]
-            Maps[Google Maps]
-            Vision[Image Analysis]
+          Search[Google Search]
+          Vision[Image Analysis]
         end
     end
     
@@ -53,13 +57,14 @@ graph TB
     
     Firebase --> UI
     UI --> CloudRun
+    UI --> MapsJS
+    MapsJS --> PlacesAPI
     CloudBuild --> CloudRun
     CloudRun --> API
     Upload --> FileHandler
     API --> Gemini
     Gemini --> Tools
     Tools --> Search
-    Tools --> Maps
     Tools --> Vision
     FileHandler --> CloudStorage
     API --> TempStorage
@@ -253,9 +258,6 @@ historical-travel-agent/
 │   │   │   ├── search/              # 検索統合
 │   │   │   │   ├── __init__.py
 │   │   │   │   └── google_search_client.py
-│   │   │   ├── maps/                # 地図統合
-│   │   │   │   ├── __init__.py
-│   │   │   │   └── google_maps_client.py
 │   │   │   ├── storage/             # ストレージ
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── local_storage.py         # ローカル開発用
@@ -444,7 +446,15 @@ cd deployment/terraform && terraform apply
 - **TypeScript**: リアルタイム型チェック
 - **App Router**: Next.js 16 App Router使用
 
-#### 2. Photo Upload Interface  
+#### 2. Google Maps Platform Integration
+- **目的**: 地図表示と観光スポット検索
+- **技術**: Maps JavaScript API + Places API（フロントエンドから直接呼び出し）
+- **機能**:
+  - 地図上での観光スポット表示
+  - Places APIによるスポット検索・詳細情報取得
+  - 地理的コンテキストの提供
+
+#### 3. Photo Upload Interface
 - **目的**: 旅行後の写真・感想アップロード
 - **機能**:
   - ドラッグ&ドロップファイルアップロード
@@ -498,7 +508,6 @@ cd deployment/terraform && terraform apply
 **外部サービス統合**:
 - `GeminiClient`: Vertex AI Gemini統合（Function Calling、マルチモーダル入力）
 - `GoogleSearchClient`: Google Search統合（歴史情報検索）
-- `GoogleMapsClient`: Google Maps統合（地図生成）
 - `LocalStorage` / `CloudStorage`: ファイルストレージ実装
 
 #### 4. インターフェース層 (Interfaces Layer)
@@ -534,12 +543,7 @@ POST /api/v1/upload-images         # 画像アップロード
    - 最新の観光情報取得
    - 歴史的事実の検証
 
-2. **Google Maps Tool**
-   - 地理的コンテキストの取得
-   - 周辺の歴史的スポット発見
-   - ルート最適化
-
-3. **Image Analysis (Vision)**
+2. **Image Analysis (Vision)**
    - アップロードされた写真の分析
    - 観光スポット・建造物の識別
    - 歴史的要素の抽出

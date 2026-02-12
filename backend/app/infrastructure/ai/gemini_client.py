@@ -5,7 +5,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING, Any, TypeVar
+import re
+import ssl
+import time
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 from google import genai
 from google.api_core import exceptions as google_exceptions
@@ -22,6 +28,7 @@ if TYPE_CHECKING:
     from app.infrastructure.ai.schemas.base import GeminiResponseSchema
 
 T = TypeVar("T", bound="GeminiResponseSchema")
+_URL_TOOL_TIMEOUT_SECONDS = 10
 
 
 class GeminiClient:
@@ -33,7 +40,7 @@ class GeminiClient:
     def __init__(
         self,
         project_id: str,
-        location: str = "asia-northeast1",
+        location: str = "global",
         model_name: str = "gemini-2.5-flash",
     ) -> None:
         """GeminiClientを初期化する
@@ -65,8 +72,9 @@ class GeminiClient:
         temperature: float = 0.7,
         max_output_tokens: int = 8192,
         images: list[str] | None = None,
+        model_name_override: str | None = None,
         timeout: int = 60,
-        max_retries: int = 3,
+        max_retries: int = 10,
     ) -> str:
         """基本的なコンテンツ生成を行う
 
@@ -104,24 +112,75 @@ class GeminiClient:
 
         # リトライ付きで生成を実行
         for attempt in range(max_retries):
+            attempt_start = time.perf_counter()
             try:
+                first_call_start = time.perf_counter()
+                selected_model_name = model_name_override or self.model_name
                 response = await asyncio.wait_for(
                     self._client.models.generate_content(
-                        model=self.model_name,
+                        model=selected_model_name,
                         contents=contents,  # type: ignore[arg-type]
                         config=generation_config,
                     ),
                     timeout=timeout,
                 )
+                first_call_sec = time.perf_counter() - first_call_start
+                tool_resolution_start = time.perf_counter()
+                response = await self._resolve_validate_url_tool_calls(
+                    response=response,
+                    tools=tools,
+                    prompt=prompt,
+                    system_instruction=system_instruction,
+                    temperature=temperature,
+                    max_output_tokens=max_output_tokens,
+                    images=images,
+                    model_name_override=model_name_override,
+                    timeout=timeout,
+                )
+                tool_resolution_sec = time.perf_counter() - tool_resolution_start
+                attempt_sec = time.perf_counter() - attempt_start
+                self._logger.info(
+                    "StepA timing: attempt=%d/%d first_call_sec=%.3f tool_resolution_sec=%.3f attempt_total_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    first_call_sec,
+                    tool_resolution_sec,
+                    attempt_sec,
+                )
+                if tools and "google_search" in tools:
+                    search_diagnostics = self._build_search_tool_diagnostics(response)
+                    self._logger.info(
+                        "Google Search tool diagnostics: %s",
+                        search_diagnostics,
+                    )
+                    if (
+                        search_diagnostics["grounded_candidate_count"] == 0
+                        and search_diagnostics["google_search_function_call_count"] == 0
+                    ):
+                        self._logger.warning(
+                            "Google Search was requested but no grounding/function-call evidence was found."
+                        )
                 return self._extract_text(response)
 
             except TimeoutError as e:
+                self._logger.warning(
+                    "StepA timeout: attempt=%d/%d elapsed_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                )
                 if attempt == max_retries - 1:
                     raise AIServiceConnectionError(f"Request timeout: {e}") from e
                 await self._exponential_backoff(attempt)
 
             except google_exceptions.ResourceExhausted as e:
                 # クォータ超過エラー（429）
+                self._logger.warning(
+                    "StepA quota exhausted: attempt=%d/%d elapsed_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                )
                 if attempt == max_retries - 1:
                     raise AIServiceQuotaExceededError(f"API quota exceeded: {e}") from e
                 # 指数バックオフでリトライ
@@ -129,21 +188,47 @@ class GeminiClient:
 
             except google_exceptions.DeadlineExceeded as e:
                 # タイムアウトエラー
+                self._logger.warning(
+                    "StepA deadline exceeded: attempt=%d/%d elapsed_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                )
                 if attempt == max_retries - 1:
                     raise AIServiceConnectionError(f"Request timeout: {e}") from e
                 await self._exponential_backoff(attempt)
 
             except google_exceptions.ServiceUnavailable as e:
                 # サービス利用不可エラー（500系）
+                self._logger.warning(
+                    "StepA service unavailable: attempt=%d/%d elapsed_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                )
                 if attempt == max_retries - 1:
                     raise AIServiceConnectionError(f"Service unavailable: {e}") from e
                 await self._exponential_backoff(attempt)
 
             except google_exceptions.InvalidArgument as e:
                 # 不正な引数エラー（400）- リトライしない
+                self._logger.warning(
+                    "StepA invalid argument: attempt=%d/%d elapsed_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                )
                 raise AIServiceInvalidRequestError(f"Invalid request: {e}") from e
 
             except genai_errors.ClientError as e:
+                self._logger.warning(
+                    "StepA client error: attempt=%d/%d elapsed_sec=%.3f code=%s status=%s",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                    getattr(e, "code", None),
+                    getattr(e, "status", None),
+                )
                 if self._is_rate_limit_error(e):
                     if attempt == max_retries - 1:
                         raise AIServiceQuotaExceededError(f"API quota exceeded: {e}") from e
@@ -152,12 +237,24 @@ class GeminiClient:
                 raise AIServiceInvalidRequestError(f"Invalid request: {e}") from e
 
             except genai_errors.ServerError as e:
+                self._logger.warning(
+                    "StepA server error: attempt=%d/%d elapsed_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                )
                 if attempt == max_retries - 1:
                     raise AIServiceConnectionError(f"Service unavailable: {e}") from e
                 await self._exponential_backoff(attempt)
 
             except google_exceptions.GoogleAPIError as e:
                 # その他のGoogleAPIエラー
+                self._logger.warning(
+                    "StepA google api error: attempt=%d/%d elapsed_sec=%.3f",
+                    attempt + 1,
+                    max_retries,
+                    time.perf_counter() - attempt_start,
+                )
                 if attempt == max_retries - 1:
                     raise AIServiceConnectionError(f"Google API error: {e}") from e
                 await self._exponential_backoff(attempt)
@@ -176,7 +273,7 @@ class GeminiClient:
         max_output_tokens: int = 8192,
         images: list[str] | None = None,
         timeout: int = 60,
-        max_retries: int = 3,
+        max_retries: int = 10,
     ) -> dict[str, Any]:
         """JSON構造化データを生成する
 
@@ -286,6 +383,35 @@ class GeminiClient:
             if tool_name == "google_search":
                 tools.append(types.Tool(google_search=types.GoogleSearch()))
                 continue
+            if tool_name == "validate_url":
+                tools.append(
+                    types.Tool(
+                        function_declarations=[
+                            types.FunctionDeclaration(
+                                name="validate_url",
+                                description=(
+                                    "URLの到達性と有効性を検証します。"
+                                    "404、ソフト404、期限付きリンク等を検出します。"
+                                ),
+                                parameters=cast(
+                                    Any,
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "urls": {
+                                                "type": "array",
+                                                "items": {"type": "string"},
+                                                "description": "検証対象URLの配列",
+                                            }
+                                        },
+                                        "required": ["urls"],
+                                    },
+                                ),
+                            )
+                        ]
+                    )
+                )
+                continue
             raise AIServiceInvalidRequestError(f"Unsupported tool name: {tool_name}")
         return tools
 
@@ -312,6 +438,251 @@ class GeminiClient:
             parts.append(types.Part.from_uri(file_uri=image_uri, mime_type="image/jpeg"))
         parts.append(types.Part.from_text(text=prompt))
         return parts
+
+    async def _resolve_validate_url_tool_calls(
+        self,
+        *,
+        response: Any,
+        tools: list[str] | None,
+        prompt: str,
+        system_instruction: str | None,
+        temperature: float,
+        max_output_tokens: int,
+        images: list[str] | None,
+        model_name_override: str | None,
+        timeout: int,
+    ) -> Any:
+        """validate_urlツール呼び出しがあれば実行結果を反映して再生成する。"""
+        if not tools or "validate_url" not in tools:
+            return response
+
+        function_calls = self._extract_named_function_calls(response, "validate_url")
+        if not function_calls:
+            return response
+        self._logger.info(
+            "validate_url tool calls detected: count=%d",
+            len(function_calls),
+        )
+
+        urls_to_validate: list[str] = []
+        for call_args in function_calls:
+            urls = call_args.get("urls")
+            if not isinstance(urls, list):
+                continue
+            for url in urls:
+                if isinstance(url, str) and url.strip():
+                    urls_to_validate.append(url.strip())
+
+        # ツール誤動作時の暴走防止
+        unique_urls = list(dict.fromkeys(urls_to_validate))[:20]
+        if not unique_urls:
+            return response
+
+        validation_results = []
+        validate_start = time.perf_counter()
+        for url in unique_urls:
+            validation_results.append(await self._validate_url_with_http_check(url))
+        validate_sec = time.perf_counter() - validate_start
+
+        validation_text = self._format_validate_url_results(validation_results)
+        self._logger.info(
+            "validate_url tool execution finished: checked=%d valid=%d invalid=%d validate_sec=%.3f",
+            len(validation_results),
+            len([item for item in validation_results if item.get("verdict") == "valid"]),
+            len([item for item in validation_results if item.get("verdict") != "valid"]),
+            validate_sec,
+        )
+        augmented_prompt = (
+            f"{prompt}\n\n"
+            "<url_validation_results>\n"
+            f"{validation_text}\n"
+            "</url_validation_results>\n\n"
+            "上記で invalid と判定されたURLは出典として採用しないでください。"
+        )
+        followup_tools = [tool for tool in tools if tool != "validate_url"]
+        followup_model_tools = self._prepare_tools(followup_tools) if followup_tools else None
+        followup_config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            temperature=temperature,
+            max_output_tokens=max_output_tokens,
+            tools=followup_model_tools,
+        )
+        followup_contents = self._prepare_contents(augmented_prompt, images)
+        second_call_start = time.perf_counter()
+        followup_response = await asyncio.wait_for(
+            self._client.models.generate_content(
+                model=model_name_override or self.model_name,
+                contents=followup_contents,  # type: ignore[arg-type]
+                config=followup_config,
+            ),
+            timeout=timeout,
+        )
+        self._logger.info(
+            "validate_url followup generation finished: second_call_sec=%.3f",
+            time.perf_counter() - second_call_start,
+        )
+        return followup_response
+
+    def _extract_named_function_calls(
+        self, response: Any, function_name: str
+    ) -> list[dict[str, Any]]:
+        """レスポンスから指定名のFunction Call引数を抽出する。"""
+        calls: list[dict[str, Any]] = []
+        candidates = getattr(response, "candidates", None)
+        if not candidates:
+            return calls
+
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            parts = getattr(content, "parts", None)
+            if not parts:
+                continue
+            for part in parts:
+                function_call = getattr(part, "function_call", None)
+                if function_call is None:
+                    continue
+                name = getattr(function_call, "name", None)
+                if name != function_name:
+                    continue
+                args = getattr(function_call, "args", None)
+                if isinstance(args, dict):
+                    calls.append(args)
+                    continue
+                if isinstance(args, str):
+                    try:
+                        parsed = json.loads(args)
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(parsed, dict):
+                        calls.append(parsed)
+        return calls
+
+    async def _validate_url_with_http_check(self, url: str) -> dict[str, Any]:
+        """URL検証ツールの実処理。"""
+        return await asyncio.to_thread(self._validate_url_with_http_check_sync, url)
+
+    def _validate_url_with_http_check_sync(self, url: str) -> dict[str, Any]:
+        """URL検証ツールの同期処理。"""
+        parsed = urlparse(url)
+        if parsed.scheme.lower() != "https":
+            return {
+                "url": url,
+                "verdict": "invalid",
+                "reason": "non_https",
+                "tls_valid": False,
+                "tls_error": "non_https_scheme",
+            }
+        if any(
+            token in parsed.query.lower()
+            for token in ("x-goog-expires", "x-amz-expires", "x-goog-signature", "token=")
+        ):
+            return {
+                "url": url,
+                "verdict": "invalid",
+                "reason": "possibly_expiring",
+                "tls_valid": None,
+                "tls_error": None,
+            }
+
+        try:
+            request = Request(
+                url,
+                headers={"User-Agent": "HistoricalTravelAgent/1.0 (validate_url tool)"},
+                method="GET",
+            )
+            with urlopen(request, timeout=_URL_TOOL_TIMEOUT_SECONDS) as response:  # noqa: S310
+                status_code = response.getcode()
+                content_type = response.headers.get("Content-Type", "")
+                final_url = response.geturl()
+                body = response.read(65536).decode("utf-8", errors="ignore")
+                if status_code < 200 or status_code >= 300:
+                    return {
+                        "url": url,
+                        "verdict": "invalid",
+                        "reason": f"http_status_{status_code}",
+                        "final_url": final_url,
+                        "tls_valid": True,
+                        "tls_error": None,
+                    }
+                if "text/html" in content_type.lower() and self._is_soft_404_html(body, final_url):
+                    return {
+                        "url": url,
+                        "verdict": "invalid",
+                        "reason": "soft_404",
+                        "final_url": final_url,
+                        "tls_valid": True,
+                        "tls_error": None,
+                    }
+                return {
+                    "url": url,
+                    "verdict": "valid",
+                    "reason": "ok",
+                    "final_url": final_url,
+                    "tls_valid": True,
+                    "tls_error": None,
+                }
+        except HTTPError as exc:
+            return {
+                "url": url,
+                "verdict": "invalid",
+                "reason": f"http_error_{exc.code}",
+                "tls_valid": True,
+                "tls_error": None,
+            }
+        except (URLError, TimeoutError, ValueError, ssl.SSLError) as exc:
+            tls_error = self._extract_tls_error_code(exc)
+            return {
+                "url": url,
+                "verdict": "invalid",
+                "reason": f"network_error_{type(exc).__name__}",
+                "tls_valid": False if tls_error else None,
+                "tls_error": tls_error,
+            }
+
+    def _extract_tls_error_code(self, exc: BaseException) -> str | None:
+        """例外からTLSエラー種別を抽出する。"""
+        if isinstance(exc, ssl.SSLError):
+            detail = str(exc).lower()
+        elif isinstance(exc, URLError):
+            detail = str(exc.reason).lower()
+        else:
+            detail = str(exc).lower()
+
+        if "certificate has expired" in detail or "certificate expired" in detail:
+            return "certificate_expired"
+        if "certificate verify failed" in detail:
+            return "certificate_verify_failed"
+        if "self signed certificate" in detail:
+            return "self_signed_certificate"
+        if "hostname" in detail and "mismatch" in detail:
+            return "hostname_mismatch"
+        return None
+
+    def _is_soft_404_html(self, html: str, final_url: str) -> bool:
+        lowered = html.lower()
+        final_url_lower = final_url.lower()
+        if any(token in final_url_lower for token in ("/404", "404.html", "kanko404")):
+            return True
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", html, flags=re.IGNORECASE | re.DOTALL)
+        title = title_match.group(1).lower() if title_match else ""
+        return any(
+            token in title or token in lowered
+            for token in ("not found", "見つかりません", "お探しのページ", "統合しました")
+        )
+
+    def _format_validate_url_results(self, validation_results: list[dict[str, Any]]) -> str:
+        lines = []
+        for result in validation_results:
+            lines.append(
+                "- url: {url} | verdict: {verdict} | reason: {reason} | tls_valid: {tls_valid} | tls_error: {tls_error}".format(
+                    url=result.get("url"),
+                    verdict=result.get("verdict"),
+                    reason=result.get("reason"),
+                    tls_valid=result.get("tls_valid"),
+                    tls_error=result.get("tls_error"),
+                )
+            )
+        return "\n".join(lines)
 
     def _extract_text(self, response: Any) -> str:
         """レスポンスからテキストを取り出す
@@ -393,6 +764,62 @@ class GeminiClient:
             "candidate_text_lengths": candidate_text_lengths[:10],
             "finish_reasons": finish_reasons[:10],
             "has_prompt_feedback": prompt_feedback is not None,
+        }
+
+    def _build_search_tool_diagnostics(self, response: Any) -> dict[str, Any]:
+        """Google Searchツール利用の診断情報を構築する。"""
+
+        def _field(obj: Any, key: str) -> Any:
+            if obj is None:
+                return None
+            if isinstance(obj, dict):
+                return obj.get(key)
+            return getattr(obj, key, None)
+
+        def _as_list(value: Any) -> list[Any]:
+            if isinstance(value, (list, tuple)):
+                return list(value)
+            return []
+
+        candidates = _as_list(_field(response, "candidates"))
+        grounded_candidate_count = 0
+        grounding_chunk_count = 0
+        web_search_query_count = 0
+        google_search_function_call_count = 0
+        grounded_uris: list[str] = []
+
+        for candidate in candidates:
+            grounding_metadata = _field(candidate, "grounding_metadata")
+            if grounding_metadata is not None:
+                grounded_candidate_count += 1
+
+                grounding_chunks = _as_list(_field(grounding_metadata, "grounding_chunks"))
+                grounding_chunk_count += len(grounding_chunks)
+
+                for chunk in grounding_chunks:
+                    web = _field(chunk, "web")
+                    uri = _field(web, "uri")
+                    if isinstance(uri, str) and uri.strip():
+                        grounded_uris.append(uri.strip())
+
+                web_search_queries = _as_list(_field(grounding_metadata, "web_search_queries"))
+                web_search_query_count += len(web_search_queries)
+
+            content = _field(candidate, "content")
+            parts = _as_list(_field(content, "parts"))
+            for part in parts:
+                function_call = _field(part, "function_call")
+                name = _field(function_call, "name")
+                if name == "google_search":
+                    google_search_function_call_count += 1
+
+        return {
+            "candidate_count": len(candidates),
+            "grounded_candidate_count": grounded_candidate_count,
+            "grounding_chunk_count": grounding_chunk_count,
+            "web_search_query_count": web_search_query_count,
+            "google_search_function_call_count": google_search_function_call_count,
+            "grounded_uri_samples": grounded_uris[:5],
         }
 
     def _extract_structured_data(self, response: Any) -> dict[str, Any]:
