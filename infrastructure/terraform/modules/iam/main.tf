@@ -79,6 +79,14 @@ resource "google_service_account_iam_member" "backend_service_account_user" {
   member             = "serviceAccount:${google_service_account.backend[0].email}"
 }
 
+# Firebase Auth権限（IDトークン検証）
+resource "google_project_iam_member" "backend_firebase_auth" {
+  count   = var.environment == "production" ? 1 : 0
+  project = var.project_id
+  role    = "roles/firebaseauth.viewer"
+  member  = "serviceAccount:${google_service_account.backend[0].email}"
+}
+
 # ============================================================================
 # フロントエンド用サービスアカウント
 # ============================================================================

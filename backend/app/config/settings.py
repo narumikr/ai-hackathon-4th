@@ -1,8 +1,9 @@
 """アプリケーション設定."""
 
+import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import quote_plus
 
 from pydantic import field_validator, model_validator
@@ -61,6 +62,19 @@ class Settings(DatabaseSettings):
 
     # CORS設定
     cors_origins: list[str] = ["http://localhost:3000"]
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> list[str]:
+        """環境変数からのCORS_ORIGINS値をパース（JSON形式・カンマ区切りの両方に対応）"""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("["):
+                return json.loads(v)
+            return [s.strip() for s in v.split(",") if s.strip()]
+        raise ValueError(f"cors_originsの形式が不正です: {v}")
 
     # Redis設定
     redis_url: str = "redis://localhost:6379"  # デフォルト値を設定

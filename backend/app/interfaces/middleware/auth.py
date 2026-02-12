@@ -26,12 +26,29 @@ class UserContext:
 
 
 def extract_token_from_header(request: Request) -> str | None:
-    """Extract Bearer token from Authorization header.
+    """Extract Bearer token from request headers.
+
+    In production, the frontend proxy overwrites the Authorization header
+    with a GCP OIDC token for Cloud Run service-to-service authentication,
+    and forwards the original Firebase ID token via X-Forwarded-Authorization.
+
+    Priority:
+        1. X-Forwarded-Authorization (forwarded from frontend proxy)
+        2. Authorization (direct access / local development)
 
     Returns:
         Token string or None if not present
     """
-    auth_header = request.headers.get("Authorization")
+    forwarded_auth = request.headers.get("X-Forwarded-Authorization")
+    standard_auth = request.headers.get("Authorization")
+
+    logger.warning(
+        "Auth header debug: X-Forwarded-Authorization=%s, Authorization=%s",
+        "present" if forwarded_auth else "absent",
+        "present" if standard_auth else "absent",
+    )
+
+    auth_header = forwarded_auth or standard_auth
     if not auth_header:
         return None
 
@@ -39,7 +56,11 @@ def extract_token_from_header(request: Request) -> str | None:
     if len(parts) != 2 or parts[0].lower() != "bearer":
         return None
 
-    return parts[1]
+    token = parts[1]
+    source = "X-Forwarded-Authorization" if forwarded_auth else "Authorization"
+    logger.warning("Token extracted from %s (first 20 chars: %s...)", source, token[:20])
+
+    return token
 
 
 def require_auth(request: Request) -> UserContext:
@@ -72,7 +93,7 @@ def require_auth(request: Request) -> UserContext:
             detail="Authentication service is unavailable",
         ) from e
     except ValueError as e:
-        logger.debug(f"Token verification failed: {e}")
+        logger.warning(f"Token verification failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

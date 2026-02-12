@@ -122,6 +122,11 @@ const proxyRequest = async (request: NextRequest, path: string[]): Promise<NextR
     forwardHeaders.delete('content-length');
 
     if (process.env.NODE_ENV === 'production') {
+      const originalAuth = forwardHeaders.get('Authorization');
+      if (originalAuth) {
+        forwardHeaders.set('X-Forwarded-Authorization', originalAuth);
+      }
+
       const audience = new URL(backendServiceUrl).origin;
       const identityToken = await getIdentityToken(audience);
       forwardHeaders.set('Authorization', `Bearer ${identityToken}`);
