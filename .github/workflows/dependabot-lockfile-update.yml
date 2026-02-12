@@ -1,0 +1,86 @@
+---
+name: "Dependabot Lockfile Update"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main, develop, develop/**]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-lockfile:
+    name: Update Lockfile
+    # Dependabot PRのみで実行
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Detect changed files
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/pyproject.toml'
+            frontend:
+              - 'frontend/package.json'
+
+      - name: Setup Python
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        if: steps.changes.outputs.backend == 'true'
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Update backend lockfile
+        if: steps.changes.outputs.backend == 'true'
+        run: |
+          cd backend
+          uv lock
+          uv sync
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        if: steps.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: '8'
+
+      - name: Update frontend lockfile
+        if: steps.changes.outputs.frontend == 'true'
+        run: |
+          cd frontend
+          pnpm install --lockfile-only
+
+      - name: Commit lockfile changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email \
+            'github-actions[bot]@users.noreply.github.com'
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add backend/uv.lock frontend/pnpm-lock.yaml || true
+            git commit -m "chore(deps): update lockfiles" || true
+            git push
+          else
+            echo "No lockfile changes to commit"
+          fi
