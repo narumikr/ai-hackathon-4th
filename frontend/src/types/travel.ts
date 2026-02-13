@@ -17,7 +17,6 @@ export interface TouristSpot {
 }
 
 export interface CreateTravelPlanRequest {
-  userId: string;
   title: string;
   destination: string;
   spots?: TouristSpot[];

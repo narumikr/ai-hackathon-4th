@@ -26,6 +26,11 @@ resource "google_cloud_run_service" "backend" {
         }
 
         env {
+          name  = "FIREBASE_PROJECT_ID"
+          value = var.project_id
+        }
+
+        env {
           name  = "STORAGE_TYPE"
           value = "gcs"
         }

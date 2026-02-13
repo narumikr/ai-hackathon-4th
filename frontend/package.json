@@ -23,6 +23,7 @@
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
     "axios": "^1.7.0",
+    "firebase": "^12.9.0",
     "next": "^16.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

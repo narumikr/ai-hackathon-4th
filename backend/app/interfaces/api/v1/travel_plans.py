@@ -15,6 +15,8 @@ from app.infrastructure.persistence.database import get_db
 from app.infrastructure.repositories.reflection_repository import ReflectionRepository
 from app.infrastructure.repositories.travel_guide_repository import TravelGuideRepository
 from app.infrastructure.repositories.travel_plan_repository import TravelPlanRepository
+from app.interfaces.api.v1.ownership import verify_ownership
+from app.interfaces.middleware.auth import UserContext, require_auth
 from app.interfaces.schemas.travel_plan import (
     CreateTravelPlanRequest,
     TravelPlanListResponse,
@@ -72,18 +74,20 @@ def get_reflection_repository(
 def create_travel_plan(
     request: CreateTravelPlanRequest,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行計画を作成する
 
     Args:
         request: 旅行計画作成リクエスト
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         TravelPlanResponse: 作成された旅行計画
 
     Raises:
-        HTTPException: バリデーションエラー（400）
+        HTTPException: バリデーションエラー（400）、認証エラー（401）
     """
     use_case = CreateTravelPlanUseCase(repository)
 
@@ -92,7 +96,7 @@ def create_travel_plan(
 
     try:
         dto = use_case.execute(
-            user_id=request.user_id,
+            user_id=auth.uid,
             title=request.title,
             destination=request.destination,
             spots=spots_dict,
@@ -111,21 +115,21 @@ def create_travel_plan(
     summary="旅行計画一覧を取得",
 )
 def list_travel_plans(
-    user_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> list[TravelPlanListResponse]:
     """ユーザーの旅行計画一覧を取得する
 
     Args:
-        user_id: ユーザーID
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         list[TravelPlanListResponse]: 旅行計画リスト
     """
     use_case = ListTravelPlansUseCase(repository)
     try:
-        dtos = use_case.execute(user_id=user_id)
+        dtos = use_case.execute(user_id=auth.uid)
         return [TravelPlanListResponse.from_dto(dto) for dto in dtos]
     except ValueError as e:
         raise HTTPException(
@@ -144,18 +148,20 @@ def get_travel_plan(
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
     guide_repository: TravelGuideRepository = Depends(get_guide_repository),  # noqa: B008
     reflection_repository: ReflectionRepository = Depends(get_reflection_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行計画を取得する
 
     Args:
         plan_id: 旅行計画ID
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         TravelPlanResponse: 旅行計画
 
     Raises:
-        HTTPException: 旅行計画が見つからない（404）
+        HTTPException: 旅行計画が見つからない（404）、認証エラー（401）
     """
     use_case = GetTravelPlanUseCase(
         repository,
@@ -165,6 +171,7 @@ def get_travel_plan(
 
     try:
         dto = use_case.execute(plan_id=plan_id)
+        verify_ownership(dto.user_id, auth, "travel plan")
         return TravelPlanResponse(**dto.__dict__)
     except ValueError as e:
         raise HTTPException(
@@ -187,6 +194,7 @@ def update_travel_plan(
     plan_id: str,
     request: UpdateTravelPlanRequest,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> TravelPlanResponse:
     """旅行計画を更新する
 
@@ -194,13 +202,23 @@ def update_travel_plan(
         plan_id: 旅行計画ID
         request: 旅行計画更新リクエスト
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         TravelPlanResponse: 更新された旅行計画
 
     Raises:
-        HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）
+        HTTPException: 旅行計画が見つからない（404）、バリデーションエラー（400）、認証エラー（401）
     """
+    # 所有者チェック
+    travel_plan = repository.find_by_id(plan_id)
+    if travel_plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Travel plan not found: {plan_id}",
+        )
+    verify_ownership(travel_plan.user_id, auth, "travel plan")
+
     use_case = UpdateTravelPlanUseCase(repository)
 
     # Pydanticスキーマ → 辞書変換
@@ -237,19 +255,30 @@ def update_travel_plan(
 def delete_travel_plan(
     plan_id: str,
     repository: TravelPlanRepository = Depends(get_repository),  # noqa: B008
+    auth: UserContext = Depends(require_auth),  # noqa: B008
 ) -> Response:
     """旅行計画を削除する
 
     Args:
         plan_id: 旅行計画ID
         repository: TravelPlanRepository
+        auth: 認証ユーザー（Firebase ID token検証済み）
 
     Returns:
         Response: 204 No Content
 
     Raises:
-        HTTPException: 旅行計画が見つからない（404）
+        HTTPException: 旅行計画が見つからない（404）、認証エラー（401）
     """
+    # 所有者チェック
+    travel_plan = repository.find_by_id(plan_id)
+    if travel_plan is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Travel plan not found: {plan_id}",
+        )
+    verify_ownership(travel_plan.user_id, auth, "travel plan")
+
     use_case = DeleteTravelPlanUseCase(repository)
 
     try:

@@ -6,7 +6,6 @@ import { Container } from '@/components/layout';
 import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
 import {
   BUTTON_LABELS,
-  DEFAULT_USER_ID,
   EMOJI_LABELS,
   ERROR_DIALOG_MESSAGES,
   FORM_LABELS,
@@ -137,8 +136,6 @@ export default function ReflectionDetailPage() {
 
     try {
       const apiClient = createApiClientFromEnv();
-      // TODO: 実際のユーザーIDに置き換える（認証機能実装後）
-      const userId = DEFAULT_USER_ID;
 
       // 1. 各スポットの写真をアップロード
       for (const spot of spots) {
@@ -149,7 +146,6 @@ export default function ReflectionDetailPage() {
         if (files.length > 0) {
           await apiClient.uploadSpotReflection({
             planId: id,
-            userId,
             spotId: spot.id,
             spotNote: spot.comment,
             files,
@@ -161,7 +157,6 @@ export default function ReflectionDetailPage() {
       await apiClient.createReflection({
         request: {
           planId: id,
-          userId,
           userNotes: overallComment || undefined,
         },
       });

@@ -53,12 +53,11 @@ class CreateReflectionRequest(BaseModel):
     """振り返り作成リクエスト"""
 
     plan_id: str = Field(..., min_length=1, alias="planId")
-    user_id: str = Field(..., min_length=1, alias="userId")
     user_notes: str | None = Field(None, alias="userNotes")
 
     model_config = {"populate_by_name": True}
 
-    @field_validator("plan_id", "user_id")
+    @field_validator("plan_id")
     @classmethod
     def validate_not_empty(cls, value: str) -> str:
         """空文字列でないことを検証する"""

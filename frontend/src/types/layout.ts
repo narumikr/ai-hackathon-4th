@@ -42,6 +42,10 @@ export interface MobileMenuProps {
   onClose: () => void;
   /** Current path for active state */
   currentPath?: string;
+  /** Handler for sign out */
+  onSignOut?: () => void;
+  /** User email to display */
+  userEmail?: string | null;
 }
 
 /**
