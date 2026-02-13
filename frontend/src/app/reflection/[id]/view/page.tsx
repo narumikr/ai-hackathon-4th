@@ -12,6 +12,10 @@ import {
   STATUS_LABELS,
 } from '@/constants';
 import { createApiClientFromEnv } from '@/lib/api';
+import {
+  clearReflectionSubmissionPending,
+  hasPendingReflectionSubmission,
+} from '@/lib/reflectionSubmissionState';
 import type { TravelPlanResponse } from '@/types';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -25,6 +29,7 @@ export default function ReflectionViewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmissionPending, setIsSubmissionPending] = useState(false);
 
   const fetchTravelPlan = useCallback(
     async (isRefresh = false) => {
@@ -41,9 +46,20 @@ export default function ReflectionViewPage() {
         const apiClient = createApiClientFromEnv();
         const response = await apiClient.getTravelPlan({ planId: id });
         setTravel(response);
+        const submissionPending = hasPendingReflectionSubmission(id);
+        setIsSubmissionPending(submissionPending);
 
-        // 振り返りがまだ作成されていない場合（processing以外）
-        if (!response.pamphlet && response.reflectionGenerationStatus !== 'processing') {
+        if (response.pamphlet || response.reflectionGenerationStatus === 'processing') {
+          clearReflectionSubmissionPending(id);
+          setIsSubmissionPending(false);
+        }
+
+        // 振り返りがまだ作成されていない場合（送信直後の処理待ちを除く）
+        if (
+          !response.pamphlet &&
+          response.reflectionGenerationStatus !== 'processing' &&
+          !submissionPending
+        ) {
           setError(MESSAGES.REFLECTION_NOT_FOUND);
         }
       } catch (_err) {
@@ -89,7 +105,7 @@ export default function ReflectionViewPage() {
   }
 
   // 生成中の場合
-  if (travel.reflectionGenerationStatus === 'processing') {
+  if (travel.reflectionGenerationStatus === 'processing' || isSubmissionPending) {
     return (
       <GenerationStatusView
         title={PAGE_TITLES.REFLECTION_PAMPHLET}

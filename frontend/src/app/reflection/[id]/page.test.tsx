@@ -30,10 +30,9 @@ vi.mock('next/link', () => ({
 
 // Next.js の useRouter と useParams をモック
 const mockPush = vi.fn();
+const mockRouter = { push: mockPush };
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+  useRouter: () => mockRouter,
   useParams: () => ({
     id: 'test-plan-id',
   }),
@@ -59,12 +58,30 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/components/features/reflection', () => ({
   SpotReflectionForm: ({
     spot,
+    onUpdate,
   }: {
     spot: { id: string; name: string; isAdded: boolean };
+    onUpdate: (id: string, updates: Record<string, unknown>) => void;
   }) => (
     <div data-testid={`spot-form-${spot.id}`}>
       <span data-testid={`spot-name-${spot.id}`}>{spot.name}</span>
       {spot.isAdded && <span data-testid={`added-marker-${spot.id}`}>追加済み</span>}
+      <button
+        type="button"
+        data-testid={`add-photo-${spot.id}`}
+        onClick={() =>
+          onUpdate(spot.id, {
+            photos: [
+              {
+                url: 'blob:test-photo',
+                file: new File(['dummy'], `${spot.id}.png`, { type: 'image/png' }),
+              },
+            ],
+          })
+        }
+      >
+        写真追加
+      </button>
     </div>
   ),
   SpotAdder: () => <div data-testid="spot-adder">スポット追加エリア</div>,
@@ -441,6 +458,30 @@ describe('ReflectionDetailPage', () => {
       // 検証: ツールチップが表示される
       await waitFor(() => {
         expect(screen.getByText(TOOLTIP_MESSAGES.PHOTO_REQUIRED)).toBeInTheDocument();
+      });
+    });
+
+    it('送信時はアップロード完了を待たずに閲覧ページへ遷移する', async () => {
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockUploadSpotReflection.mockImplementation(
+        () => new Promise(resolve => setTimeout(resolve, 100))
+      );
+      mockCreateReflection.mockResolvedValue(undefined);
+
+      render(<ReflectionDetailPage />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION })
+        ).toBeInTheDocument();
+      });
+
+      const submitButton = screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION });
+      fireEvent.click(screen.getByTestId('add-photo-spot-1'));
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/reflection/test-plan-id/view');
       });
     });
   });

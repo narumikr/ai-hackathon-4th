@@ -271,6 +271,25 @@ describe('ReflectionViewPage', () => {
         expect(mockGetTravelPlan).toHaveBeenCalledTimes(2);
       });
     });
+
+    it('送信直後フラグがある場合は not_started でも生成中ビューが表示される', async () => {
+      window.sessionStorage.setItem('reflection-submission:pending:test-plan-id', 'true');
+      mockGetTravelPlan.mockResolvedValue(
+        createMockTravelPlan({
+          reflectionGenerationStatus: 'not_started',
+          pamphlet: null,
+        })
+      );
+
+      render(<ReflectionViewPage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('generation-status-view')).toBeInTheDocument();
+      });
+      expect(screen.getByTestId('status-label')).toHaveTextContent(
+        STATUS_LABELS.REFLECTION_PROCESSING
+      );
+    });
   });
 
   describe('正常表示', () => {

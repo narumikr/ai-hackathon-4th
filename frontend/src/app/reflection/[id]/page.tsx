@@ -19,6 +19,10 @@ import {
   TOOLTIP_MESSAGES,
 } from '@/constants';
 import { createApiClientFromEnv } from '@/lib/api';
+import {
+  clearReflectionSubmissionPending,
+  markReflectionSubmissionPending,
+} from '@/lib/reflectionSubmissionState';
 import type { TravelPlanResponse } from '@/types';
 import type { ReflectionSpot } from '@/types/reflection';
 import Link from 'next/link';
@@ -137,31 +141,40 @@ export default function ReflectionDetailPage() {
     try {
       const apiClient = createApiClientFromEnv();
 
-      // 1. 各スポットの写真をアップロード
-      for (const spot of spots) {
-        const files = spot.photos
-          .filter(photo => photo.file !== undefined)
-          .map(photo => photo.file as File);
+      markReflectionSubmissionPending(id);
+      void (async () => {
+        try {
+          // 1. 各スポットの写真をアップロード
+          for (const spot of spots) {
+            const files = spot.photos
+              .filter(photo => photo.file !== undefined)
+              .map(photo => photo.file as File);
 
-        if (files.length > 0) {
-          await apiClient.uploadSpotReflection({
-            planId: id,
-            spotId: spot.id,
-            spotNote: spot.comment,
-            files,
+            if (files.length > 0) {
+              await apiClient.uploadSpotReflection({
+                planId: id,
+                spotId: spot.id,
+                spotNote: spot.comment,
+                files,
+              });
+            }
+          }
+
+          // 2. 振り返り生成APIを呼び出す
+          await apiClient.createReflection({
+            request: {
+              planId: id,
+              userNotes: overallComment || undefined,
+            },
           });
+        } catch (err) {
+          console.error('Failed to submit reflection in background', err);
+        } finally {
+          clearReflectionSubmissionPending(id);
         }
-      }
+      })();
 
-      // 2. 振り返り生成APIを呼び出す
-      await apiClient.createReflection({
-        request: {
-          planId: id,
-          userNotes: overallComment || undefined,
-        },
-      });
-
-      // 3. 成功後、振り返り閲覧ページにリダイレクト
+      // 3. 処理を待たずに振り返り閲覧ページにリダイレクト
       router.push(`/reflection/${id}/view`);
     } catch (_err) {
       setIsSubmitting(false);
