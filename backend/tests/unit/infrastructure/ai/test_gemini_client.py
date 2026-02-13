@@ -389,6 +389,7 @@ async def test_generate_structured_data_invalid_json_raises_invalid_request_erro
             prompt="富士山の情報を返してください",
             response_schema=SimpleTestSchema,
             temperature=0.0,
+            max_retries=1,
         )
 
 
@@ -501,3 +502,149 @@ async def test_connection_error():
                 prompt="テストプロンプト",
                 max_retries=3,
             )
+
+
+@pytest.mark.asyncio
+async def test_generate_structured_data_retries_when_json_is_broken_then_succeeds():
+    """構造化JSONが壊れて返っても再試行で復旧できること。"""
+    invalid_response = MagicMock()
+    invalid_response.text = '{"name":"富士山","type":"自然'
+    invalid_response.parsed = None
+    invalid_response.candidates = None
+
+    expected_data = {"name": "富士山", "type": "自然"}
+    valid_response = _build_response_with_text(json.dumps(expected_data))
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=[invalid_response, valid_response]
+    )
+
+    with patch.object(gemini_client, "_exponential_backoff", new=AsyncMock()):
+        result = await gemini_client.generate_content_with_schema(
+            prompt="富士山の情報を返してください",
+            response_schema=SimpleTestSchema,
+            temperature=0.0,
+            max_retries=2,
+        )
+
+    assert result == expected_data
+    assert mock_async_client.models.generate_content.call_count == 2
+
+
+
+def test_build_response_text_diagnostics_includes_block_reason_and_part_counts():
+    """text抽出診断にblock_reasonとparts内訳が含まれること。"""
+    gemini_client, _ = _build_client_and_async_client()
+
+    text_part = MagicMock()
+    text_part.text = "候補テキスト"
+    text_part.function_call = None
+
+    function_part = MagicMock()
+    function_part.text = None
+    function_part.function_call = MagicMock()
+
+    other_part = MagicMock()
+    other_part.text = None
+    other_part.function_call = None
+
+    content = MagicMock()
+    content.parts = [text_part, function_part, other_part]
+
+    candidate = MagicMock()
+    candidate.finish_reason = "SAFETY"
+    candidate.content = content
+
+    prompt_feedback = MagicMock()
+    prompt_feedback.block_reason = "SAFETY"
+
+    response = MagicMock()
+    response.text = ""
+    response.candidates = [candidate]
+    response.prompt_feedback = prompt_feedback
+
+    diagnostics = gemini_client._build_response_text_diagnostics(response)  # noqa: SLF001
+
+    assert diagnostics["candidate_count"] == 1
+    assert diagnostics["finish_reasons"] == ["SAFETY"]
+    assert diagnostics["prompt_feedback_block_reason"] == "SAFETY"
+    assert diagnostics["text_part_count"] == 1
+    assert diagnostics["function_call_part_count"] == 1
+    assert diagnostics["other_part_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_retries_when_response_text_is_empty_then_succeeds():
+    """response textが空でも再試行で復旧できること。"""
+    empty_response = MagicMock()
+    empty_response.text = ""
+    empty_response.candidates = []
+
+    success_response = _build_response_with_text("再試行後の抽出結果")
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=[empty_response, success_response]
+    )
+
+    with patch("app.infrastructure.ai.gemini_client.asyncio.sleep", new=AsyncMock()):
+        result = await gemini_client.generate_content(
+            prompt="沖縄戦の史実を抽出してください",
+            tools=["google_search", "validate_url"],
+            max_retries=2,
+        )
+
+    assert result == "再試行後の抽出結果"
+    assert mock_async_client.models.generate_content.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_resolves_validate_url_tool_call_in_multiple_rounds():
+    """validate_urlのtool callが複数ラウンド発生しても解決できること。"""
+    first_response = MagicMock()
+    first_response.text = ""
+    first_call = MagicMock()
+    first_call.name = "validate_url"
+    first_call.args = {"urls": ["https://example.com/source1"]}
+    first_part = MagicMock()
+    first_part.function_call = first_call
+    first_content = MagicMock()
+    first_content.parts = [first_part]
+    first_candidate = MagicMock()
+    first_candidate.content = first_content
+    first_response.candidates = [first_candidate]
+
+    second_response = MagicMock()
+    second_response.text = ""
+    second_call = MagicMock()
+    second_call.name = "validate_url"
+    second_call.args = {"urls": ["https://example.com/source2"]}
+    second_part = MagicMock()
+    second_part.function_call = second_call
+    second_content = MagicMock()
+    second_content.parts = [second_part]
+    second_candidate = MagicMock()
+    second_candidate.content = second_content
+    second_response.candidates = [second_candidate]
+
+    final_response = _build_response_with_text("最終抽出結果")
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=[first_response, second_response, final_response]
+    )
+
+    with patch.object(
+        gemini_client,
+        "_validate_url_with_http_check",
+        new=AsyncMock(return_value={"url": "https://example.com", "verdict": "valid", "reason": "ok"}),
+    ):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search", "validate_url"],
+            temperature=0.0,
+        )
+
+    assert result == "最終抽出結果"
+    assert mock_async_client.models.generate_content.call_count == 3

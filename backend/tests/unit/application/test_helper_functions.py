@@ -1,6 +1,8 @@
 """ヘルパー関数の動作確認テスト"""
 
 from app.application.use_cases.generate_travel_guide import (
+    _assess_fact_extraction_coverage,
+    _build_fact_extraction_retry_prompt,
     _create_tourist_spots,
     _detect_new_spots,
     _normalize_spot_name,
@@ -102,3 +104,33 @@ def test_create_tourist_spots_generates_unique_ids() -> None:
     result = _create_tourist_spots(new_spot_names)
     ids = [spot.id for spot in result]
     assert len(ids) == len(set(ids))  # すべてのIDが一意
+
+
+
+def test_assess_fact_extraction_coverage_detects_missing_sources() -> None:
+    """スポットごとの出典不足を検出できることを確認。"""
+    extracted_facts = """
+- 清水寺: 歴史的背景 [清水寺公式](https://www.kiyomizudera.or.jp/)
+- 金閣寺: 歴史的背景のみ（URLなし）
+"""
+    summary = _assess_fact_extraction_coverage(
+        extracted_facts=extracted_facts,
+        spot_names=["清水寺", "金閣寺"],
+    )
+
+    assert summary["sufficient"] is False
+    assert "金閣寺" in summary["missing_spot_sources"]
+
+
+def test_build_fact_extraction_retry_prompt_includes_missing_spots() -> None:
+    """再抽出プロンプトに不足スポットが含まれることを確認。"""
+    retry_prompt = _build_fact_extraction_retry_prompt(
+        base_prompt="元プロンプト",
+        previous_extracted_facts="前回結果",
+        missing_spot_sources=["清水寺", "金閣寺"],
+        min_required_urls=4,
+    )
+
+    assert "清水寺" in retry_prompt
+    assert "金閣寺" in retry_prompt
+    assert "4 件以上" in retry_prompt

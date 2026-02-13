@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound="GeminiResponseSchema")
 _URL_TOOL_TIMEOUT_SECONDS = 10
+_MAX_VALIDATE_URL_TOOL_LOOPS = 3
 
 
 class GeminiClient:
@@ -160,7 +161,28 @@ class GeminiClient:
                         self._logger.warning(
                             "Google Search was requested but no grounding/function-call evidence was found."
                         )
-                return self._extract_text(response)
+                try:
+                    return self._extract_text(response)
+                except AIServiceInvalidRequestError as e:
+                    diagnostics = self._build_response_text_diagnostics(response)
+                    self._logger.warning(
+                        "StepA text extraction failed: attempt=%d/%d model=%s tools=%s error=%s diagnostics=%s",
+                        attempt + 1,
+                        max_retries,
+                        selected_model_name,
+                        tools,
+                        str(e),
+                        diagnostics,
+                    )
+                    if str(e) == "Response text is empty." and attempt < max_retries - 1:
+                        self._logger.info(
+                            "StepA empty text response detected; retrying attempt=%d/%d",
+                            attempt + 1,
+                            max_retries,
+                        )
+                        await asyncio.sleep(0.3 * (attempt + 1))
+                        continue
+                    raise
 
             except TimeoutError as e:
                 self._logger.warning(
@@ -324,7 +346,36 @@ class GeminiClient:
                     ),
                     timeout=timeout,
                 )
-                return self._extract_structured_data(response)
+                try:
+                    return self._extract_structured_data(response)
+                except AIServiceInvalidRequestError as e:
+                    diagnostics = self._build_response_text_diagnostics(response)
+                    repaired = await self._try_repair_structured_payload(
+                        response=response,
+                        response_schema=response_schema,
+                        system_instruction=system_instruction,
+                        timeout=timeout,
+                    )
+                    if repaired is not None:
+                        self._logger.info(
+                            "Structured response repaired successfully: attempt=%d/%d diagnostics=%s",
+                            attempt + 1,
+                            max_retries,
+                            diagnostics,
+                        )
+                        return repaired
+
+                    if attempt == max_retries - 1:
+                        raise
+                    self._logger.warning(
+                        "Structured response parsing failed: attempt=%d/%d; retrying. error=%s diagnostics=%s",
+                        attempt + 1,
+                        max_retries,
+                        str(e),
+                        diagnostics,
+                    )
+                    await self._exponential_backoff(attempt)
+                    continue
 
             except TimeoutError as e:
                 if attempt == max_retries - 1:
@@ -456,72 +507,98 @@ class GeminiClient:
         if not tools or "validate_url" not in tools:
             return response
 
-        function_calls = self._extract_named_function_calls(response, "validate_url")
-        if not function_calls:
-            return response
-        self._logger.info(
-            "validate_url tool calls detected: count=%d",
-            len(function_calls),
-        )
+        current_response = response
+        validation_round_texts: list[str] = []
 
-        urls_to_validate: list[str] = []
-        for call_args in function_calls:
-            urls = call_args.get("urls")
-            if not isinstance(urls, list):
-                continue
-            for url in urls:
-                if isinstance(url, str) and url.strip():
-                    urls_to_validate.append(url.strip())
+        for round_index in range(_MAX_VALIDATE_URL_TOOL_LOOPS):
+            function_calls = self._extract_named_function_calls(current_response, "validate_url")
+            if not function_calls:
+                return current_response
 
-        # ツール誤動作時の暴走防止
-        unique_urls = list(dict.fromkeys(urls_to_validate))[:20]
-        if not unique_urls:
-            return response
+            self._logger.info(
+                "validate_url tool calls detected: round=%d/%d count=%d",
+                round_index + 1,
+                _MAX_VALIDATE_URL_TOOL_LOOPS,
+                len(function_calls),
+            )
 
-        validation_results = []
-        validate_start = time.perf_counter()
-        for url in unique_urls:
-            validation_results.append(await self._validate_url_with_http_check(url))
-        validate_sec = time.perf_counter() - validate_start
+            urls_to_validate: list[str] = []
+            for call_args in function_calls:
+                urls = call_args.get("urls")
+                if not isinstance(urls, list):
+                    continue
+                for url in urls:
+                    if isinstance(url, str) and url.strip():
+                        urls_to_validate.append(url.strip())
 
-        validation_text = self._format_validate_url_results(validation_results)
-        self._logger.info(
-            "validate_url tool execution finished: checked=%d valid=%d invalid=%d validate_sec=%.3f",
-            len(validation_results),
-            len([item for item in validation_results if item.get("verdict") == "valid"]),
-            len([item for item in validation_results if item.get("verdict") != "valid"]),
-            validate_sec,
+            unique_urls = list(dict.fromkeys(urls_to_validate))[:20]
+            if not unique_urls:
+                return current_response
+
+            validation_results = []
+            validate_start = time.perf_counter()
+            for url in unique_urls:
+                validation_results.append(await self._validate_url_with_http_check(url))
+            validate_sec = time.perf_counter() - validate_start
+
+            valid_count = len(
+                [item for item in validation_results if item.get("verdict") == "valid"]
+            )
+            invalid_count = len(validation_results) - valid_count
+            validation_text = self._format_validate_url_results(validation_results)
+            validation_round_texts.append(
+                f'<round index="{round_index + 1}">\n{validation_text}\n</round>'
+            )
+
+            self._logger.info(
+                "validate_url tool execution finished: round=%d/%d checked=%d valid=%d invalid=%d validate_sec=%.3f",
+                round_index + 1,
+                _MAX_VALIDATE_URL_TOOL_LOOPS,
+                len(validation_results),
+                valid_count,
+                invalid_count,
+                validate_sec,
+            )
+
+            augmented_prompt = (
+                f"{prompt}\n\n"
+                "<url_validation_results>\n"
+                f"{'\n'.join(validation_round_texts)}\n"
+                "</url_validation_results>\n\n"
+                "上記で invalid と判定されたURLは出典として採用しないでください。"
+                "出典が不足する場合は、追加で検索して validate_url を使って再検証してください。"
+            )
+
+            followup_model_tools = self._prepare_tools(tools)
+            followup_config = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=temperature,
+                max_output_tokens=max_output_tokens,
+                tools=followup_model_tools,
+            )
+            followup_contents = self._prepare_contents(augmented_prompt, images)
+
+            followup_start = time.perf_counter()
+            current_response = await asyncio.wait_for(
+                self._client.models.generate_content(
+                    model=model_name_override or self.model_name,
+                    contents=followup_contents,  # type: ignore[arg-type]
+                    config=followup_config,
+                ),
+                timeout=timeout,
+            )
+            self._logger.info(
+                "validate_url followup generation finished: round=%d/%d followup_sec=%.3f",
+                round_index + 1,
+                _MAX_VALIDATE_URL_TOOL_LOOPS,
+                time.perf_counter() - followup_start,
+            )
+
+        self._logger.warning(
+            "validate_url resolution reached max rounds: max_rounds=%d",
+            _MAX_VALIDATE_URL_TOOL_LOOPS,
         )
-        augmented_prompt = (
-            f"{prompt}\n\n"
-            "<url_validation_results>\n"
-            f"{validation_text}\n"
-            "</url_validation_results>\n\n"
-            "上記で invalid と判定されたURLは出典として採用しないでください。"
-        )
-        followup_tools = [tool for tool in tools if tool != "validate_url"]
-        followup_model_tools = self._prepare_tools(followup_tools) if followup_tools else None
-        followup_config = types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            temperature=temperature,
-            max_output_tokens=max_output_tokens,
-            tools=followup_model_tools,
-        )
-        followup_contents = self._prepare_contents(augmented_prompt, images)
-        second_call_start = time.perf_counter()
-        followup_response = await asyncio.wait_for(
-            self._client.models.generate_content(
-                model=model_name_override or self.model_name,
-                contents=followup_contents,  # type: ignore[arg-type]
-                config=followup_config,
-            ),
-            timeout=timeout,
-        )
-        self._logger.info(
-            "validate_url followup generation finished: second_call_sec=%.3f",
-            time.perf_counter() - second_call_start,
-        )
-        return followup_response
+        return current_response
 
     def _extract_named_function_calls(
         self, response: Any, function_name: str
@@ -740,6 +817,9 @@ class GeminiClient:
         candidate_count = 0
         candidate_text_lengths: list[int] = []
         finish_reasons: list[str] = []
+        text_part_count = 0
+        function_call_part_count = 0
+        other_part_count = 0
         candidates = getattr(response, "candidates", None)
         if candidates:
             candidate_count = len(candidates)
@@ -754,16 +834,31 @@ class GeminiClient:
                     continue
                 for part in parts:
                     part_text = getattr(part, "text", None)
+                    function_call = getattr(part, "function_call", None)
                     if isinstance(part_text, str):
+                        text_part_count += 1
                         candidate_text_lengths.append(len(part_text))
+                        continue
+                    if function_call is not None:
+                        function_call_part_count += 1
+                        continue
+                    other_part_count += 1
 
         prompt_feedback = getattr(response, "prompt_feedback", None)
+        block_reason = None
+        if prompt_feedback is not None:
+            block_reason = getattr(prompt_feedback, "block_reason", None)
+
         return {
             "text_length": text_length,
             "candidate_count": candidate_count,
             "candidate_text_lengths": candidate_text_lengths[:10],
             "finish_reasons": finish_reasons[:10],
             "has_prompt_feedback": prompt_feedback is not None,
+            "prompt_feedback_block_reason": str(block_reason) if block_reason is not None else None,
+            "text_part_count": text_part_count,
+            "function_call_part_count": function_call_part_count,
+            "other_part_count": other_part_count,
         }
 
     def _build_search_tool_diagnostics(self, response: Any) -> dict[str, Any]:
@@ -821,6 +916,73 @@ class GeminiClient:
             "google_search_function_call_count": google_search_function_call_count,
             "grounded_uri_samples": grounded_uris[:5],
         }
+
+    async def _try_repair_structured_payload(
+        self,
+        *,
+        response: Any,
+        response_schema: type[T],
+        system_instruction: str | None,
+        timeout: int,
+    ) -> dict[str, Any] | None:
+        """壊れた構造化JSONを再生成して回復を試みる。"""
+        raw_payload = self._extract_raw_structured_payload(response)
+        if not raw_payload:
+            return None
+
+        repair_prompt = (
+            "以下は壊れている可能性のあるJSONです。"
+            "スキーマに厳密に準拠した有効なJSONオブジェクトのみを返してください。"
+            "説明文は不要です。\n"
+            f"<broken_json>{raw_payload}</broken_json>"
+        )
+
+        json_schema = response_schema.model_json_schema(mode="serialization")
+        repair_config = types.GenerateContentConfig(
+            system_instruction=system_instruction,
+            temperature=0.0,
+            max_output_tokens=4096,
+            response_mime_type="application/json",
+            response_json_schema=json_schema,
+        )
+
+        try:
+            repair_response = await asyncio.wait_for(
+                self._client.models.generate_content(
+                    model=self.model_name,
+                    contents=repair_prompt,
+                    config=repair_config,
+                ),
+                timeout=timeout,
+            )
+            return self._extract_structured_data(repair_response)
+        except Exception as exc:
+            self._logger.warning(
+                "Structured response repair failed: error=%s",
+                str(exc),
+            )
+            return None
+
+    def _extract_raw_structured_payload(self, response: Any) -> str | None:
+        """構造化レスポンス候補の生テキストを抽出する。"""
+        text = getattr(response, "text", None)
+        if isinstance(text, str) and text.strip():
+            return text.strip()
+
+        candidates = getattr(response, "candidates", None)
+        if not candidates:
+            return None
+
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            parts = getattr(content, "parts", None)
+            if not parts:
+                continue
+            for part in parts:
+                part_text = getattr(part, "text", None)
+                if isinstance(part_text, str) and part_text.strip():
+                    return part_text.strip()
+        return None
 
     def _extract_structured_data(self, response: Any) -> dict[str, Any]:
         """構造化レスポンスをdictとして抽出する.

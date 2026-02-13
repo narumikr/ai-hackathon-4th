@@ -65,6 +65,8 @@ def _normalize_photo_inputs(photos: list[dict]) -> list[dict]:
 _IMAGE_ANALYSIS_PROMPT_TEMPLATE = "image_analysis_prompt.txt"
 _IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE = "image_analysis_system_instruction.txt"
 _MAX_CONCURRENT_IMAGE_ANALYSIS = 3
+_MAX_IMAGE_ANALYSIS_RETRIES = 2
+_RETRY_BASE_DELAY_SECONDS = 0.3
 
 
 def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
@@ -127,7 +129,7 @@ class AnalyzePhotosUseCase:
         photos: list[dict],
         spot_note: str | None = None,
         spot_note_provided: bool = False,
-    ) -> ReflectionDTO:
+    ) -> ReflectionDTO | None:
         """写真を分析し振り返りを保存する
 
         Args:
@@ -206,78 +208,113 @@ class AnalyzePhotosUseCase:
 
         async def _analyze_single_photo(payload: dict) -> Photo | None:
             async with semaphore:
-                try:
-                    analysis_text = await self._ai_service.analyze_image(
-                        prompt=payload["prompt"],
-                        image_uri=payload["url"],
-                        system_instruction=render_template(
-                            _IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE
-                        ),
-                        temperature=0.0,
-                    )
-                    if _analysis_needs_search(analysis_text):
-                        try:
-                            analysis_text = await self._ai_service.analyze_image(
-                                prompt=payload["prompt"],
-                                image_uri=payload["url"],
-                                system_instruction=(
-                                    "説明文は日本語で作成してください。"
-                                    "可能であれば出典名やURLを文中に含めてください。"
-                                ),
-                                temperature=0.0,
-                                tools=["google_search"],
-                            )
-                        except Exception as exc:
-                            logger.warning(
-                                "Image analysis with search tool failed; using initial analysis.",
-                                exc_info=exc,
-                                extra={
-                                    "plan_id": plan_id,
-                                    "photo_id": payload["photo_id"],
-                                    "spot_id": payload["spot_id"],
-                                },
-                            )
-                    analysis = _parse_image_analysis(analysis_text, index=payload["index"])
-                    return Photo(
-                        id=payload["photo_id"],
-                        spot_id=payload["spot_id"],
-                        url=payload["url"],
-                        analysis=analysis,
-                        user_description=payload["user_description"],
-                    )
-                except Exception as exc:
-                    logger.warning(
-                        "Image analysis failed; skipping photo.",
-                        exc_info=exc,
-                        extra={
-                            "plan_id": plan_id,
-                            "photo_id": payload["photo_id"],
-                            "spot_id": payload["spot_id"],
-                        },
-                    )
-                    return None
+                last_error: Exception | None = None
+                for attempt in range(_MAX_IMAGE_ANALYSIS_RETRIES + 1):
+                    try:
+                        analysis_text = await self._ai_service.analyze_image(
+                            prompt=payload["prompt"],
+                            image_uri=payload["url"],
+                            system_instruction=render_template(
+                                _IMAGE_ANALYSIS_SYSTEM_INSTRUCTION_TEMPLATE
+                            ),
+                            temperature=0.0,
+                        )
+                        if _analysis_needs_search(analysis_text):
+                            try:
+                                analysis_text = await self._ai_service.analyze_image(
+                                    prompt=payload["prompt"],
+                                    image_uri=payload["url"],
+                                    system_instruction=(
+                                        "説明文は日本語で作成してください。"
+                                        "可能であれば出典名やURLを文中に含めてください。"
+                                    ),
+                                    temperature=0.0,
+                                    tools=["google_search"],
+                                )
+                            except Exception as exc:
+                                logger.warning(
+                                    "Image analysis with search tool failed; using initial analysis.",
+                                    exc_info=exc,
+                                    extra={
+                                        "plan_id": plan_id,
+                                        "photo_id": payload["photo_id"],
+                                        "spot_id": payload["spot_id"],
+                                        "attempt": attempt + 1,
+                                    },
+                                )
+                        analysis = _parse_image_analysis(analysis_text, index=payload["index"])
+                        return Photo(
+                            id=payload["photo_id"],
+                            spot_id=payload["spot_id"],
+                            url=payload["url"],
+                            analysis=analysis,
+                            user_description=payload["user_description"],
+                        )
+                    except Exception as exc:
+                        last_error = exc
+                        is_final_attempt = attempt >= _MAX_IMAGE_ANALYSIS_RETRIES
+                        logger.warning(
+                            "Image analysis attempt failed.",
+                            exc_info=exc,
+                            extra={
+                                "plan_id": plan_id,
+                                "photo_id": payload["photo_id"],
+                                "spot_id": payload["spot_id"],
+                                "attempt": attempt + 1,
+                                "max_attempts": _MAX_IMAGE_ANALYSIS_RETRIES + 1,
+                                "is_final_attempt": is_final_attempt,
+                            },
+                        )
+                        if is_final_attempt:
+                            break
+                        await asyncio.sleep(_RETRY_BASE_DELAY_SECONDS * (2**attempt))
+
+                logger.error(
+                    "Image analysis failed after retries; skipping photo.",
+                    exc_info=last_error,
+                    extra={
+                        "plan_id": plan_id,
+                        "photo_id": payload["photo_id"],
+                        "spot_id": payload["spot_id"],
+                        "max_attempts": _MAX_IMAGE_ANALYSIS_RETRIES + 1,
+                    },
+                )
+                return None
 
         tasks = [_analyze_single_photo(payload) for payload in analysis_inputs]
         results = await asyncio.gather(*tasks)
         new_photos = [photo for photo in results if photo is not None]
-        if not new_photos:
-            logger.error(
-                "All photo analyses failed.",
+        failed_photo_count = len(analysis_inputs) - len(new_photos)
+        if failed_photo_count > 0:
+            logger.warning(
+                "Some photo analyses failed and were skipped.",
                 extra={
                     "plan_id": plan_id,
                     "user_id": user_id,
                     "requested_photo_count": len(analysis_inputs),
                     "successful_photo_count": len(new_photos),
+                    "failed_photo_count": failed_photo_count,
                     "spot_id": spot_id,
                 },
             )
-            raise ValueError(
-                "all photo analyses failed for "
-                f"plan_id={plan_id}, user_id={user_id}, "
-                f"requested_photo_count={len(analysis_inputs)}, "
-                f"successful_photo_count={len(new_photos)}, "
-                f"spot_id={spot_id}"
-            )
+
+        if not new_photos:
+            if existing_reflection is None:
+                logger.warning(
+                    "No analyzable photos were produced and no reflection exists; skipping save.",
+                    extra={
+                        "plan_id": plan_id,
+                        "user_id": user_id,
+                        "requested_photo_count": len(analysis_inputs),
+                        "spot_id": spot_id,
+                    },
+                )
+                return None
+
+            if spot_note_provided:
+                existing_reflection.update_spot_note(spot_id, spot_note)
+                self._reflection_repository.save(existing_reflection)
+            return ReflectionDTO.from_entity(existing_reflection)
 
         if existing_reflection is None:
             reflection = Reflection(

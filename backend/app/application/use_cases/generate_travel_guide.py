@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import re
+import time
 from typing import Any
 from urllib.parse import urlparse
 
@@ -98,6 +100,8 @@ _NO_SPOTS_TEXT_TEMPLATE = "travel_guide_no_spots_text.txt"
 
 logger = logging.getLogger(__name__)
 _URL_REGEX = re.compile(r"https?://[^\s)\]}>\"']+")
+_MAX_FACT_EXTRACTION_ROUNDS = 4
+_MIN_EXTRACTED_URLS_FOR_FACTS = 3
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -288,6 +292,63 @@ def _summarize_url_quality(urls: set[str]) -> dict[str, Any]:
         "possibly_expiring_urls": possibly_expiring_urls,
         "grounding_redirect_urls": grounding_redirect_urls,
     }
+
+
+def _spot_has_source_in_facts(spot_name: str, extracted_facts: str) -> bool:
+    """抽出事実テキスト内で、スポットに紐づく出典URLがあるかを判定する。"""
+    for line in extracted_facts.splitlines():
+        if spot_name in line and _URL_REGEX.search(line):
+            return True
+    return False
+
+
+def _assess_fact_extraction_coverage(
+    *,
+    extracted_facts: str,
+    spot_names: list[str],
+) -> dict[str, Any]:
+    """StepAの出典充足度を判定する。"""
+    extracted_urls = _extract_urls(extracted_facts)
+    missing_spot_sources = [
+        spot_name
+        for spot_name in spot_names
+        if not _spot_has_source_in_facts(spot_name, extracted_facts)
+    ]
+    min_required_urls = max(_MIN_EXTRACTED_URLS_FOR_FACTS, len(spot_names))
+    has_min_urls = len(extracted_urls) >= min_required_urls
+    sufficient = has_min_urls and not missing_spot_sources
+
+    return {
+        "sufficient": sufficient,
+        "url_count": len(extracted_urls),
+        "min_required_urls": min_required_urls,
+        "missing_spot_sources": missing_spot_sources,
+    }
+
+
+def _build_fact_extraction_retry_prompt(
+    *,
+    base_prompt: str,
+    previous_extracted_facts: str,
+    missing_spot_sources: list[str],
+    min_required_urls: int,
+) -> str:
+    """出典不足を補うための再抽出プロンプトを作成する。"""
+    missing_spots_text = "\n".join([f"- {spot_name}" for spot_name in missing_spot_sources])
+    if not missing_spots_text:
+        missing_spots_text = "- なし"
+
+    return (
+        f"{base_prompt}\n\n"
+        "<retry_instructions>\n"
+        "前回の抽出結果では出典が不足しています。\n"
+        f"最低でも {min_required_urls} 件以上の有効な出典URL（https://）を含めてください。\n"
+        "次のスポットは特に出典不足です。各スポットごとに1件以上の出典URLを含めてください。\n"
+        f"{missing_spots_text}\n"
+        "前回結果:\n"
+        f"{previous_extracted_facts}\n"
+        "</retry_instructions>"
+    )
 
 
 def _log_fact_extraction_link_diagnostics(*, plan_id: str, extracted_facts: str) -> None:
@@ -608,22 +669,81 @@ class GenerateTravelGuideUseCase:
                     "Starting fact extraction",
                     extra={"plan_id": plan_id},
                 )
-                fact_extraction_prompt = _build_fact_extraction_prompt(travel_plan)
-                extracted_facts = await self._ai_service.generate_with_search(
-                    prompt=fact_extraction_prompt,
-                    system_instruction=render_template(
-                        _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE
-                    ),
+                fact_extraction_prompt_base = _build_fact_extraction_prompt(travel_plan)
+                fact_extraction_system_instruction = render_template(
+                    _FACT_EXTRACTION_SYSTEM_INSTRUCTION_TEMPLATE
                 )
-                if not extracted_facts or not extracted_facts.strip():
-                    raise ValueError("extracted_facts must be a non-empty string.")
+                fact_extraction_prompt = fact_extraction_prompt_base
+                extracted_facts = ""
+                coverage_summary: dict[str, Any] | None = None
+
+                for round_index in range(_MAX_FACT_EXTRACTION_ROUNDS):
+                    round_start = time.perf_counter()
+                    extracted_facts = await self._ai_service.generate_with_search(
+                        prompt=fact_extraction_prompt,
+                        system_instruction=fact_extraction_system_instruction,
+                    )
+                    round_elapsed_sec = time.perf_counter() - round_start
+
+                    if not extracted_facts or not extracted_facts.strip():
+                        raise ValueError("extracted_facts must be a non-empty string.")
+
+                    coverage_summary = _assess_fact_extraction_coverage(
+                        extracted_facts=extracted_facts,
+                        spot_names=plan_spot_names,
+                    )
+                    logger.info(
+                        "Fact extraction round completed: round=%d/%d elapsed_sec=%.3f url_count=%d min_required_urls=%d missing_spot_sources=%d sufficient=%s",
+                        round_index + 1,
+                        _MAX_FACT_EXTRACTION_ROUNDS,
+                        round_elapsed_sec,
+                        coverage_summary["url_count"],
+                        coverage_summary["min_required_urls"],
+                        len(coverage_summary["missing_spot_sources"]),
+                        coverage_summary["sufficient"],
+                        extra={
+                            "plan_id": plan_id,
+                            "round": round_index + 1,
+                            "max_rounds": _MAX_FACT_EXTRACTION_ROUNDS,
+                            "round_elapsed_sec": round_elapsed_sec,
+                            "url_count": coverage_summary["url_count"],
+                            "min_required_urls": coverage_summary["min_required_urls"],
+                            "missing_spot_sources": coverage_summary["missing_spot_sources"],
+                            "sufficient": coverage_summary["sufficient"],
+                        },
+                    )
+                    _log_fact_extraction_link_diagnostics(
+                        plan_id=plan_id,
+                        extracted_facts=extracted_facts,
+                    )
+
+                    if coverage_summary["sufficient"]:
+                        break
+
+                    if round_index >= _MAX_FACT_EXTRACTION_ROUNDS - 1:
+                        logger.warning(
+                            "Fact extraction reached max rounds with insufficient citations.",
+                            extra={
+                                "plan_id": plan_id,
+                                "max_rounds": _MAX_FACT_EXTRACTION_ROUNDS,
+                                "url_count": coverage_summary["url_count"],
+                                "min_required_urls": coverage_summary["min_required_urls"],
+                                "missing_spot_sources": coverage_summary["missing_spot_sources"],
+                            },
+                        )
+                        break
+
+                    fact_extraction_prompt = _build_fact_extraction_retry_prompt(
+                        base_prompt=fact_extraction_prompt_base,
+                        previous_extracted_facts=extracted_facts,
+                        missing_spot_sources=coverage_summary["missing_spot_sources"],
+                        min_required_urls=coverage_summary["min_required_urls"],
+                    )
+                    await asyncio.sleep(0.3 * (round_index + 1))
+
                 logger.debug(
                     "Fact extraction completed",
                     extra={"plan_id": plan_id, "facts_length": len(extracted_facts)},
-                )
-                _log_fact_extraction_link_diagnostics(
-                    plan_id=plan_id,
-                    extracted_facts=extracted_facts,
                 )
 
                 # 初回生成（Step Aの出力を使用）

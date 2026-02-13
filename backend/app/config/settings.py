@@ -94,7 +94,7 @@ class Settings(DatabaseSettings):
     gemini_model_name: str = "gemini-3-flash-preview"
     gemini_temperature: float = 0.7
     gemini_max_output_tokens: int = 12288
-    gemini_timeout_seconds: int = 60
+    gemini_timeout_seconds: int = 120
     # TODO: 将来の拡張用 - thinking_levelパラメータの活用
     gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）
 
