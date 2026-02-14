@@ -30,6 +30,6 @@
 
 ## アプリ
 
-- デプロイURL: https://historical-travel-agent-frontend-production-ut4xishifq-an.a.run.app
+- デプロイURL: https://historical-travel-agent-frontend-production-755050049246.asia-northeast1.run.app/
 - ブログ: 追加予定
 - デモ動画: 追加予定

@@ -7,6 +7,10 @@
         "-y",
         "@upstash/context7-mcp"
       ]
+    },
+    "drawio": {
+      "command": "npx",
+      "args": ["@drawio/mcp"]
     }
   }
 }
