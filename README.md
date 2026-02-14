@@ -31,5 +31,5 @@
 ## アプリ
 
 - デプロイURL: https://historical-travel-agent-frontend-production-ut4xishifq-an.a.run.app
-- ブログ: 追加予定
-- デモ動画: 追加予定
+- ブログ: https://zenn.dev/narumikr/articles/5296da37bf4b74
+- デモ動画: https://www.youtube.com/watch?v=3I2r3mKEl8I&t=3s
