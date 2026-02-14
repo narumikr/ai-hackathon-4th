@@ -57,6 +57,16 @@ def _build_client_and_async_client() -> tuple[GeminiClient, MagicMock]:
     return client, mock_async_client
 
 
+def test_prepare_tools_skips_validate_url_model_tool() -> None:
+    """validate_url はモデルツールに渡さず、google_search のみ構成されること。"""
+    gemini_client, _ = _build_client_and_async_client()
+
+    prepared_tools = gemini_client._prepare_tools(["google_search", "validate_url"])  # noqa: SLF001
+
+    assert len(prepared_tools) == 1
+    assert prepared_tools[0].google_search is not None
+
+
 @pytest.mark.asyncio
 async def test_generate_text_success():
     """テキスト生成の成功ケース
@@ -86,17 +96,22 @@ async def test_generate_with_search_success():
     前提条件: Google Searchツールを指定してSDKが正常なレスポンスを返す
     検証項目: 検索結果を含むテキストが返されること
     """
-    mock_response = _build_response_with_text("検索結果を含む生成テキスト")
+    mock_response = _build_response_with_text("検索結果を含む生成テキスト https://example.com/source")
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
 
-    result = await gemini_client.generate_content(
-        prompt="最新の観光情報を教えて",
-        tools=["google_search"],
-        temperature=0.0,
-    )
+    with patch.object(
+        gemini_client,
+        "_validate_url_with_http_check",
+        new=AsyncMock(return_value={"url": "https://example.com/source", "verdict": "valid", "reason": "ok"}),
+    ):
+        result = await gemini_client.generate_content(
+            prompt="最新の観光情報を教えて",
+            tools=["google_search"],
+            temperature=0.0,
+        )
 
-    assert result == "検索結果を含む生成テキスト"
+    assert result == "検索結果を含む生成テキスト https://example.com/source [検証: valid]"
     mock_async_client.models.generate_content.assert_called_once()
 
 
@@ -116,7 +131,7 @@ async def test_generate_with_search_resolves_validate_url_tool_call():
     candidate.content = content
     first_response.candidates = [candidate]
 
-    second_response = _build_response_with_text("検証済みURLのみを使った抽出結果")
+    second_response = _build_response_with_text("https://example.com/source を使用した抽出結果")
 
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(
@@ -134,8 +149,223 @@ async def test_generate_with_search_resolves_validate_url_tool_call():
             temperature=0.0,
         )
 
-    assert result == "検証済みURLのみを使った抽出結果"
+    assert result == "https://example.com/source [検証: valid] を使用した抽出結果"
     assert mock_async_client.models.generate_content.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_retries_when_response_has_no_urls():
+    """URLが含まれない回答は再試行し、検証済みURL付き回答へ改善すること。"""
+    first_response = _build_response_with_text("スポットの歴史情報です。")
+    second_response = _build_response_with_text("https://example.com/source を使用した抽出結果")
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=[first_response, second_response]
+    )
+
+    with patch.object(
+        gemini_client,
+        "_validate_url_with_http_check",
+        new=AsyncMock(return_value={"url": "https://example.com/source", "verdict": "valid", "reason": "ok"}),
+    ):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search"],
+            temperature=0.0,
+            max_retries=2,
+        )
+
+    assert result == "https://example.com/source [検証: valid] を使用した抽出結果"
+    assert mock_async_client.models.generate_content.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_returns_text_when_max_retries_reached_with_no_urls():
+    """URLなしで最大試行に達した場合でもテキストを返すこと。"""
+    response = _build_response_with_text("スポットの歴史情報です。")
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=response)
+
+    result = await gemini_client.generate_content(
+        prompt="出典候補を抽出してください",
+        tools=["google_search"],
+        temperature=0.0,
+        max_retries=1,
+    )
+
+    assert result == "スポットの歴史情報です。"
+    assert mock_async_client.models.generate_content.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_passes_spot_context_to_url_validation():
+    """スポット見出し付き本文ではURL検証にspot_nameとclaimが渡ること。"""
+    response = _build_response_with_text(
+        """
+## スポット別の事実
+### ひめゆりの塔
+- 学徒隊の慰霊碑として建立された [出典: https://www.nippon.com/ja/guide-to-japan/gu900191/]
+"""
+    )
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=response)
+
+    validate_mock = AsyncMock(
+        return_value={
+            "url": "https://www.nippon.com/ja/guide-to-japan/gu900191/",
+            "verdict": "invalid",
+            "reason": "relevance_mismatch",
+            "spot_name": "ひめゆりの塔",
+        }
+    )
+    with patch.object(gemini_client, "_validate_url_with_http_check", new=validate_mock):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search"],
+            temperature=0.0,
+            max_retries=1,
+        )
+
+    assert "[無効URL除去]" in result
+    assert "https://www.nippon.com/ja/guide-to-japan/gu900191/" not in result
+    assert validate_mock.await_count == 1
+    call_kwargs = validate_mock.await_args_list[0].kwargs
+    assert call_kwargs["spot_name"] == "ひめゆりの塔"
+    assert "学徒隊の慰霊碑として建立された" in (call_kwargs["claim"] or "")
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_retry_uses_updated_feedback_prompt():
+    """URL検証失敗時の再試行で、更新済みフィードバックプロンプトが送信されること。"""
+    first_response = _build_response_with_text(
+        "A [出典: https://valid.example.com] と B [出典: https://invalid.example.com]"
+    )
+    second_response = _build_response_with_text(
+        "A [出典: https://valid.example.com] [検証: valid]"
+    )
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(side_effect=[first_response, second_response])
+
+    async def _validate(url: str, **_: object) -> dict[str, str]:
+        if "://valid.example.com" in url:
+            return {"url": url, "verdict": "valid", "reason": "ok"}
+        return {"url": url, "verdict": "invalid", "reason": "network_error_URLError"}
+
+    with patch.object(gemini_client, "_validate_url_with_http_check", new=AsyncMock(side_effect=_validate)):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search"],
+            temperature=0.0,
+            max_retries=2,
+        )
+
+    assert "https://valid.example.com" in result
+    assert "[検証: valid]" in result
+    assert mock_async_client.models.generate_content.call_count == 2
+    second_call_contents = mock_async_client.models.generate_content.await_args_list[1].kwargs["contents"]
+    assert "<url_validation_feedback>" in second_call_contents
+    assert "https://valid.example.com" in second_call_contents
+    assert "vertexaisearch.cloud.google.com" in second_call_contents
+    assert "同義語・旧称・英語表記" in second_call_contents
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_returns_sanitized_text_when_max_retries_reached_with_invalid_urls():
+    """invalid URLが残っていても最大試行到達時は除去済みテキストを返すこと。"""
+    response = _build_response_with_text(
+        "A [出典: https://valid.example.com] と B [出典: https://invalid.example.com]"
+    )
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=response)
+
+    async def _validate(url: str, **_: object) -> dict[str, str]:
+        if "://valid.example.com" in url:
+            return {"url": url, "verdict": "valid", "reason": "ok"}
+        return {"url": url, "verdict": "invalid", "reason": "network_error_URLError"}
+
+    with patch.object(gemini_client, "_validate_url_with_http_check", new=AsyncMock(side_effect=_validate)):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search"],
+            temperature=0.0,
+            max_retries=1,
+        )
+
+    assert "https://valid.example.com [検証: valid]" in result
+    assert "https://invalid.example.com" not in result
+    assert "[無効URL除去]" in result
+    assert mock_async_client.models.generate_content.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_reuses_cached_valid_urls_without_revalidation():
+    """同一リクエスト内で一度validになったURLは再検証をスキップすること。"""
+    first_response = _build_response_with_text(
+        "A [出典: https://valid.example.com] と B [出典: https://invalid.example.com]"
+    )
+    second_response = _build_response_with_text(
+        "A [出典: https://valid.example.com]"
+    )
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(side_effect=[first_response, second_response])
+
+    async def _validate(url: str, **_: object) -> dict[str, str]:
+        if "://valid.example.com" in url:
+            return {"url": url, "verdict": "valid", "reason": "ok"}
+        return {"url": url, "verdict": "invalid", "reason": "network_error_URLError"}
+
+    validate_mock = AsyncMock(side_effect=_validate)
+    with patch.object(gemini_client, "_validate_url_with_http_check", new=validate_mock):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search"],
+            temperature=0.0,
+            max_retries=2,
+        )
+
+    assert "https://valid.example.com [検証: valid]" in result
+    # 1回目で valid/invalid の2URLを検証し、2回目の valid はキャッシュで再検証しない。
+    assert validate_mock.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_early_accept_when_enough_valid_urls():
+    """valid URLが一定数に達した場合は再試行せずearly acceptすること。"""
+    response_text = "\n".join(
+        [
+            "- [出典: https://valid1.example.com]",
+            "- [出典: https://valid2.example.com]",
+            "- [出典: https://valid3.example.com]",
+            "- [出典: https://valid4.example.com]",
+            "- [出典: https://valid5.example.com]",
+            "- [出典: https://invalid.example.com]",
+        ]
+    )
+    first_response = _build_response_with_text(response_text)
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(return_value=first_response)
+
+    async def _validate(url: str, **_: object) -> dict[str, str]:
+        if "://invalid.example.com" in url:
+            return {"url": url, "verdict": "invalid", "reason": "network_error_URLError"}
+        return {"url": url, "verdict": "valid", "reason": "ok"}
+
+    with patch.object(gemini_client, "_validate_url_with_http_check", new=AsyncMock(side_effect=_validate)):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search"],
+            temperature=0.0,
+            max_retries=5,
+        )
+
+    assert mock_async_client.models.generate_content.call_count == 1
+    assert "https://valid1.example.com [検証: valid]" in result
+    assert "https://invalid.example.com" not in result
+    assert "[無効URL除去]" in result
 
 
 def test_validate_url_with_http_check_detects_certificate_expired() -> None:
@@ -179,17 +409,22 @@ async def test_generate_with_search_logs_diagnostics_when_grounding_present(capl
     candidate.grounding_metadata = grounding_metadata
 
     mock_response = MagicMock()
-    mock_response.text = "検索結果を含む生成テキスト"
+    mock_response.text = "検索結果を含む生成テキスト https://www.chusonji.or.jp/"
     mock_response.candidates = [candidate]
 
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
 
-    with caplog.at_level(logging.INFO):
-        await gemini_client.generate_content(
-            prompt="中尊寺の歴史を調べて",
-            tools=["google_search"],
-        )
+    with patch.object(
+        gemini_client,
+        "_validate_url_with_http_check",
+        new=AsyncMock(return_value={"url": "https://www.chusonji.or.jp/", "verdict": "valid", "reason": "ok"}),
+    ):
+        with caplog.at_level(logging.INFO):
+            await gemini_client.generate_content(
+                prompt="中尊寺の歴史を調べて",
+                tools=["google_search"],
+            )
 
     assert "Google Search tool diagnostics" in caplog.text
     assert "grounding_chunk_count" in caplog.text
@@ -199,17 +434,22 @@ async def test_generate_with_search_logs_diagnostics_when_grounding_present(capl
 async def test_generate_with_search_warns_when_no_evidence(caplog: pytest.LogCaptureFixture):
     """Google Searchを要求しても証跡がない場合にWarningが出力されること."""
     mock_response = MagicMock()
-    mock_response.text = "検索結果を含む生成テキスト"
+    mock_response.text = "検索結果を含む生成テキスト https://example.com/source"
     mock_response.candidates = []
 
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(return_value=mock_response)
 
-    with caplog.at_level(logging.WARNING):
-        await gemini_client.generate_content(
-            prompt="中尊寺の歴史を調べて",
-            tools=["google_search"],
-        )
+    with patch.object(
+        gemini_client,
+        "_validate_url_with_http_check",
+        new=AsyncMock(return_value={"url": "https://example.com/source", "verdict": "valid", "reason": "ok"}),
+    ):
+        with caplog.at_level(logging.WARNING):
+            await gemini_client.generate_content(
+                prompt="中尊寺の歴史を調べて",
+                tools=["google_search"],
+            )
 
     assert "no grounding/function-call evidence was found" in caplog.text
 
@@ -485,6 +725,24 @@ async def test_max_retries_exceeded():
 
 
 @pytest.mark.asyncio
+async def test_max_retries_is_capped_to_five_when_ten_or_more_is_requested():
+    """max_retriesが10以上の場合は5回に丸められること。"""
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=google_exceptions.ResourceExhausted("Quota exceeded")
+    )
+
+    with patch.object(gemini_client, "_exponential_backoff", new=AsyncMock()):
+        with pytest.raises(AIServiceQuotaExceededError):
+            await gemini_client.generate_content(
+                prompt="テストプロンプト",
+                max_retries=10,
+            )
+
+    assert mock_async_client.models.generate_content.call_count == 5
+
+
+@pytest.mark.asyncio
 async def test_connection_error():
     """接続エラー
 
@@ -530,6 +788,53 @@ async def test_generate_structured_data_retries_when_json_is_broken_then_succeed
 
     assert result == expected_data
     assert mock_async_client.models.generate_content.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_generate_structured_data_retry_uses_compaction_prompt() -> None:
+    """構造化JSON再試行時に段階的な簡潔化指示を追加すること。"""
+    invalid_response = MagicMock()
+    invalid_response.text = '{"name":"富士山","type":"自然'
+    invalid_response.parsed = None
+    invalid_part = MagicMock()
+    invalid_part.text = invalid_response.text
+    invalid_content = MagicMock()
+    invalid_content.parts = [invalid_part]
+    invalid_candidate = MagicMock()
+    invalid_candidate.finish_reason = "FinishReason.MAX_TOKENS"
+    invalid_candidate.content = invalid_content
+    invalid_response.candidates = [invalid_candidate]
+
+    invalid_repair_response = MagicMock()
+    invalid_repair_response.text = '{"name":"富士山","type":"自然'
+    invalid_repair_response.parsed = None
+    invalid_repair_response.candidates = None
+
+    expected_data = {"name": "富士山", "type": "自然"}
+    valid_response = _build_response_with_text(json.dumps(expected_data))
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=[invalid_response, invalid_repair_response, valid_response]
+    )
+
+    with patch.object(gemini_client, "_exponential_backoff", new=AsyncMock()):
+        result = await gemini_client.generate_content_with_schema(
+            prompt="富士山の情報を返してください",
+            response_schema=SimpleTestSchema,
+            temperature=0.0,
+            max_retries=3,
+        )
+
+    assert result == expected_data
+    assert mock_async_client.models.generate_content.call_count == 3
+    first_call_contents = mock_async_client.models.generate_content.await_args_list[0].kwargs["contents"]
+    second_call_contents = mock_async_client.models.generate_content.await_args_list[1].kwargs["contents"]
+    third_call_contents = mock_async_client.models.generate_content.await_args_list[2].kwargs["contents"]
+    assert "<retry_compaction_instructions>" not in first_call_contents
+    assert "<broken_json>" in second_call_contents
+    assert "<retry_compaction_instructions>" in third_call_contents
+    assert "目標文字量: 前回の85%程度まで削減する。" in third_call_contents
 
 
 
@@ -581,21 +886,28 @@ async def test_generate_with_search_retries_when_response_text_is_empty_then_suc
     empty_response.text = ""
     empty_response.candidates = []
 
-    success_response = _build_response_with_text("再試行後の抽出結果")
+    success_response = _build_response_with_text("再試行後の抽出結果 https://example.com/source")
 
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(
         side_effect=[empty_response, success_response]
     )
 
-    with patch("app.infrastructure.ai.gemini_client.asyncio.sleep", new=AsyncMock()):
+    with (
+        patch("app.infrastructure.ai.gemini_client.asyncio.sleep", new=AsyncMock()),
+        patch.object(
+            gemini_client,
+            "_validate_url_with_http_check",
+            new=AsyncMock(return_value={"url": "https://example.com/source", "verdict": "valid", "reason": "ok"}),
+        ),
+    ):
         result = await gemini_client.generate_content(
             prompt="沖縄戦の史実を抽出してください",
-            tools=["google_search", "validate_url"],
+            tools=["google_search"],
             max_retries=2,
         )
 
-    assert result == "再試行後の抽出結果"
+    assert result == "再試行後の抽出結果 https://example.com/source [検証: valid]"
     assert mock_async_client.models.generate_content.call_count == 2
 
 
@@ -628,17 +940,20 @@ async def test_generate_with_search_resolves_validate_url_tool_call_in_multiple_
     second_candidate.content = second_content
     second_response.candidates = [second_candidate]
 
-    final_response = _build_response_with_text("最終抽出結果")
+    final_response = _build_response_with_text("最終抽出結果 https://example.com/source2")
 
     gemini_client, mock_async_client = _build_client_and_async_client()
     mock_async_client.models.generate_content = AsyncMock(
         side_effect=[first_response, second_response, final_response]
     )
 
+    async def _validate(url: str, **_: object) -> dict[str, str]:
+        return {"url": url, "verdict": "valid", "reason": "ok"}
+
     with patch.object(
         gemini_client,
         "_validate_url_with_http_check",
-        new=AsyncMock(return_value={"url": "https://example.com", "verdict": "valid", "reason": "ok"}),
+        new=AsyncMock(side_effect=_validate),
     ):
         result = await gemini_client.generate_content(
             prompt="出典候補を抽出してください",
@@ -646,5 +961,79 @@ async def test_generate_with_search_resolves_validate_url_tool_call_in_multiple_
             temperature=0.0,
         )
 
-    assert result == "最終抽出結果"
+    assert result == "最終抽出結果 https://example.com/source2 [検証: valid]"
     assert mock_async_client.models.generate_content.call_count == 3
+
+
+
+def test_validate_url_with_http_check_marks_relevance_mismatch() -> None:
+    """spot_nameと無関係なページはrelevance_mismatchでinvalidになること。"""
+    gemini_client, _ = _build_client_and_async_client()
+
+    fake_response = MagicMock()
+    fake_response.getcode.return_value = 200
+    fake_response.headers.get.return_value = "text/html; charset=utf-8"
+    fake_response.geturl.return_value = "https://example.com/unrelated"
+    fake_response.read.return_value = (
+        "<html><head><title>文化財データベース</title></head>"
+        "<body>登録情報の一覧ページです。</body></html>"
+    ).encode()
+
+    context_manager = MagicMock()
+    context_manager.__enter__.return_value = fake_response
+    context_manager.__exit__.return_value = None
+
+    with patch("app.infrastructure.ai.gemini_client.urlopen", return_value=context_manager):
+        result = gemini_client._validate_url_with_http_check_sync(  # noqa: SLF001
+            "https://example.com/unrelated",
+            spot_name="高千穂峡",
+            claim="柱状節理の渓谷",
+        )
+
+    assert result["verdict"] == "invalid"
+    assert result["reason"] == "relevance_mismatch"
+
+
+@pytest.mark.asyncio
+async def test_generate_with_search_validate_url_accepts_structured_entries():
+    """validate_urlの引数が {url, spotName, claim} 形式でも検証処理へ渡せること。"""
+    first_response = MagicMock()
+    first_response.text = ""
+    function_call = MagicMock()
+    function_call.name = "validate_url"
+    function_call.args = {
+        "urls": [
+            {
+                "url": "https://example.com/source",
+                "spotName": "高千穂峡",
+                "claim": "柱状節理の渓谷",
+            }
+        ]
+    }
+    part = MagicMock()
+    part.function_call = function_call
+    content = MagicMock()
+    content.parts = [part]
+    candidate = MagicMock()
+    candidate.content = content
+    first_response.candidates = [candidate]
+
+    second_response = _build_response_with_text("https://example.com/source を使用した抽出結果")
+
+    gemini_client, mock_async_client = _build_client_and_async_client()
+    mock_async_client.models.generate_content = AsyncMock(
+        side_effect=[first_response, second_response]
+    )
+
+    validate_mock = AsyncMock(return_value={"url": "https://example.com/source", "verdict": "valid", "reason": "ok"})
+    with patch.object(gemini_client, "_validate_url_with_http_check", new=validate_mock):
+        result = await gemini_client.generate_content(
+            prompt="出典候補を抽出してください",
+            tools=["google_search", "validate_url"],
+            temperature=0.0,
+        )
+
+    assert result == "https://example.com/source [検証: valid] を使用した抽出結果"
+    validate_mock.assert_awaited()
+    call = validate_mock.await_args
+    assert call.args[0] == "https://example.com/source"

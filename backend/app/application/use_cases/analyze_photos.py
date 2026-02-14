@@ -77,11 +77,6 @@ def _parse_image_analysis(response: str, *, index: int) -> ImageAnalysis:
     return ImageAnalysis(description=response)
 
 
-def _analysis_needs_search(text: str) -> bool:
-    """補助的に検索を使うか判定する"""
-    return "http://" not in text and "https://" not in text and "出典" not in text
-
-
 def _build_image_analysis_prompt(
     destination: str,
     spot_name: str,
@@ -219,29 +214,6 @@ class AnalyzePhotosUseCase:
                             ),
                             temperature=0.0,
                         )
-                        if _analysis_needs_search(analysis_text):
-                            try:
-                                analysis_text = await self._ai_service.analyze_image(
-                                    prompt=payload["prompt"],
-                                    image_uri=payload["url"],
-                                    system_instruction=(
-                                        "説明文は日本語で作成してください。"
-                                        "可能であれば出典名やURLを文中に含めてください。"
-                                    ),
-                                    temperature=0.0,
-                                    tools=["google_search"],
-                                )
-                            except Exception as exc:
-                                logger.warning(
-                                    "Image analysis with search tool failed; using initial analysis.",
-                                    exc_info=exc,
-                                    extra={
-                                        "plan_id": plan_id,
-                                        "photo_id": payload["photo_id"],
-                                        "spot_id": payload["spot_id"],
-                                        "attempt": attempt + 1,
-                                    },
-                                )
                         analysis = _parse_image_analysis(analysis_text, index=payload["index"])
                         return Photo(
                             id=payload["photo_id"],

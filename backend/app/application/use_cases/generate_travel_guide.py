@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import asyncio
 import hashlib
 import logging
@@ -100,8 +101,10 @@ _NO_SPOTS_TEXT_TEMPLATE = "travel_guide_no_spots_text.txt"
 
 logger = logging.getLogger(__name__)
 _URL_REGEX = re.compile(r"https?://[^\s)\]}>\"']+")
+_VALIDATED_SOURCE_MARKER_REGEX = re.compile(r"\[\s*検証\s*[:：]\s*valid\s*\]", flags=re.IGNORECASE)
 _MAX_FACT_EXTRACTION_ROUNDS = 4
 _MIN_EXTRACTED_URLS_FOR_FACTS = 3
+_MAX_GUIDE_REGENERATIONS_ON_UNKNOWN_RELATED_SPOTS = 1
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -210,6 +213,16 @@ def _extract_urls(text: str) -> set[str]:
     return urls
 
 
+def _extract_validated_urls(text: str) -> set[str]:
+    """`[検証: valid]`付き行のURLのみ抽出する。"""
+    validated_urls: set[str] = set()
+    for line in text.splitlines():
+        if not _VALIDATED_SOURCE_MARKER_REGEX.search(line):
+            continue
+        validated_urls.update(_extract_urls(line))
+    return validated_urls
+
+
 def _collect_urls_from_guide_payload(guide_data: dict[str, Any]) -> set[str]:
     """旅行ガイド構造化データからURLを収集する。"""
     urls: set[str] = set()
@@ -294,10 +307,14 @@ def _summarize_url_quality(urls: set[str]) -> dict[str, Any]:
     }
 
 
-def _spot_has_source_in_facts(spot_name: str, extracted_facts: str) -> bool:
-    """抽出事実テキスト内で、スポットに紐づく出典URLがあるかを判定する。"""
+def _spot_has_validated_source_in_facts(spot_name: str, extracted_facts: str) -> bool:
+    """抽出事実テキスト内で、スポットに紐づく検証済み出典URLがあるかを判定する。"""
     for line in extracted_facts.splitlines():
-        if spot_name in line and _URL_REGEX.search(line):
+        if (
+            spot_name in line
+            and _URL_REGEX.search(line)
+            and _VALIDATED_SOURCE_MARKER_REGEX.search(line)
+        ):
             return True
     return False
 
@@ -309,18 +326,20 @@ def _assess_fact_extraction_coverage(
 ) -> dict[str, Any]:
     """StepAの出典充足度を判定する。"""
     extracted_urls = _extract_urls(extracted_facts)
+    validated_urls = _extract_validated_urls(extracted_facts)
     missing_spot_sources = [
         spot_name
         for spot_name in spot_names
-        if not _spot_has_source_in_facts(spot_name, extracted_facts)
+        if not _spot_has_validated_source_in_facts(spot_name, extracted_facts)
     ]
     min_required_urls = max(_MIN_EXTRACTED_URLS_FOR_FACTS, len(spot_names))
-    has_min_urls = len(extracted_urls) >= min_required_urls
+    has_min_urls = len(validated_urls) >= min_required_urls
     sufficient = has_min_urls and not missing_spot_sources
 
     return {
         "sufficient": sufficient,
-        "url_count": len(extracted_urls),
+        "raw_url_count": len(extracted_urls),
+        "validated_url_count": len(validated_urls),
         "min_required_urls": min_required_urls,
         "missing_spot_sources": missing_spot_sources,
     }
@@ -332,19 +351,65 @@ def _build_fact_extraction_retry_prompt(
     previous_extracted_facts: str,
     missing_spot_sources: list[str],
     min_required_urls: int,
+    feedback_round: int,
 ) -> str:
     """出典不足を補うための再抽出プロンプトを作成する。"""
+    validated_urls = sorted(_extract_validated_urls(previous_extracted_facts))
+    validated_url_count = len(validated_urls)
+    has_enough_validated_urls = validated_url_count >= min_required_urls
+
     missing_spots_text = "\n".join([f"- {spot_name}" for spot_name in missing_spot_sources])
     if not missing_spots_text:
         missing_spots_text = "- なし"
+
+    reusable_urls_text = "\n".join([f"- {url}" for url in validated_urls[:10]])
+    if not reusable_urls_text:
+        reusable_urls_text = "- なし"
+
+    if has_enough_validated_urls:
+        url_count_instruction = (
+            f"前回結果には有効な出典URLが {validated_url_count} 件あり、必要件数（{min_required_urls}件）を満たしています。\n"
+            "前回の有効URLを再利用し、新しいURLは原則として追加しないでください。\n"
+        )
+    else:
+        additional_needed = min_required_urls - validated_url_count
+        url_count_instruction = (
+            f"前回結果の有効な出典URLは {validated_url_count} 件です。最低でも {min_required_urls} 件以上にしてください。\n"
+            f"不足している {additional_needed} 件分のみ、必要最小限で新しいURLを追加してください。\n"
+        )
+
+    missing_spot_instruction = (
+        "次のスポットは特に出典不足です。可能な限り前回の有効URLを再利用し、"
+        "不足を補えない場合に限って新しいURLを追加してください。\n"
+    )
+    if feedback_round <= 1:
+        search_expansion_instruction = "検索クエリには同義語・旧称・英語表記を追加し、同一観点の検索語を繰り返さないでください。\n"
+    elif feedback_round == 2:
+        search_expansion_instruction = (
+            "検索クエリに年代・自治体名・施設種別を追加し、前回未使用ドメインを優先してください。\n"
+        )
+    else:
+        search_expansion_instruction = (
+            "3回目以降の再試行です。公式機関ドメイン（自治体・博物館・文化財）を優先し、"
+            "各スポットで最低1件は別ドメインの新規URLを提示してください。\n"
+        )
+    blocked_host_instruction = (
+        "以下のリダイレクトURLは有効期限付きになりやすいため出典として使用禁止です。\n"
+        "- vertexaisearch.cloud.google.com/grounding-api-redirect\n"
+    )
 
     return (
         f"{base_prompt}\n\n"
         "<retry_instructions>\n"
         "前回の抽出結果では出典が不足しています。\n"
-        f"最低でも {min_required_urls} 件以上の有効な出典URL（https://）を含めてください。\n"
-        "次のスポットは特に出典不足です。各スポットごとに1件以上の出典URLを含めてください。\n"
+        f"{url_count_instruction}"
+        "URL出典には必ず `[検証: valid]` を付けてください。\n"
+        "前回の有効URL候補（再利用推奨）:\n"
+        f"{reusable_urls_text}\n"
+        f"{missing_spot_instruction}"
         f"{missing_spots_text}\n"
+        f"{blocked_host_instruction}"
+        f"{search_expansion_instruction}"
         "前回結果:\n"
         f"{previous_extracted_facts}\n"
         "</retry_instructions>"
@@ -354,11 +419,13 @@ def _build_fact_extraction_retry_prompt(
 def _log_fact_extraction_link_diagnostics(*, plan_id: str, extracted_facts: str) -> None:
     """Step Aの抽出URL品質をログ出力する。"""
     extracted_urls = _extract_urls(extracted_facts)
+    validated_urls = _extract_validated_urls(extracted_facts)
     summary = _summarize_url_quality(extracted_urls)
 
     logger.info(
-        "Fact extraction link diagnostics: extracted_urls=%d domains=%d malformed=%d non_https=%d expiring=%d grounding_redirect=%d",
+        "Fact extraction link diagnostics: extracted_urls=%d validated_urls=%d domains=%d malformed=%d non_https=%d expiring=%d grounding_redirect=%d",
         summary["url_count"],
+        len(validated_urls),
         summary["domain_count"],
         len(summary["malformed_urls"]),
         len(summary["non_https_urls"]),
@@ -367,6 +434,7 @@ def _log_fact_extraction_link_diagnostics(*, plan_id: str, extracted_facts: str)
         extra={
             "plan_id": plan_id,
             "extracted_url_count": summary["url_count"],
+            "validated_url_count": len(validated_urls),
             "extracted_domain_count": summary["domain_count"],
             "malformed_url_count": len(summary["malformed_urls"]),
             "non_https_url_count": len(summary["non_https_urls"]),
@@ -505,6 +573,23 @@ def _build_timeline(items: list, allowed_spot_names: set[str]) -> list[Historica
     return timeline
 
 
+def _extract_unknown_related_spot_names(error: ValueError) -> list[str]:
+    """relatedSpots不整合エラーから未知スポット名を抽出する。"""
+    message = str(error)
+    if "relatedSpots contains unknown spot names:" not in message:
+        return []
+    match = re.search(r"relatedSpots contains unknown spot names: (\[.*\])", message)
+    if not match:
+        return []
+    try:
+        parsed = ast.literal_eval(match.group(1))
+    except (ValueError, SyntaxError):
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [name for name in parsed if isinstance(name, str) and name.strip()]
+
+
 def _build_spot_details(items: list, plan_spot_names: set[str]) -> list[SpotDetail]:
     """スポット詳細データを値オブジェクトに変換する"""
     spot_details: list[SpotDetail] = []
@@ -630,10 +715,27 @@ class GenerateTravelGuideUseCase:
             ValueError: 入力や生成結果が不正な場合
 
         """
+        execute_started_at = time.perf_counter()
+        phase_timings_sec: dict[str, float] = {
+            "load_plan": 0.0,
+            "set_processing_status": 0.0,
+            "fact_extraction_total": 0.0,
+            "guide_structured_generation": 0.0,
+            "guide_payload_validation": 0.0,
+            "guide_persistence": 0.0,
+            "spot_image_job_registration": 0.0,
+            "spot_image_task_enqueue": 0.0,
+            "set_succeeded_status": 0.0,
+            "set_failed_status": 0.0,
+        }
+        generation_outcome = "started"
+
         logger.debug("GenerateTravelGuideUseCase started", extra={"plan_id": plan_id})
         validate_required_str(plan_id, "plan_id")
 
+        load_plan_start = time.perf_counter()
         travel_plan = self._plan_repository.find_by_id(plan_id)
+        phase_timings_sec["load_plan"] = time.perf_counter() - load_plan_start
         if travel_plan is None:
             raise TravelPlanNotFoundError(plan_id)
 
@@ -655,8 +757,10 @@ class GenerateTravelGuideUseCase:
         if duplicate_spots:
             raise ValueError(f"duplicate spot names are not allowed: {sorted(duplicate_spots)}")
 
+        set_processing_start = time.perf_counter()
         travel_plan.update_generation_statuses(guide_status=GenerationStatus.PROCESSING)
         self._plan_repository.save(travel_plan, commit=commit)
+        phase_timings_sec["set_processing_status"] = time.perf_counter() - set_processing_start
         logger.debug(
             "Guide status set to processing in use case",
             extra={"plan_id": plan_id},
@@ -677,6 +781,7 @@ class GenerateTravelGuideUseCase:
                 extracted_facts = ""
                 coverage_summary: dict[str, Any] | None = None
 
+                fact_extraction_total_start = time.perf_counter()
                 for round_index in range(_MAX_FACT_EXTRACTION_ROUNDS):
                     round_start = time.perf_counter()
                     extracted_facts = await self._ai_service.generate_with_search(
@@ -693,11 +798,12 @@ class GenerateTravelGuideUseCase:
                         spot_names=plan_spot_names,
                     )
                     logger.info(
-                        "Fact extraction round completed: round=%d/%d elapsed_sec=%.3f url_count=%d min_required_urls=%d missing_spot_sources=%d sufficient=%s",
+                        "Fact extraction round completed: round=%d/%d elapsed_sec=%.3f raw_url_count=%d validated_url_count=%d min_required_urls=%d missing_spot_sources=%d sufficient=%s",
                         round_index + 1,
                         _MAX_FACT_EXTRACTION_ROUNDS,
                         round_elapsed_sec,
-                        coverage_summary["url_count"],
+                        coverage_summary["raw_url_count"],
+                        coverage_summary["validated_url_count"],
                         coverage_summary["min_required_urls"],
                         len(coverage_summary["missing_spot_sources"]),
                         coverage_summary["sufficient"],
@@ -706,7 +812,8 @@ class GenerateTravelGuideUseCase:
                             "round": round_index + 1,
                             "max_rounds": _MAX_FACT_EXTRACTION_ROUNDS,
                             "round_elapsed_sec": round_elapsed_sec,
-                            "url_count": coverage_summary["url_count"],
+                            "raw_url_count": coverage_summary["raw_url_count"],
+                            "validated_url_count": coverage_summary["validated_url_count"],
                             "min_required_urls": coverage_summary["min_required_urls"],
                             "missing_spot_sources": coverage_summary["missing_spot_sources"],
                             "sufficient": coverage_summary["sufficient"],
@@ -726,7 +833,8 @@ class GenerateTravelGuideUseCase:
                             extra={
                                 "plan_id": plan_id,
                                 "max_rounds": _MAX_FACT_EXTRACTION_ROUNDS,
-                                "url_count": coverage_summary["url_count"],
+                                "raw_url_count": coverage_summary["raw_url_count"],
+                                "validated_url_count": coverage_summary["validated_url_count"],
                                 "min_required_urls": coverage_summary["min_required_urls"],
                                 "missing_spot_sources": coverage_summary["missing_spot_sources"],
                             },
@@ -738,9 +846,13 @@ class GenerateTravelGuideUseCase:
                         previous_extracted_facts=extracted_facts,
                         missing_spot_sources=coverage_summary["missing_spot_sources"],
                         min_required_urls=coverage_summary["min_required_urls"],
+                        feedback_round=round_index + 1,
                     )
                     await asyncio.sleep(0.3 * (round_index + 1))
 
+                phase_timings_sec["fact_extraction_total"] = (
+                    time.perf_counter() - fact_extraction_total_start
+                )
                 logger.debug(
                     "Fact extraction completed",
                     extra={"plan_id": plan_id, "facts_length": len(extracted_facts)},
@@ -751,56 +863,112 @@ class GenerateTravelGuideUseCase:
                     "Starting travel guide generation",
                     extra={"plan_id": plan_id},
                 )
-                structured = await self._generate_guide_data(travel_plan, extracted_facts)
-                logger.debug(
-                    "Travel guide generation completed",
-                    extra={
-                        "plan_id": plan_id,
-                        "structured_keys": sorted(structured.keys()),
-                    },
-                )
-                _log_link_quality_diagnostics(
-                    plan_id=plan_id,
-                    stage="initial_generation",
-                    extracted_facts=extracted_facts,
-                    guide_data=structured,
-                )
-                # レスポンスバリデーション
-                try:
-                    TravelGuideResponseSchema.model_validate(structured)
-                except ValidationError as e:
-                    raise ValueError(f"Invalid AI response structure: {e}") from e
-
-                overview = _require_str(structured.get("overview"), "overview")
-                _require_min_length(overview, "overview", 100)
-                timeline_items = _require_list(structured.get("timeline"), "timeline")
-                spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
-                checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
-
-                plan_spot_name_set = set(plan_spot_names)
-                spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
-
-                # 新規スポット検出と追加
-                new_spot_names = _detect_new_spots(spot_details, travel_plan.spots)
-                if new_spot_names:
-                    new_spots = _create_tourist_spots(new_spot_names)
-                    updated_spots = travel_plan.spots + new_spots
-                    travel_plan.update_plan(spots=updated_spots)
-                    # commit=Falseで保存（最終的なステータス更新時に一括コミット）
-                    self._plan_repository.save(travel_plan, commit=False)
-                    logger.debug(
-                        "New spots detected and added",
-                        extra={"plan_id": plan_id, "new_spot_count": len(new_spot_names)},
+                guide_structured_generation_start = time.perf_counter()
+                structured = {}
+                guide_retry_feedback: str | None = None
+                for guide_generation_attempt in range(
+                    _MAX_GUIDE_REGENERATIONS_ON_UNKNOWN_RELATED_SPOTS + 1
+                ):
+                    structured = await self._generate_guide_data(
+                        travel_plan,
+                        extracted_facts,
+                        related_spots_retry_feedback=guide_retry_feedback,
                     )
+                    logger.debug(
+                        "Travel guide generation completed",
+                        extra={
+                            "plan_id": plan_id,
+                            "attempt": guide_generation_attempt + 1,
+                            "structured_keys": sorted(structured.keys()),
+                        },
+                    )
+                    _log_link_quality_diagnostics(
+                        plan_id=plan_id,
+                        stage="initial_generation"
+                        if guide_generation_attempt == 0
+                        else f"retry_{guide_generation_attempt}",
+                        extracted_facts=extracted_facts,
+                        guide_data=structured,
+                    )
+                    # レスポンスバリデーション
+                    payload_validation_start = time.perf_counter()
+                    try:
+                        TravelGuideResponseSchema.model_validate(structured)
+                    except ValidationError as e:
+                        raise ValueError(f"Invalid AI response structure: {e}") from e
 
-                spot_detail_name_set = {detail.spot_name for detail in spot_details}
-                checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
-                allowed_related_spots_for_timeline = spot_detail_name_set | {
-                    travel_plan.destination
-                }
-                timeline = _build_timeline(timeline_items, allowed_related_spots_for_timeline)
+                    overview = _require_str(structured.get("overview"), "overview")
+                    _require_min_length(overview, "overview", 100)
+                    timeline_items = _require_list(structured.get("timeline"), "timeline")
+                    spot_detail_items = _require_list(structured.get("spotDetails"), "spotDetails")
+                    checkpoint_items = _require_list(structured.get("checkpoints"), "checkpoints")
+
+                    plan_spot_name_set = set(plan_spot_names)
+                    spot_details = _build_spot_details(spot_detail_items, plan_spot_name_set)
+                    spot_detail_name_set = {detail.spot_name for detail in spot_details}
+                    checkpoints = _build_checkpoints(checkpoint_items, spot_detail_name_set)
+                    allowed_related_spots_for_timeline = spot_detail_name_set | {
+                        travel_plan.destination
+                    }
+                    try:
+                        timeline = _build_timeline(
+                            timeline_items, allowed_related_spots_for_timeline
+                        )
+                    except ValueError as e:
+                        unknown_spot_names = _extract_unknown_related_spot_names(e)
+                        can_retry = (
+                            bool(unknown_spot_names)
+                            and guide_generation_attempt
+                            < _MAX_GUIDE_REGENERATIONS_ON_UNKNOWN_RELATED_SPOTS
+                        )
+                        if not can_retry:
+                            raise
+                        allowed_names_text = ", ".join(sorted(allowed_related_spots_for_timeline))
+                        unknown_names_text = ", ".join(unknown_spot_names)
+                        guide_retry_feedback = (
+                            "前回の出力では timeline.relatedSpots に未許可スポット名が含まれていました。\n"
+                            f"未許可スポット名: {unknown_names_text}\n"
+                            "次のルールを厳守して再生成してください。\n"
+                            f"- relatedSpots は次の名称のみ使用可: {allowed_names_text}\n"
+                            "- spotDetails に存在しない名称を relatedSpots に入れないこと。\n"
+                            "- 追加スポットを使う場合は、spotDetails と checkpoints に同名を必ず追加すること。"
+                        )
+                        logger.warning(
+                            "Retrying guide structured generation due to unknown related spots.",
+                            extra={
+                                "plan_id": plan_id,
+                                "attempt": guide_generation_attempt + 1,
+                                "unknown_related_spot_names": unknown_spot_names,
+                                "allowed_related_spot_names": sorted(
+                                    allowed_related_spots_for_timeline
+                                ),
+                            },
+                        )
+                        continue
+
+                    # 新規スポット検出と追加
+                    new_spot_names = _detect_new_spots(spot_details, travel_plan.spots)
+                    if new_spot_names:
+                        new_spots = _create_tourist_spots(new_spot_names)
+                        updated_spots = travel_plan.spots + new_spots
+                        travel_plan.update_plan(spots=updated_spots)
+                        # commit=Falseで保存（最終的なステータス更新時に一括コミット）
+                        self._plan_repository.save(travel_plan, commit=False)
+                        logger.debug(
+                            "New spots detected and added",
+                            extra={"plan_id": plan_id, "new_spot_count": len(new_spot_names)},
+                        )
+                    break
+
+                phase_timings_sec["guide_structured_generation"] = (
+                    time.perf_counter() - guide_structured_generation_start
+                )
+                phase_timings_sec["guide_payload_validation"] = (
+                    time.perf_counter() - payload_validation_start
+                )
 
                 allowed_related_spots_for_compose = {travel_plan.destination}
+                guide_persistence_start = time.perf_counter()
                 generated_guide = self._composer.compose(
                     plan_id=travel_plan.id,
                     overview=overview,
@@ -821,36 +989,67 @@ class GenerateTravelGuideUseCase:
                         checkpoints=generated_guide.checkpoints,
                     )
                     saved_guide = self._guide_repository.save(existing, commit=False)
+                register_jobs_start = time.perf_counter()
                 created_jobs = self._register_spot_image_jobs(
                     plan_id=plan_id,
                     spot_details=saved_guide.spot_details,
                     commit=False,
                 )
+                phase_timings_sec["spot_image_job_registration"] = (
+                    time.perf_counter() - register_jobs_start
+                )
+                enqueue_tasks_start = time.perf_counter()
                 self._enqueue_spot_image_tasks(
                     plan_id=plan_id,
                     spot_details=saved_guide.spot_details,
                     task_target_url=task_target_url,
+                )
+                phase_timings_sec["spot_image_task_enqueue"] = (
+                    time.perf_counter() - enqueue_tasks_start
+                )
+                phase_timings_sec["guide_persistence"] = (
+                    time.perf_counter() - guide_persistence_start
                 )
                 logger.info(
                     "Spot image jobs registered",
                     extra={"plan_id": plan_id, "created_jobs": created_jobs},
                 )
 
+            set_succeeded_start = time.perf_counter()
             travel_plan.update_generation_statuses(guide_status=GenerationStatus.SUCCEEDED)
             self._plan_repository.save(travel_plan, commit=commit)
+            phase_timings_sec["set_succeeded_status"] = time.perf_counter() - set_succeeded_start
+            generation_outcome = "succeeded"
             logger.debug(
                 "Guide status set to succeeded in use case",
                 extra={"plan_id": plan_id},
             )
         except Exception:
+            generation_outcome = "failed"
             logger.exception(
                 "Travel guide generation failed in use case",
                 extra={"plan_id": plan_id},
             )
+            failed_status_start = time.perf_counter()
             failed_plan = self._plan_repository.find_by_id(travel_plan.id) or travel_plan
             failed_plan.update_generation_statuses(guide_status=GenerationStatus.FAILED)
             self._plan_repository.save(failed_plan, commit=commit)
+            phase_timings_sec["set_failed_status"] = time.perf_counter() - failed_status_start
             raise
+        finally:
+            total_elapsed_sec = time.perf_counter() - execute_started_at
+            logger.info(
+                "Travel guide generation timing summary: outcome=%s total_sec=%.3f phases=%s",
+                generation_outcome,
+                total_elapsed_sec,
+                phase_timings_sec,
+                extra={
+                    "plan_id": plan_id,
+                    "outcome": generation_outcome,
+                    "total_elapsed_sec": total_elapsed_sec,
+                    "phase_timings_sec": phase_timings_sec,
+                },
+            )
 
         return TravelGuideDTO.from_entity(saved_guide)
 
@@ -910,7 +1109,11 @@ class GenerateTravelGuideUseCase:
             )
 
     async def _generate_guide_data(
-        self, travel_plan: TravelPlan, extracted_facts: str
+        self,
+        travel_plan: TravelPlan,
+        extracted_facts: str,
+        *,
+        related_spots_retry_feedback: str | None = None,
     ) -> dict[str, Any]:
         """旅行ガイドデータを生成する
 
@@ -929,7 +1132,11 @@ class GenerateTravelGuideUseCase:
                 "facts_length": len(extracted_facts),
             },
         )
-        guide_prompt = _build_travel_guide_prompt(travel_plan, extracted_facts)
+        guide_prompt = _build_travel_guide_prompt(
+            travel_plan,
+            extracted_facts,
+            related_spots_retry_feedback=related_spots_retry_feedback,
+        )
         structured = await self._ai_service.generate_structured_data(
             prompt=guide_prompt,
             response_schema=TravelGuideResponseSchema,
@@ -960,11 +1167,100 @@ def _build_fact_extraction_prompt(travel_plan: TravelPlan) -> str:
     )
 
 
-def _build_travel_guide_prompt(travel_plan: TravelPlan, extracted_facts: str) -> str:
+def _build_spot_source_constraints_text(travel_plan: TravelPlan, extracted_facts: str) -> str:
+    """StepB向けにスポット別の利用可能URL制約を構築する。"""
+    spot_names = [spot.name for spot in travel_plan.spots]
+    validated_urls_by_spot: dict[str, list[str]] = {spot_name: [] for spot_name in spot_names}
+    seen_urls_by_spot: dict[str, set[str]] = {spot_name: set() for spot_name in spot_names}
+    in_spot_section = False
+    current_spot: str | None = None
+
+    for raw_line in extracted_facts.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        if re.match(r"^##\s+", line):
+            in_spot_section = "スポット別の事実" in line
+            if not in_spot_section:
+                current_spot = None
+
+        if in_spot_section and re.match(r"^###\s+", line):
+            heading_text = line[3:].strip()
+            bracket_match = re.match(r"^\[(.+?)\]$", heading_text)
+            if bracket_match:
+                heading_text = bracket_match.group(1).strip()
+            current_spot = heading_text if heading_text in validated_urls_by_spot else None
+            continue
+
+        if not _VALIDATED_SOURCE_MARKER_REGEX.search(line):
+            continue
+
+        urls = _extract_urls(line)
+        if not urls:
+            continue
+
+        target_spots: list[str] = []
+        if current_spot:
+            target_spots.append(current_spot)
+        for spot_name in spot_names:
+            if spot_name in line and spot_name not in target_spots:
+                target_spots.append(spot_name)
+
+        if not target_spots:
+            continue
+
+        for spot_name in target_spots:
+            for url in urls:
+                if url in seen_urls_by_spot[spot_name]:
+                    continue
+                seen_urls_by_spot[spot_name].add(url)
+                validated_urls_by_spot[spot_name].append(url)
+
+    lines = [
+        "以下はスポット別の利用可能URL（StepAで [検証: valid] 判定済み）です。",
+        "各スポットの本文では、そのスポットに割り当てられたURLのみを出典として使用してください。",
+        "割り当てがないスポットは、出典不足として扱い、無関係なURLを流用しないでください。",
+        "",
+    ]
+
+    for spot_name in spot_names:
+        lines.append(f"- {spot_name}:")
+        urls = validated_urls_by_spot[spot_name]
+        if not urls:
+            lines.append("  - URLなし（出典不足）")
+            continue
+        for url in urls:
+            lines.append(f"  - {url}")
+
+    return "\n".join(lines)
+
+
+def _build_allowed_related_spots_text(travel_plan: TravelPlan) -> str:
+    """StepB向けにrelatedSpotsで使用可能な名称を列挙する。"""
+    allowed_names = sorted({travel_plan.destination, *[spot.name for spot in travel_plan.spots]})
+    lines = [
+        "relatedSpotsで使用可能な名称一覧です。",
+        "この一覧にない名称は relatedSpots に入れてはいけません。",
+    ]
+    for name in allowed_names:
+        lines.append(f"- {name}")
+    return "\n".join(lines)
+
+
+def _build_travel_guide_prompt(
+    travel_plan: TravelPlan,
+    extracted_facts: str,
+    *,
+    related_spots_retry_feedback: str | None = None,
+) -> str:
     """旅行ガイド生成用のプロンプトを生成する（Step B）"""
     return render_template(
         _TRAVEL_GUIDE_PROMPT_TEMPLATE,
         destination=travel_plan.destination,
         spots_text=_build_spots_text(travel_plan),
         extracted_facts=extracted_facts,
+        spot_source_constraints=_build_spot_source_constraints_text(travel_plan, extracted_facts),
+        allowed_related_spots=_build_allowed_related_spots_text(travel_plan),
+        related_spots_retry_feedback=related_spots_retry_feedback or "なし",
     )

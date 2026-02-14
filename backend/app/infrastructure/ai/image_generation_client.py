@@ -51,7 +51,7 @@ class ImageGenerationClient:
         prompt: str,
         *,
         aspect_ratio: str = "16:9",
-        timeout: int = 60,
+        timeout: int = 90,
         max_retries: int = 3,
     ) -> bytes:
         """画像を生成する
@@ -70,6 +70,11 @@ class ImageGenerationClient:
             AIServiceQuotaExceededError: クォータ超過エラー
             AIServiceInvalidRequestError: 不正リクエストエラー
         """
+        if max_retries <= 0:
+            raise AIServiceInvalidRequestError("max_retries must be greater than 0.")
+        if max_retries >= 10:
+            max_retries = 5
+
         # GenerateContentConfigの作成（画像生成用）
         generation_config = types.GenerateContentConfig(
             response_modalities=["IMAGE"],

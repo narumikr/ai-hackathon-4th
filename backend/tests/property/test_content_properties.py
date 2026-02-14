@@ -175,10 +175,10 @@ async def test_property_web_search_execution(inputs: tuple[str, str | None]) -> 
         system_instruction=system_instruction,
     )
 
-    # 検証1: GeminiClient.generate_content()が検索+URL検証ツールで呼び出されること
+    # 検証1: GeminiClient.generate_content()がGoogle Searchツールで呼び出されること
     mock_client.generate_content.assert_called_once()
     call_kwargs = mock_client.generate_content.call_args.kwargs
-    assert call_kwargs["tools"] == ["google_search", "validate_url"]
+    assert call_kwargs["tools"] == ["google_search"]
     assert call_kwargs["prompt"] == prompt
     assert call_kwargs["system_instruction"] == system_instruction
 

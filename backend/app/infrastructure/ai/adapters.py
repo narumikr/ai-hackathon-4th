@@ -29,7 +29,7 @@ class GeminiAIService(IAIService, IImageGenerationService):
         *,
         default_temperature: float = 0.7,
         default_max_output_tokens: int = 8192,
-        default_timeout_seconds: int = 60,
+        default_timeout_seconds: int = 90,
     ) -> None:
         """GeminiAIServiceを初期化する
 
@@ -97,12 +97,12 @@ class GeminiAIService(IAIService, IImageGenerationService):
         return await self.client.generate_content(
             prompt=prompt,
             system_instruction=system_instruction,
-            tools=["google_search", "validate_url"],
+            tools=["google_search"],
             temperature=temperature if temperature is not None else 0.0,
             max_output_tokens=max_output_tokens
             if max_output_tokens is not None
             else self.default_max_output_tokens,
-            timeout=max(self.default_timeout_seconds, 120),
+            timeout=self.default_timeout_seconds,
         )
 
     async def analyze_image(
