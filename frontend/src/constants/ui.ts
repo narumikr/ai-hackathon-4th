@@ -155,7 +155,7 @@ export const NAVIGATION_ITEMS = [
 export const FOOTER_LINKS = [
   {
     label: 'Zennの記事を読む',
-    href: 'https://zenn.dev/articles/5296da37bf4b74',
+    href: 'https://zenn.dev/narumikr/articles/5296da37bf4b74',
   },
 ] as const;
 
