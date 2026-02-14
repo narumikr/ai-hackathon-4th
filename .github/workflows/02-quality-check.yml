@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["Stage 1: Lint Check"]
     types: [completed]
-    branches: [main, develop]
+    branches: [main, develop/**]
 
 env:
   NODE_VERSION: '18'

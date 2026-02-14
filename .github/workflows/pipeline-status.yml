@@ -6,7 +6,7 @@ on:
       - "Stage 1: Lint Check"
       - "Stage 2: Code Quality Check"
     types: [completed]
-    branches: [main, develop]
+    branches: [main, develop/**]
 
 jobs:
   pipeline-status:
