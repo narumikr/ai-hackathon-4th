@@ -30,7 +30,9 @@ vi.mock('next/link', () => ({
 
 // Next.js の useRouter と useParams をモック
 const mockPush = vi.fn();
-const mockRouter = { push: mockPush };
+const mockRouter = {
+  push: mockPush,
+};
 vi.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
   useParams: () => ({
@@ -60,8 +62,13 @@ vi.mock('@/components/features/reflection', () => ({
     spot,
     onUpdate,
   }: {
-    spot: { id: string; name: string; isAdded: boolean };
-    onUpdate: (id: string, updates: Record<string, unknown>) => void;
+    spot: {
+      id: string;
+      name: string;
+      isAdded: boolean;
+      photos?: Array<{ url: string; file?: File }>;
+    };
+    onUpdate: (id: string, updates: { photos: Array<{ url: string; file?: File }> }) => void;
   }) => (
     <div data-testid={`spot-form-${spot.id}`}>
       <span data-testid={`spot-name-${spot.id}`}>{spot.name}</span>
@@ -69,16 +76,13 @@ vi.mock('@/components/features/reflection', () => ({
       <button
         type="button"
         data-testid={`add-photo-${spot.id}`}
-        onClick={() =>
+        onClick={() => {
+          const file = new File(['dummy-bytes'], `${spot.id}.jpg`, { type: 'image/jpeg' });
+          const currentPhotos = spot.photos ?? [];
           onUpdate(spot.id, {
-            photos: [
-              {
-                url: 'blob:test-photo',
-                file: new File(['dummy'], `${spot.id}.png`, { type: 'image/png' }),
-              },
-            ],
-          })
-        }
+            photos: [...currentPhotos, { url: `blob:${spot.id}-${currentPhotos.length}`, file }],
+          });
+        }}
       >
         写真追加
       </button>

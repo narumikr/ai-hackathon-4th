@@ -157,6 +157,25 @@ export default function ReflectionDetailPage() {
                 spotNote: spot.comment,
                 files,
               });
+              setSpots(prev =>
+                prev.map(currentSpot => {
+                  if (currentSpot.id !== spot.id) {
+                    return currentSpot;
+                  }
+                  return {
+                    ...currentSpot,
+                    photos: currentSpot.photos.map(photo => {
+                      if (photo.file === undefined) {
+                        return photo;
+                      }
+                      return {
+                        ...photo,
+                        file: undefined,
+                      };
+                    }),
+                  };
+                })
+              );
             }
           }
 
