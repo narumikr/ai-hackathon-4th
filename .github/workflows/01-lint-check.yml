@@ -1,23 +1,7 @@
 name: "Stage 1: Lint Check"
 
-# This workflow runs on both pull_request and pull_request_target events:
-# - pull_request: For regular PRs from repository branches
-# - pull_request_target: For Dependabot PRs (which may not trigger pull_request in some configurations)
-# 
-# Security note: pull_request_target runs with base branch permissions but checks out PR code.
-# This is safe for this workflow because:
-# - Only read-only operations (lint, format, typecheck)
-# - No secrets or write permissions required
-# - Limited permissions: contents:read, pull-requests:read
-
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
-    branches: [main, develop/**]
-    paths:
-      - 'frontend/**'
-      - 'backend/**'
-  pull_request_target:
     types: [opened, reopened, synchronize]
     branches: [main, develop/**]
     paths:
@@ -47,8 +31,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Detect changed paths
         uses: dorny/paths-filter@v3
@@ -69,8 +51,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -107,8 +87,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
