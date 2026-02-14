@@ -154,15 +154,12 @@ async def test_generate_with_search_resolves_validate_url_tool_call():
 
 
 @pytest.mark.asyncio
-async def test_generate_with_search_retries_when_response_has_no_urls():
-    """URLが含まれない回答は再試行し、検証済みURL付き回答へ改善すること。"""
+async def test_generate_with_search_returns_immediately_when_response_has_no_urls():
+    """URLが含まれない回答は再試行せず、そのまま返すこと。"""
     first_response = _build_response_with_text("スポットの歴史情報です。")
-    second_response = _build_response_with_text("https://example.com/source を使用した抽出結果")
 
     gemini_client, mock_async_client = _build_client_and_async_client()
-    mock_async_client.models.generate_content = AsyncMock(
-        side_effect=[first_response, second_response]
-    )
+    mock_async_client.models.generate_content = AsyncMock(return_value=first_response)
 
     with patch.object(
         gemini_client,
@@ -176,8 +173,8 @@ async def test_generate_with_search_retries_when_response_has_no_urls():
             max_retries=2,
         )
 
-    assert result == "https://example.com/source [検証: valid] を使用した抽出結果"
-    assert mock_async_client.models.generate_content.call_count == 2
+    assert result == "スポットの歴史情報です。"
+    assert mock_async_client.models.generate_content.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -236,17 +233,14 @@ async def test_generate_with_search_passes_spot_context_to_url_validation():
 
 
 @pytest.mark.asyncio
-async def test_generate_with_search_retry_uses_updated_feedback_prompt():
-    """URL検証失敗時の再試行で、更新済みフィードバックプロンプトが送信されること。"""
+async def test_generate_with_search_does_not_retry_on_invalid_urls():
+    """URL検証でinvalidが含まれても再試行せず、サニタイズ済み本文を返すこと。"""
     first_response = _build_response_with_text(
         "A [出典: https://valid.example.com] と B [出典: https://invalid.example.com]"
     )
-    second_response = _build_response_with_text(
-        "A [出典: https://valid.example.com] [検証: valid]"
-    )
 
     gemini_client, mock_async_client = _build_client_and_async_client()
-    mock_async_client.models.generate_content = AsyncMock(side_effect=[first_response, second_response])
+    mock_async_client.models.generate_content = AsyncMock(return_value=first_response)
 
     async def _validate(url: str, **_: object) -> dict[str, str]:
         if "://valid.example.com" in url:
@@ -263,12 +257,9 @@ async def test_generate_with_search_retry_uses_updated_feedback_prompt():
 
     assert "https://valid.example.com" in result
     assert "[検証: valid]" in result
-    assert mock_async_client.models.generate_content.call_count == 2
-    second_call_contents = mock_async_client.models.generate_content.await_args_list[1].kwargs["contents"]
-    assert "<url_validation_feedback>" in second_call_contents
-    assert "https://valid.example.com" in second_call_contents
-    assert "vertexaisearch.cloud.google.com" in second_call_contents
-    assert "同義語・旧称・英語表記" in second_call_contents
+    assert "https://invalid.example.com" not in result
+    assert "[無効URL除去]" in result
+    assert mock_async_client.models.generate_content.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -300,17 +291,14 @@ async def test_generate_with_search_returns_sanitized_text_when_max_retries_reac
 
 
 @pytest.mark.asyncio
-async def test_generate_with_search_reuses_cached_valid_urls_without_revalidation():
-    """同一リクエスト内で一度validになったURLは再検証をスキップすること。"""
+async def test_generate_with_search_validates_each_url_once_without_retry():
+    """再試行なしで、回答中の各URLを一度ずつ検証すること。"""
     first_response = _build_response_with_text(
         "A [出典: https://valid.example.com] と B [出典: https://invalid.example.com]"
     )
-    second_response = _build_response_with_text(
-        "A [出典: https://valid.example.com]"
-    )
 
     gemini_client, mock_async_client = _build_client_and_async_client()
-    mock_async_client.models.generate_content = AsyncMock(side_effect=[first_response, second_response])
+    mock_async_client.models.generate_content = AsyncMock(return_value=first_response)
 
     async def _validate(url: str, **_: object) -> dict[str, str]:
         if "://valid.example.com" in url:
@@ -327,13 +315,12 @@ async def test_generate_with_search_reuses_cached_valid_urls_without_revalidatio
         )
 
     assert "https://valid.example.com [検証: valid]" in result
-    # 1回目で valid/invalid の2URLを検証し、2回目の valid はキャッシュで再検証しない。
     assert validate_mock.await_count == 2
 
 
 @pytest.mark.asyncio
-async def test_generate_with_search_early_accept_when_enough_valid_urls():
-    """valid URLが一定数に達した場合は再試行せずearly acceptすること。"""
+async def test_generate_with_search_returns_sanitized_text_when_valid_and_invalid_urls_mix():
+    """valid/invalid混在時は再試行せず、invalid除去済みテキストを返すこと。"""
     response_text = "\n".join(
         [
             "- [出典: https://valid1.example.com]",

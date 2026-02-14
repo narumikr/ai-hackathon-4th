@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.infrastructure.ai.schemas.base import GeminiResponseSchema
 
 T = TypeVar("T", bound="GeminiResponseSchema")
+_STEP_A_SEARCH_INTERNAL_MAX_RETRIES = 1
 
 
 class GeminiAIService(IAIService, IImageGenerationService):
@@ -103,6 +104,7 @@ class GeminiAIService(IAIService, IImageGenerationService):
             if max_output_tokens is not None
             else self.default_max_output_tokens,
             timeout=self.default_timeout_seconds,
+            max_retries=_STEP_A_SEARCH_INTERNAL_MAX_RETRIES,
         )
 
     async def analyze_image(

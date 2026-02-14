@@ -30,7 +30,11 @@ from app.domain.travel_plan.entity import TouristSpot, TravelPlan
 from app.domain.travel_plan.exceptions import TravelPlanNotFoundError
 from app.domain.travel_plan.repository import ITravelPlanRepository
 from app.domain.travel_plan.value_objects import GenerationStatus
-from app.infrastructure.ai.schemas.travel_guide import TravelGuideResponseSchema
+from app.infrastructure.ai.schemas.travel_guide import (
+    TravelGuideDetailsSchema,
+    TravelGuideOutlineSchema,
+    TravelGuideResponseSchema,
+)
 from app.prompts import load_template, render_template
 
 _TRAVEL_GUIDE_SCHEMA: dict[str, Any] = {
@@ -102,9 +106,13 @@ _NO_SPOTS_TEXT_TEMPLATE = "travel_guide_no_spots_text.txt"
 logger = logging.getLogger(__name__)
 _URL_REGEX = re.compile(r"https?://[^\s)\]}>\"']+")
 _VALIDATED_SOURCE_MARKER_REGEX = re.compile(r"\[\s*検証\s*[:：]\s*valid\s*\]", flags=re.IGNORECASE)
-_MAX_FACT_EXTRACTION_ROUNDS = 4
+# StepAの反復回数は1回固定とする。
+_MAX_FACT_EXTRACTION_ROUNDS = 1
 _MIN_EXTRACTED_URLS_FOR_FACTS = 3
 _MAX_GUIDE_REGENERATIONS_ON_UNKNOWN_RELATED_SPOTS = 1
+_STEP_B_REQUEST_TIMEOUT_SECONDS = 90
+_STEP_B_TIMEOUT_RETRY_COUNT = 1
+_STEP_B_TOTAL_TIMEOUT_SECONDS = 180
 
 
 def _normalize_spot_name(spot_name: str) -> str:
@@ -866,13 +874,41 @@ class GenerateTravelGuideUseCase:
                 guide_structured_generation_start = time.perf_counter()
                 structured = {}
                 guide_retry_feedback: str | None = None
+                guide_generation_deadline = (
+                    guide_structured_generation_start + _STEP_B_TOTAL_TIMEOUT_SECONDS
+                )
                 for guide_generation_attempt in range(
                     _MAX_GUIDE_REGENERATIONS_ON_UNKNOWN_RELATED_SPOTS + 1
                 ):
+                    remaining_sec = max(0.0, guide_generation_deadline - time.perf_counter())
+                    if remaining_sec <= 0:
+                        raise TimeoutError(
+                            "StepB total timeout exceeded before structured generation completed."
+                        )
+                    effective_timeout_sec = min(
+                        _STEP_B_REQUEST_TIMEOUT_SECONDS, max(1, int(remaining_sec))
+                    )
+                    logger.info(
+                        "StepB structured generation start: attempt=%d/%d timeout_sec=%d remaining_sec=%.1f timeout_retries=%d",
+                        guide_generation_attempt + 1,
+                        _MAX_GUIDE_REGENERATIONS_ON_UNKNOWN_RELATED_SPOTS + 1,
+                        effective_timeout_sec,
+                        remaining_sec,
+                        _STEP_B_TIMEOUT_RETRY_COUNT + 1,
+                        extra={
+                            "plan_id": plan_id,
+                            "attempt": guide_generation_attempt + 1,
+                            "max_attempts": _MAX_GUIDE_REGENERATIONS_ON_UNKNOWN_RELATED_SPOTS + 1,
+                            "timeout_sec": effective_timeout_sec,
+                            "remaining_sec": remaining_sec,
+                            "timeout_retry_count": _STEP_B_TIMEOUT_RETRY_COUNT,
+                        },
+                    )
                     structured = await self._generate_guide_data(
                         travel_plan,
                         extracted_facts,
                         related_spots_retry_feedback=guide_retry_feedback,
+                        timeout_seconds=effective_timeout_sec,
                     )
                     logger.debug(
                         "Travel guide generation completed",
@@ -1114,6 +1150,7 @@ class GenerateTravelGuideUseCase:
         extracted_facts: str,
         *,
         related_spots_retry_feedback: str | None = None,
+        timeout_seconds: int = _STEP_B_REQUEST_TIMEOUT_SECONDS,
     ) -> dict[str, Any]:
         """旅行ガイドデータを生成する
 
@@ -1137,14 +1174,121 @@ class GenerateTravelGuideUseCase:
             extracted_facts,
             related_spots_retry_feedback=related_spots_retry_feedback,
         )
-        structured = await self._ai_service.generate_structured_data(
-            prompt=guide_prompt,
-            response_schema=TravelGuideResponseSchema,
-            system_instruction=render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE),
+        system_instruction = render_template(_TRAVEL_GUIDE_SYSTEM_INSTRUCTION_TEMPLATE)
+
+        outline_prompt = _build_travel_guide_outline_prompt(guide_prompt)
+        outline_data = await self._generate_structured_data_with_timeout_retry(
+            prompt=outline_prompt,
+            response_schema=TravelGuideOutlineSchema,
+            system_instruction=system_instruction,
+            timeout_seconds=timeout_seconds,
+            stage_label="outline",
+            travel_plan=travel_plan,
+            extracted_facts=extracted_facts,
         )
-        if not isinstance(structured, dict):
-            raise ValueError("structured response must be a dict.")
-        return structured
+
+        details_prompt = _build_travel_guide_details_prompt(guide_prompt, outline_data)
+        details_data = await self._generate_structured_data_with_timeout_retry(
+            prompt=details_prompt,
+            response_schema=TravelGuideDetailsSchema,
+            system_instruction=system_instruction,
+            timeout_seconds=timeout_seconds,
+            stage_label="details",
+            travel_plan=travel_plan,
+            extracted_facts=extracted_facts,
+        )
+
+        return {
+            "overview": outline_data.get("overview"),
+            "timeline": outline_data.get("timeline"),
+            "spotDetails": details_data.get("spotDetails"),
+            "checkpoints": details_data.get("checkpoints"),
+        }
+
+    async def _generate_structured_data_with_timeout_retry(
+        self,
+        *,
+        prompt: str,
+        response_schema: type[Any],
+        system_instruction: str,
+        timeout_seconds: int,
+        stage_label: str,
+        travel_plan: TravelPlan,
+        extracted_facts: str,
+    ) -> dict[str, Any]:
+        timeout_retry_feedback: str | None = None
+        for timeout_retry in range(_STEP_B_TIMEOUT_RETRY_COUNT + 1):
+            current_prompt = prompt
+            if timeout_retry_feedback:
+                current_prompt = (
+                    f"{current_prompt}\n\n"
+                    "<timeout_retry_feedback>\n"
+                    f"{timeout_retry_feedback}\n"
+                    "</timeout_retry_feedback>\n"
+                )
+            attempt_start = time.perf_counter()
+            try:
+                structured = await asyncio.wait_for(
+                    self._ai_service.generate_structured_data(
+                        prompt=current_prompt,
+                        response_schema=response_schema,
+                        system_instruction=system_instruction,
+                    ),
+                    timeout=timeout_seconds,
+                )
+            except TimeoutError as e:
+                logger.warning(
+                    "StepB %s generation timed out: timeout_retry=%d/%d timeout_sec=%d",
+                    stage_label,
+                    timeout_retry + 1,
+                    _STEP_B_TIMEOUT_RETRY_COUNT + 1,
+                    timeout_seconds,
+                    extra={
+                        "destination": travel_plan.destination,
+                        "spot_count": len(travel_plan.spots),
+                        "facts_length": len(extracted_facts),
+                        "stage": stage_label,
+                        "timeout_retry": timeout_retry + 1,
+                        "max_timeout_retries": _STEP_B_TIMEOUT_RETRY_COUNT + 1,
+                        "timeout_seconds": timeout_seconds,
+                    },
+                )
+                if timeout_retry >= _STEP_B_TIMEOUT_RETRY_COUNT:
+                    raise TimeoutError(
+                        f"StepB {stage_label} generation timed out after {_STEP_B_TIMEOUT_RETRY_COUNT + 1} attempts."
+                    ) from e
+                timeout_retry_feedback = (
+                    "前回は応答時間制限を超過しました。"
+                    "次回は説明を簡潔化し、冗長な導入や重複説明を削除してください。"
+                    "各配列要素は必要最小限の文量で維持してください。"
+                )
+                await asyncio.sleep(0.3 * (timeout_retry + 1))
+                continue
+
+            elapsed_sec = time.perf_counter() - attempt_start
+            logger.info(
+                "StepB %s generation completed: timeout_retry=%d/%d elapsed_sec=%.3f timeout_sec=%d",
+                stage_label,
+                timeout_retry + 1,
+                _STEP_B_TIMEOUT_RETRY_COUNT + 1,
+                elapsed_sec,
+                timeout_seconds,
+                extra={
+                    "destination": travel_plan.destination,
+                    "spot_count": len(travel_plan.spots),
+                    "facts_length": len(extracted_facts),
+                    "stage": stage_label,
+                    "timeout_retry": timeout_retry + 1,
+                    "max_timeout_retries": _STEP_B_TIMEOUT_RETRY_COUNT + 1,
+                    "elapsed_sec": elapsed_sec,
+                    "timeout_seconds": timeout_seconds,
+                },
+            )
+            if not isinstance(structured, dict):
+                raise ValueError("structured response must be a dict.")
+            return structured
+
+        raise TimeoutError(f"StepB {stage_label} generation failed due to timeout.")
 
 
 def _build_spots_text(travel_plan: TravelPlan) -> str:
@@ -1263,4 +1407,31 @@ def _build_travel_guide_prompt(
         spot_source_constraints=_build_spot_source_constraints_text(travel_plan, extracted_facts),
         allowed_related_spots=_build_allowed_related_spots_text(travel_plan),
         related_spots_retry_feedback=related_spots_retry_feedback or "なし",
+    )
+
+
+def _build_travel_guide_outline_prompt(base_prompt: str) -> str:
+    """StepB-1: 骨子生成用プロンプトを構築する。"""
+    return (
+        f"{base_prompt}\n\n"
+        "<generation_phase>\n"
+        "現在は骨子生成フェーズです。overview と timeline のみを生成してください。\n"
+        "spotDetails と checkpoints はこのフェーズでは生成しないでください。\n"
+        "</generation_phase>"
+    )
+
+
+def _build_travel_guide_details_prompt(base_prompt: str, outline_data: dict[str, Any]) -> str:
+    """StepB-2: 詳細生成用プロンプトを構築する。"""
+    return (
+        f"{base_prompt}\n\n"
+        "<generation_phase>\n"
+        "現在は詳細生成フェーズです。spotDetails と checkpoints のみを生成してください。\n"
+        "overview と timeline はこのフェーズでは生成しないでください。\n"
+        "</generation_phase>\n\n"
+        "<outline_context>\n"
+        f"overview: {outline_data.get('overview')}\n"
+        f"timeline: {outline_data.get('timeline')}\n"
+        "上記の骨子と整合する詳細のみを生成してください。\n"
+        "</outline_context>"
     )

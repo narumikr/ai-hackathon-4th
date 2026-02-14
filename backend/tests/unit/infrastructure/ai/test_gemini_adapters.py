@@ -109,6 +109,7 @@ async def test_generate_with_search(gemini_service, mock_gemini_client):
         temperature=0.0,
         max_output_tokens=2048,
         timeout=60,
+        max_retries=1,
     )
 
 

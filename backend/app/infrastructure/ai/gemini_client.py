@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound="GeminiResponseSchema")
 _URL_TOOL_TIMEOUT_SECONDS = 10
 _MAX_VALIDATE_URL_TOOL_LOOPS = 3
-_MIN_VALID_URLS_FOR_EARLY_ACCEPT = 5
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
 _DIAGNOSTIC_SNAPSHOT_DIR = _BACKEND_ROOT / "logs" / "ai_failures"
 _STEPA_BLOCKED_SOURCE_HOSTS = ("vertexaisearch.cloud.google.com",)
@@ -122,8 +121,6 @@ class GeminiClient:
         )
 
         requested_tools = list(tools) if tools else []
-        original_prompt = prompt
-        previous_invalid_urls: tuple[str, ...] = ()
         cumulative_valid_urls: set[str] = set()
         retry_without_validate_url = False
         should_server_side_url_validation = "google_search" in requested_tools
@@ -249,17 +246,8 @@ class GeminiClient:
                             attempt + 1,
                             max_retries,
                         )
-                        if attempt < max_retries - 1:
-                            prompt = self._build_missing_url_feedback_prompt(
-                                base_prompt=original_prompt,
-                                previous_response_text=extracted_text,
-                                feedback_round=attempt + 1,
-                                reusable_valid_urls=tuple(sorted(cumulative_valid_urls)),
-                            )
-                            await asyncio.sleep(0.3 * (attempt + 1))
-                            continue
                         self._logger.warning(
-                            "StepA max retries reached with no URLs; proceeding with unvalidated text. request_id=%s attempt=%d/%d",
+                            "StepA no URLs detected; skipping retry and proceeding with current text. request_id=%s attempt=%d/%d",
                             request_id,
                             attempt + 1,
                             max_retries,
@@ -269,56 +257,8 @@ class GeminiClient:
                     if validation_summary["invalid"] == 0:
                         return validated_text
 
-                    if cumulative_valid_count >= _MIN_VALID_URLS_FOR_EARLY_ACCEPT:
-                        self._logger.warning(
-                            "StepA early accept activated: request_id=%s attempt=%d/%d valid=%d invalid=%d cumulative_valid=%d threshold=%d",
-                            request_id,
-                            attempt + 1,
-                            max_retries,
-                            validation_summary["valid"],
-                            validation_summary["invalid"],
-                            cumulative_valid_count,
-                            _MIN_VALID_URLS_FOR_EARLY_ACCEPT,
-                        )
-                        return validated_text
-
-                    if attempt < max_retries - 1:
-                        current_invalid_urls = tuple(
-                            sorted(
-                                item.get("url")
-                                for item in validation_summary.get("invalid_details", [])
-                                if isinstance(item.get("url"), str) and item.get("url")
-                            )
-                        )
-                        repeated_invalid_urls = (
-                            bool(current_invalid_urls)
-                            and current_invalid_urls == previous_invalid_urls
-                        )
-                        previous_invalid_urls = current_invalid_urls
-                        prompt_summary = dict(validation_summary)
-                        prompt_summary["valid_details"] = [
-                            {"url": url} for url in sorted(cumulative_valid_urls)[:10]
-                        ]
-                        prompt_summary["valid"] = len(cumulative_valid_urls)
-                        prompt = self._build_url_validation_feedback_prompt(
-                            base_prompt=original_prompt,
-                            previous_response_text=extracted_text,
-                            validation_summary=prompt_summary,
-                            feedback_round=attempt + 1,
-                            repeated_invalid_urls=repeated_invalid_urls,
-                        )
-                        self._logger.warning(
-                            "StepA server-side URL validation failed; retrying request_id=%s attempt=%d/%d invalid=%d",
-                            request_id,
-                            attempt + 1,
-                            max_retries,
-                            validation_summary["invalid"],
-                        )
-                        await asyncio.sleep(0.3 * (attempt + 1))
-                        continue
-
                     self._logger.warning(
-                        "StepA max retries reached with invalid URLs remaining; proceeding with sanitized text. request_id=%s attempt=%d/%d invalid=%d cumulative_valid=%d",
+                        "StepA invalid URLs detected; skipping retry and proceeding with sanitized text. request_id=%s attempt=%d/%d invalid=%d cumulative_valid=%d",
                         request_id,
                         attempt + 1,
                         max_retries,

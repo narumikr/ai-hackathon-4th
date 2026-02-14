@@ -470,7 +470,7 @@ async def test_generate_travel_guide_use_case_retries_once_on_unknown_related_sp
 
     assert dto.plan_id == sample_travel_plan.id
     assert len(dto.timeline) == 2
-    assert ai_service.call_count == 2
+    assert ai_service.call_count == 4
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
     assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
@@ -951,7 +951,7 @@ async def test_generate_travel_guide_does_not_retry_without_evaluation(
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
     assert dto.overview == first_payload["overview"]
-    assert ai_service.call_count == 1
+    assert ai_service.call_count == 2
 
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
