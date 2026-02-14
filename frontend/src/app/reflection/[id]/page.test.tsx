@@ -56,7 +56,7 @@ vi.mock('@/lib/api', () => ({
   }),
 }));
 
-// SpotReflectionForm と SpotAdder コンポーネントをシンプルにモック
+// SpotReflectionForm コンポーネントをシンプルにモック
 vi.mock('@/components/features/reflection', () => ({
   SpotReflectionForm: ({
     spot,
@@ -88,7 +88,6 @@ vi.mock('@/components/features/reflection', () => ({
       </button>
     </div>
   ),
-  SpotAdder: () => <div data-testid="spot-adder">スポット追加エリア</div>,
 }));
 
 // テスト用のモックデータ
@@ -307,16 +306,16 @@ describe('ReflectionDetailPage', () => {
       });
     });
 
-    it('スポット追加エリアが表示される', async () => {
+    it('スポット追加エリアが表示されない', async () => {
       // 準備: 旅行計画を返す
       mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
 
       // 実行: コンポーネントをレンダリング
       render(<ReflectionDetailPage />);
 
-      // 検証: スポット追加エリアが表示される
+      // 検証: スポット追加エリアが表示されない
       await waitFor(() => {
-        expect(screen.getByTestId('spot-adder')).toBeInTheDocument();
+        expect(screen.queryByTestId('spot-adder')).not.toBeInTheDocument();
       });
     });
   });
