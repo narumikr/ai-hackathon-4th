@@ -28,6 +28,12 @@ vi.mock('next/link', () => ({
 
 // APIクライアントのモック
 const mockListTravelPlans = vi.fn();
+const { mockHasPendingReflectionSubmission, mockClearReflectionSubmissionPending } = vi.hoisted(
+  () => ({
+    mockHasPendingReflectionSubmission: vi.fn(),
+    mockClearReflectionSubmissionPending: vi.fn(),
+  })
+);
 
 vi.mock('@/lib/api', () => ({
   createApiClientFromEnv: () => ({
@@ -36,6 +42,11 @@ vi.mock('@/lib/api', () => ({
   toApiError: (error: unknown) => ({
     message: error instanceof Error ? error.message : 'エラーが発生しました',
   }),
+}));
+
+vi.mock('@/lib/reflectionSubmissionState', () => ({
+  hasPendingReflectionSubmission: mockHasPendingReflectionSubmission,
+  clearReflectionSubmissionPending: mockClearReflectionSubmissionPending,
 }));
 
 // テスト用のモックデータ
@@ -54,6 +65,7 @@ const createMockTravelPlan = (
 describe('ReflectionListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockHasPendingReflectionSubmission.mockReturnValue(false);
   });
 
   describe('初期表示', () => {
@@ -231,6 +243,32 @@ describe('ReflectionListPage', () => {
         const processingElements = screen.getAllByText(STATUS_LABELS.REFLECTION_PROCESSING);
         expect(processingElements.length).toBeGreaterThan(0);
       });
+    });
+
+    it('送信保留中の場合はAPIがnot_startedでも生成中表示される', async () => {
+      // 準備: API上は未開始だが、セッション上は送信保留中
+      const mockTravels = [
+        createMockTravelPlan({
+          id: 'plan-pending',
+          reflectionGenerationStatus: 'not_started',
+        }),
+      ];
+      mockListTravelPlans.mockResolvedValue(mockTravels);
+      mockHasPendingReflectionSubmission.mockImplementation(
+        (planId: string) => planId === 'plan-pending'
+      );
+
+      // 実行: コンポーネントをレンダリング
+      render(<ReflectionListPage />);
+
+      // 検証: 作成ボタンではなく生成中表示になる
+      await waitFor(() => {
+        expect(
+          screen.queryByRole('button', { name: BUTTON_LABELS.CREATE_REFLECTION })
+        ).not.toBeInTheDocument();
+      });
+      const processingElements = screen.getAllByText(STATUS_LABELS.REFLECTION_PROCESSING);
+      expect(processingElements.length).toBeGreaterThan(0);
     });
 
     it('振り返り生成失敗の場合はエラーバッジが表示される', async () => {

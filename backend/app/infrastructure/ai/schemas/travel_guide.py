@@ -114,3 +114,35 @@ class TravelGuideResponseSchema(GeminiResponseSchema):
         list[CheckpointSchema],
         Field(description="各スポットでの学習チェックポイント", min_length=1),
     ]
+
+
+class TravelGuideOutlineSchema(GeminiResponseSchema):
+    """旅行ガイド骨子（overview/timeline）のレスポンススキーマ."""
+
+    overview: Annotated[
+        str,
+        Field(
+            description=(
+                "旅行全体の概要。以下の4要素を含む充実した概要文（200-400文字程度）: "
+                "1) 旅行のテーマや目的、2) 訪問スポットの関連性、3) 歴史的時代背景、4) おすすめポイント"
+            ),
+            min_length=100,
+        ),
+    ]
+    timeline: Annotated[
+        list[HistoricalEventSchema],
+        Field(description="歴史的出来事の年表", min_length=1),
+    ]
+
+
+class TravelGuideDetailsSchema(GeminiResponseSchema):
+    """旅行ガイド詳細（spotDetails/checkpoints）のレスポンススキーマ."""
+
+    spot_details: Annotated[
+        list[SpotDetailSchema],
+        Field(description="各観光スポットの詳細情報", min_length=1, alias="spotDetails"),
+    ]
+    checkpoints: Annotated[
+        list[CheckpointSchema],
+        Field(description="各スポットでの学習チェックポイント", min_length=1),
+    ]

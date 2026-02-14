@@ -239,6 +239,6 @@ async def _run_travel_guide_generation(
             logger.exception(
                 "Failed to update travel guide status to failed", extra={"plan_id": plan_id}
             )
-        raise
+        return
     finally:
         db.close()

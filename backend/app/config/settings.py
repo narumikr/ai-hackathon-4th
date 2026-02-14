@@ -94,7 +94,7 @@ class Settings(DatabaseSettings):
     gemini_model_name: str = "gemini-3-flash-preview"
     gemini_temperature: float = 0.7
     gemini_max_output_tokens: int = 12288
-    gemini_timeout_seconds: int = 60
+    gemini_timeout_seconds: int = 90
     # TODO: 将来の拡張用 - thinking_levelパラメータの活用
     gemini_thinking_level: str = "medium"  # minimal, low, medium, high（未実装）
 
@@ -103,7 +103,7 @@ class Settings(DatabaseSettings):
     image_generation_location: str = "global"
     image_generation_max_concurrent: int = 1
     image_generation_aspect_ratio: str = "16:9"
-    image_generation_timeout: int = 60
+    image_generation_timeout: int = 90
     image_execution_mode: Literal["local_worker", "cloud_tasks"] = "local_worker"
 
     # Cloud Tasks設定
@@ -122,6 +122,7 @@ class Settings(DatabaseSettings):
     # ログ設定
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     log_force_override: bool = False  # 既存のロガー設定を強制上書きするか
+    log_ai_focus: bool = False  # AI関連ログのみを一時的に詳細表示するか
 
     def get_effective_log_level(self) -> str:
         """debugフラグに基づいて有効なログレベルを取得

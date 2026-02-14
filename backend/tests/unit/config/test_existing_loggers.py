@@ -150,11 +150,14 @@ class TestExistingLoggerCompatibility:
 
         # analyze_photos.pyで使用されているログパターンをテスト
         logger.warning(
-            "Image analysis with search tool failed; using initial analysis.",
+            "Image analysis attempt failed.",
             extra={
                 "plan_id": "test-plan-789",
                 "photo_id": "photo-001",
                 "spot_id": "spot-001",
+                "attempt": 1,
+                "max_attempts": 3,
+                "is_final_attempt": False,
             },
         )
 
@@ -164,7 +167,7 @@ class TestExistingLoggerCompatibility:
         assert "app.application.use_cases.analyze_photos" in log_output, (
             "モジュール名が出力されること"
         )
-        assert "Image analysis with search tool failed" in log_output, (
+        assert "Image analysis attempt failed" in log_output, (
             "ログメッセージが出力されること"
         )
 

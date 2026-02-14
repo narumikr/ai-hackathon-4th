@@ -434,6 +434,51 @@ async def test_generate_travel_guide_use_case_rolls_back_new_spots_on_failure(
 
 
 @pytest.mark.asyncio
+async def test_generate_travel_guide_use_case_retries_once_on_unknown_related_spots(
+    db_session: Session, sample_travel_plan, fake_job_repository
+) -> None:
+    """前提条件: 初回のtimeline.relatedSpotsに未知スポットが含まれる。
+    実行: ガイド生成を実行する。
+    検証: StepBを1回再実行して成功する。
+    """
+    plan_repository = TravelPlanRepository(db_session)
+    guide_repository = TravelGuideRepository(db_session)
+    first_payload = {
+        **_structured_guide_payload(),
+        "timeline": [
+            {
+                "year": 1945,
+                "event": "不整合な年表",
+                "significance": "未知スポットが混入している。",
+                "relatedSpots": ["ミキモト真珠島"],
+            }
+        ],
+    }
+    second_payload = _structured_guide_payload()
+    ai_service = FakeAIService(
+        extracted_facts="## スポット別の事実\n\n### 清水寺\n- 778年創建 [出典: https://example.com/kiyomizu] [検証: valid]",
+        structured_data=[first_payload, second_payload],
+    )
+
+    use_case = GenerateTravelGuideUseCase(
+        plan_repository=plan_repository,
+        guide_repository=guide_repository,
+        ai_service=ai_service,
+        job_repository=fake_job_repository,
+    )
+    dto = await use_case.execute(plan_id=sample_travel_plan.id)
+
+    assert dto.plan_id == sample_travel_plan.id
+    assert len(dto.timeline) == 2
+    assert ai_service.call_count == 4
+    plan = plan_repository.find_by_id(sample_travel_plan.id)
+    assert plan is not None
+    assert plan.guide_generation_status == GenerationStatus.SUCCEEDED
+    saved = guide_repository.find_by_plan_id(sample_travel_plan.id)
+    assert saved is not None
+
+
+@pytest.mark.asyncio
 async def test_generate_travel_guide_use_case_updates_existing_guide(
     db_session: Session, sample_travel_plan, sample_travel_guide, fake_job_repository
 ) -> None:
@@ -906,7 +951,7 @@ async def test_generate_travel_guide_does_not_retry_without_evaluation(
     dto = await use_case.execute(plan_id=sample_travel_plan.id)
 
     assert dto.overview == first_payload["overview"]
-    assert ai_service.call_count == 1
+    assert ai_service.call_count == 2
 
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None

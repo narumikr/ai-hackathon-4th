@@ -16,6 +16,10 @@ import {
 } from '@/constants';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { createApiClientFromEnv } from '@/lib/api';
+import {
+  clearReflectionSubmissionPending,
+  hasPendingReflectionSubmission,
+} from '@/lib/reflectionSubmissionState';
 import type { TravelPlanListResponse } from '@/types';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -43,7 +47,20 @@ export default function ReflectionListPage() {
         const response = await apiClient.listTravelPlans({});
         // ステータスが completed のもののみをフィルタ
         const completedTravels = response.filter(t => t.status === 'completed');
-        setTravels(completedTravels);
+        const normalizedTravels = completedTravels.map(travel => {
+          const isSubmissionPending = hasPendingReflectionSubmission(travel.id);
+
+          if (isSubmissionPending && travel.reflectionGenerationStatus === 'not_started') {
+            return { ...travel, reflectionGenerationStatus: 'processing' as const };
+          }
+
+          if (isSubmissionPending && travel.reflectionGenerationStatus !== 'not_started') {
+            clearReflectionSubmissionPending(travel.id);
+          }
+
+          return travel;
+        });
+        setTravels(normalizedTravels);
       } catch (_err) {
         setError(ERROR_DIALOG_MESSAGES.REFLECTION_LIST_FETCH_FAILED);
       } finally {

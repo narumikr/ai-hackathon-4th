@@ -101,9 +101,9 @@ class FakeAIServiceWithMissingSpot(IAIService):
         # 評価用のプロンプトかどうかを判定
         if "評価してください" in prompt or "評価基準" in prompt:
             # 現在の生成データに基づいて評価結果を返す
-            # call_count == 1の時は初回生成後なのでfirst_generationを評価
-            # call_count == 2の時は再生成後なのでsecond_generationを評価
-            current_data = self.first_generation if self.call_count <= 1 else self.second_generation
+            # 1回の生成試行で structured 呼び出しが2回（outline/details）発生する。
+            # call_count <= 2 は初回生成試行、call_count >= 3 は再生成試行に対応する。
+            current_data = self.first_generation if self.call_count <= 2 else self.second_generation
             spot_details = current_data.get("spotDetails", [])
             spot_names = {spot["spotName"] for spot in spot_details}
 
@@ -128,7 +128,7 @@ class FakeAIServiceWithMissingSpot(IAIService):
 
         # 通常の生成
         self.call_count += 1
-        if self.call_count == 1:
+        if self.call_count <= 2:
             return self.first_generation
         return self.second_generation
 
@@ -237,7 +237,7 @@ async def test_does_not_retry_when_spot_is_missing(db_session: Session, sample_t
         await use_case.execute(plan_id=sample_travel_plan.id)
 
     # 検証: 初回の不正データで失敗し、再生成は行われない
-    assert ai_service.call_count == 1
+    assert ai_service.call_count == 2
 
     plan = plan_repository.find_by_id(sample_travel_plan.id)
     assert plan is not None
