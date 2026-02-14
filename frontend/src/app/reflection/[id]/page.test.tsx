@@ -30,10 +30,11 @@ vi.mock('next/link', () => ({
 
 // Next.js の useRouter と useParams をモック
 const mockPush = vi.fn();
+const mockRouter = {
+  push: mockPush,
+};
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+  useRouter: () => mockRouter,
   useParams: () => ({
     id: 'test-plan-id',
   }),
@@ -59,12 +60,32 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@/components/features/reflection', () => ({
   SpotReflectionForm: ({
     spot,
+    onUpdate,
   }: {
-    spot: { id: string; name: string; isAdded: boolean };
+    spot: {
+      id: string;
+      name: string;
+      isAdded: boolean;
+      photos?: Array<{ url: string; file?: File }>;
+    };
+    onUpdate: (id: string, updates: { photos: Array<{ url: string; file?: File }> }) => void;
   }) => (
     <div data-testid={`spot-form-${spot.id}`}>
       <span data-testid={`spot-name-${spot.id}`}>{spot.name}</span>
       {spot.isAdded && <span data-testid={`added-marker-${spot.id}`}>追加済み</span>}
+      <button
+        type="button"
+        data-testid={`add-photo-${spot.id}`}
+        onClick={() => {
+          const file = new File(['dummy-bytes'], `${spot.id}.jpg`, { type: 'image/jpeg' });
+          const currentPhotos = spot.photos ?? [];
+          onUpdate(spot.id, {
+            photos: [...currentPhotos, { url: `blob:${spot.id}-${currentPhotos.length}`, file }],
+          });
+        }}
+      >
+        写真追加
+      </button>
     </div>
   ),
   SpotAdder: () => <div data-testid="spot-adder">スポット追加エリア</div>,
@@ -442,6 +463,76 @@ describe('ReflectionDetailPage', () => {
       await waitFor(() => {
         expect(screen.getByText(TOOLTIP_MESSAGES.PHOTO_REQUIRED)).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('再試行時のアップロード制御', () => {
+    it('振り返り生成失敗後の再実行で既送信写真を再アップロードしない', async () => {
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockUploadSpotReflection.mockResolvedValue(undefined);
+      mockCreateReflection
+        .mockRejectedValueOnce(new Error('生成失敗'))
+        .mockResolvedValueOnce(undefined);
+
+      render(<ReflectionDetailPage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('add-photo-spot-1')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('add-photo-spot-1'));
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION }));
+
+      await waitFor(() => {
+        expect(mockUploadSpotReflection).toHaveBeenCalledTimes(1);
+      });
+      await waitFor(() => {
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.REFLECTION_CREATE_FAILED)
+        ).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION }));
+
+      await waitFor(() => {
+        expect(mockCreateReflection).toHaveBeenCalledTimes(2);
+      });
+      expect(mockUploadSpotReflection).toHaveBeenCalledTimes(1);
+    });
+
+    it('再実行時は新規追加した写真だけをアップロードする', async () => {
+      mockGetTravelPlan.mockResolvedValue(createMockTravelPlan());
+      mockUploadSpotReflection.mockResolvedValue(undefined);
+      mockCreateReflection
+        .mockRejectedValueOnce(new Error('生成失敗'))
+        .mockResolvedValueOnce(undefined);
+
+      render(<ReflectionDetailPage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('add-photo-spot-1')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('add-photo-spot-1'));
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION }));
+
+      await waitFor(() => {
+        expect(mockUploadSpotReflection).toHaveBeenCalledTimes(1);
+      });
+      await waitFor(() => {
+        expect(
+          screen.getByText(ERROR_DIALOG_MESSAGES.REFLECTION_CREATE_FAILED)
+        ).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId('add-photo-spot-1'));
+      fireEvent.click(screen.getByRole('button', { name: BUTTON_LABELS.GENERATE_REFLECTION }));
+
+      await waitFor(() => {
+        expect(mockUploadSpotReflection).toHaveBeenCalledTimes(2);
+      });
+      expect(mockUploadSpotReflection.mock.calls[0][0].files).toHaveLength(1);
+      expect(mockUploadSpotReflection.mock.calls[1][0].files).toHaveLength(1);
     });
   });
 });
