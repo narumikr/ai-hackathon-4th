@@ -393,18 +393,18 @@ export default function TravelGuidePage() {
                         <h3 className="font-bold text-neutral-900 text-xl">{spot.spotName}</h3>
                       </div>
 
-                      {/* 画像と歴史的背景を横並び */}
-                      <div className="mb-4 flex gap-6">
+                      {/* 画像と歴史的背景を横並び（モバイルは縦） */}
+                      <div className="mb-4 flex flex-col gap-4 md:flex-row md:gap-6">
                         {/* 画像表示エリア */}
                         <div className="shrink-0">
                           {spot.imageUrl ? (
                             <img
                               src={spot.imageUrl}
                               alt={`${spot.spotName}の画像`}
-                              className="h-48 w-64 rounded-lg object-cover"
+                              className="h-48 w-full rounded-lg object-cover md:w-64"
                             />
                           ) : (
-                            <div className="flex h-48 w-64 items-center justify-center rounded-lg bg-neutral-100">
+                            <div className="flex h-48 w-full items-center justify-center rounded-lg bg-neutral-100 md:w-64">
                               {spot.imageStatus === 'processing' ? (
                                 <div className="flex flex-col items-center gap-2 text-neutral-500">
                                   <LoadingSpinner size="lg" variant="secondary" />
