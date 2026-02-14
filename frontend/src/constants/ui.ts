@@ -156,7 +156,6 @@ export const FOOTER_LINKS = [
   {
     label: 'Zennの記事を読む',
     href: 'https://zenn.dev/articles/5296da37bf4b74',
-    external: true,
   },
 ] as const;
 
