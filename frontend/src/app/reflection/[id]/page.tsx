@@ -1,7 +1,7 @@
 'use client';
 
 import { ErrorDialog } from '@/components/features/common';
-import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
+import { SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
 import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
 import {
@@ -106,21 +106,6 @@ export default function ReflectionDetailPage() {
     }
   };
 
-  const handleAddSpot = (name: string) => {
-    const newSpot: ReflectionSpot = {
-      id: `added-${Date.now()}`,
-      name,
-      photos: [],
-      comment: '',
-      isAdded: true,
-    };
-    setSpots(prev => [...prev, newSpot]);
-  };
-
-  const handleRemoveSpot = (spotId: string) => {
-    setSpots(prev => prev.filter(s => s.id !== spotId));
-  };
-
   const handleSubmit = async () => {
     if (!travel || !id) return;
 
@@ -204,18 +189,8 @@ export default function ReflectionDetailPage() {
               {SECTION_TITLES.SPOT_REFLECTIONS}
             </h2>
             {spots.map(spot => (
-              <SpotReflectionForm
-                key={spot.id}
-                spot={spot}
-                onUpdate={handleSpotUpdate}
-                onRemove={spot.isAdded ? handleRemoveSpot : undefined}
-              />
+              <SpotReflectionForm key={spot.id} spot={spot} onUpdate={handleSpotUpdate} />
             ))}
-          </div>
-
-          {/* スポット追加 */}
-          <div className="mb-8">
-            <SpotAdder onAdd={handleAddSpot} />
           </div>
 
           {/* 全体的な感想 */}
