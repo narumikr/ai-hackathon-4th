@@ -1,6 +1,5 @@
 import { COPYRIGHT_TEXT, FOOTER_LINKS } from '@/constants';
 import type { FooterProps } from '@/types';
-import Link from 'next/link';
 
 /**
  * Footer Component
@@ -18,13 +17,15 @@ export function Footer({ className = '' }: FooterProps) {
           {/* Footer Links */}
           <nav className="flex flex-wrap justify-center gap-4 lg:justify-start lg:gap-6">
             {FOOTER_LINKS.map(link => (
-              <Link
+              <a
                 key={link.href}
                 href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-neutral-600 text-sm transition-colors hover:text-primary-700"
               >
                 {link.label}
-              </Link>
+              </a>
             ))}
           </nav>
 
