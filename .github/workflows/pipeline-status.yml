@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Get workflow runs
         id: get-runs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
@@ -39,7 +39,7 @@ jobs:
             return status;
 
       - name: Generate pipeline report
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const status = ${{ steps.get-runs.outputs.result }};
