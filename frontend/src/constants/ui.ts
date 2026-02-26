@@ -154,16 +154,8 @@ export const NAVIGATION_ITEMS = [
  */
 export const FOOTER_LINKS = [
   {
-    label: 'About',
-    href: '/about',
-  },
-  {
-    label: 'Privacy',
-    href: '/privacy',
-  },
-  {
-    label: 'Terms',
-    href: '/terms',
+    label: 'Zennの記事を読む',
+    href: 'https://zenn.dev/narumikr/articles/5296da37bf4b74',
   },
 ] as const;
 

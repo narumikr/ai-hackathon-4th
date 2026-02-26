@@ -60,7 +60,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Install Just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install frontend dependencies
         run: just install-frontend
@@ -90,7 +90,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -101,7 +101,7 @@ jobs:
           cache-dependency-glob: "backend/uv.lock"
 
       - name: Install Just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install backend dependencies
         run: just install-backend
@@ -110,7 +110,7 @@ jobs:
         run: just test-backend-cov
 
       - name: Upload backend coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: ./backend/coverage.xml
           flags: backend

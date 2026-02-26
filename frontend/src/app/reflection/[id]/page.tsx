@@ -1,7 +1,7 @@
 'use client';
 
 import { ErrorDialog } from '@/components/features/common';
-import { SpotAdder, SpotReflectionForm } from '@/components/features/reflection';
+import { SpotReflectionForm } from '@/components/features/reflection';
 import { Container } from '@/components/layout';
 import { Button, Dialog, Icon, TextArea, Tooltip } from '@/components/ui';
 import {
@@ -19,6 +19,10 @@ import {
   TOOLTIP_MESSAGES,
 } from '@/constants';
 import { createApiClientFromEnv } from '@/lib/api';
+import {
+  clearReflectionSubmissionPending,
+  markReflectionSubmissionPending,
+} from '@/lib/reflectionSubmissionState';
 import type { TravelPlanResponse } from '@/types';
 import type { ReflectionSpot } from '@/types/reflection';
 import Link from 'next/link';
@@ -106,21 +110,6 @@ export default function ReflectionDetailPage() {
     }
   };
 
-  const handleAddSpot = (name: string) => {
-    const newSpot: ReflectionSpot = {
-      id: `added-${Date.now()}`,
-      name,
-      photos: [],
-      comment: '',
-      isAdded: true,
-    };
-    setSpots(prev => [...prev, newSpot]);
-  };
-
-  const handleRemoveSpot = (spotId: string) => {
-    setSpots(prev => prev.filter(s => s.id !== spotId));
-  };
-
   const handleSubmit = async () => {
     if (!travel || !id) return;
 
@@ -137,31 +126,59 @@ export default function ReflectionDetailPage() {
     try {
       const apiClient = createApiClientFromEnv();
 
-      // 1. 各スポットの写真をアップロード
-      for (const spot of spots) {
-        const files = spot.photos
-          .filter(photo => photo.file !== undefined)
-          .map(photo => photo.file as File);
+      markReflectionSubmissionPending(id);
+      void (async () => {
+        try {
+          // 1. 各スポットの写真をアップロード
+          for (const spot of spots) {
+            const files = spot.photos
+              .filter(photo => photo.file !== undefined)
+              .map(photo => photo.file as File);
 
-        if (files.length > 0) {
-          await apiClient.uploadSpotReflection({
-            planId: id,
-            spotId: spot.id,
-            spotNote: spot.comment,
-            files,
+            if (files.length > 0) {
+              await apiClient.uploadSpotReflection({
+                planId: id,
+                spotId: spot.id,
+                spotNote: spot.comment,
+                files,
+              });
+              setSpots(prev =>
+                prev.map(currentSpot => {
+                  if (currentSpot.id !== spot.id) {
+                    return currentSpot;
+                  }
+                  return {
+                    ...currentSpot,
+                    photos: currentSpot.photos.map(photo => {
+                      if (photo.file === undefined) {
+                        return photo;
+                      }
+                      return {
+                        ...photo,
+                        file: undefined,
+                      };
+                    }),
+                  };
+                })
+              );
+            }
+          }
+
+          // 2. 振り返り生成APIを呼び出す
+          await apiClient.createReflection({
+            request: {
+              planId: id,
+              userNotes: overallComment || undefined,
+            },
           });
+        } catch (err) {
+          console.error('Failed to submit reflection in background', err);
+        } finally {
+          clearReflectionSubmissionPending(id);
         }
-      }
+      })();
 
-      // 2. 振り返り生成APIを呼び出す
-      await apiClient.createReflection({
-        request: {
-          planId: id,
-          userNotes: overallComment || undefined,
-        },
-      });
-
-      // 3. 成功後、振り返り閲覧ページにリダイレクト
+      // 3. 処理を待たずに振り返り閲覧ページにリダイレクト
       router.push(`/reflection/${id}/view`);
     } catch (_err) {
       setIsSubmitting(false);
@@ -204,18 +221,8 @@ export default function ReflectionDetailPage() {
               {SECTION_TITLES.SPOT_REFLECTIONS}
             </h2>
             {spots.map(spot => (
-              <SpotReflectionForm
-                key={spot.id}
-                spot={spot}
-                onUpdate={handleSpotUpdate}
-                onRemove={spot.isAdded ? handleRemoveSpot : undefined}
-              />
+              <SpotReflectionForm key={spot.id} spot={spot} onUpdate={handleSpotUpdate} />
             ))}
-          </div>
-
-          {/* スポット追加 */}
-          <div className="mb-8">
-            <SpotAdder onAdd={handleAddSpot} />
           </div>
 
           {/* 全体的な感想 */}

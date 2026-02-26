@@ -13,15 +13,31 @@
 {extracted_facts}
 </extracted_facts_with_sources>
 
+<spot_source_constraints>
+{spot_source_constraints}
+</spot_source_constraints>
+
+<allowed_related_spots>
+{allowed_related_spots}
+</allowed_related_spots>
+
+<related_spots_retry_feedback>
+{related_spots_retry_feedback}
+</related_spots_retry_feedback>
+
 <constraints>
 - 上記の事実情報に含まれない内容は生成しない（推測・補完禁止）。
 - スポット名はユーザー指定スポット + 「追加のおすすめスポット」欄に登場したもののみ許容する。
 - 各スポットの説明には、可能な限り出典をMarkdownリンク形式で明示すること（例: [伊勢神宮公式サイト](https://example.com)）。
 - 出典リンクを記載する場合は、https:// から始まる完全なURLを使用すること。
 - 出典リンクのURLは、`<extracted_facts_with_sources>` に存在するURLを優先して使用すること。
+- 出典リンクのURLは、`<spot_source_constraints>` で当該スポットに割り当てられたURLのみ使用すること。
+- あるスポットに割り当てがないURLを、別スポットの説明に流用してはいけない。
 - URLの改変・短縮・推測生成は禁止する（末尾スラッシュやパスを勝手に変更しない）。
 - historicalBackground と historicalSignificance は、原則として末尾に1件以上の出典リンクを記載すること。
 - 出典リンクが付けられない事実は、原則として本文に採用しないこと。
+- timeline.relatedSpots は `<allowed_related_spots>` の名称のみ使用すること。
+- `<related_spots_retry_feedback>` が「なし」以外の場合は、同指示を最優先で厳守すること。
 </constraints>
 
 <output_structure_requirements>
@@ -60,7 +76,7 @@
    - 各観光スポットに関連する歴史的出来事を時系列で配置する
    - 旅行先全体の主要な歴史的出来事も含める
    - 各出来事の relatedSpots には関連するスポット名を正確に記載する
-   - 年表は情報量を重視し、可能な限り10件以上（少なくとも5件以上）を目安にする
+   - 年表は情報量を重視し、少なくとも5件以上を目安にする
    - 出来事の内訳は偏らせず、以下をバランス良く含める
      * 起点となる出来事（創建・開府・成立など）
      * 発展や転換点（改築・戦乱・制度変更・人物交代など）
@@ -122,7 +138,7 @@
 - 出典リンクが記載されている場合、Markdown形式かつ妥当なURLになっているか確認
 - 全てのユーザー指定スポットが含まれているか確認
 - spotName と relatedSpots の表記が完全に一致しているか確認
-- timeline が十分な件数と時代幅を持ち、単調な列挙になっていないか確認
+- timeline が5件以上で時代幅を持ち、単調な列挙になっていないか確認
 - スキーマ要件を満たしているか確認
 </step_by_step_process>
 
