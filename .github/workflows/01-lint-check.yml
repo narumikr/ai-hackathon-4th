@@ -63,7 +63,7 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Install Just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install frontend dependencies
         run: just install-frontend
@@ -100,7 +100,7 @@ jobs:
           cache-dependency-glob: "backend/uv.lock"
 
       - name: Install Just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install backend dependencies
         run: just install-backend
