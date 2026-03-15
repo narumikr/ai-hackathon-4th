@@ -26,7 +26,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Detect changed paths
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         id: filter
         with:
           base: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
