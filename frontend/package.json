@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "pnpm": {
-    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "sharp"]
+    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild", "sharp"],
+    "overrides": {
+      "rollup": ">=4.59.0"
+    }
   },
   "scripts": {
     "dev": "next dev",
